@@ -1,0 +1,50 @@
+.wrapper {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+    width: 0.75rem;
+    height: 0.74rem;
+    cursor: pointer;
+}
+
+.input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.outline,
+.mark {
+    position: absolute;
+    inset: 0;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-position: center;
+    mask-position: center;
+}
+
+.outline {
+    background: var(--color-border-strong);
+    -webkit-mask-image: url('/assets/diamond-checkbox-outline.svg');
+    mask-image: url('/assets/diamond-checkbox-outline.svg');
+}
+
+.mark {
+    background: var(--color-input-bg);
+    -webkit-mask-image: url('/assets/diamond-checkbox-mark.svg');
+    mask-image: url('/assets/diamond-checkbox-mark.svg');
+    transition: background 0.1s ease-out;
+}
+
+.input:checked ~ .mark {
+    background: var(--color-accent);
+}
+
+.input:focus-visible ~ .outline {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 1px;
+}

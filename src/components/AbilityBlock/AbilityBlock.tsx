@@ -1,4 +1,5 @@
 import {InkCheckbox} from '../shared/InkCheckbox/InkCheckbox'
+import {DiamondCheckbox} from '../shared/DiamondCheckbox/DiamondCheckbox'
 import type {AbilityDefinition} from '../../data/abilities'
 import {abilityModifier, formatModifier} from '../../data/abilities'
 import type {AbilityData, SkillData} from '../../types'
@@ -40,12 +41,19 @@ function SkillRow({
                     aria-label={`${label} expertise`}
                 />
             )}
-            <InkCheckbox
-                checked={skill.proficient}
-                onChange={(proficient) => onChange({...skill, proficient})}
-                rotated={isSave}
-                aria-label={`${label} proficiency`}
-            />
+            {isSave ? (
+                <DiamondCheckbox
+                    checked={skill.proficient}
+                    onChange={(proficient) => onChange({...skill, proficient})}
+                    aria-label={`${label} proficiency`}
+                />
+            ) : (
+                <InkCheckbox
+                    checked={skill.proficient}
+                    onChange={(proficient) => onChange({...skill, proficient})}
+                    aria-label={`${label} proficiency`}
+                />
+            )}
             <span className={styles.rowBonus}>{formatModifier(bonus)}</span>
             <span className={`${styles.rowLabel} ${isSave ? styles['rowLabel--save'] : ''}`}>
                 {label}
