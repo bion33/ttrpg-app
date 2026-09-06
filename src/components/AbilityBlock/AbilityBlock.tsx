@@ -1,5 +1,6 @@
-import {InkCheckbox} from '../shared/InkCheckbox/InkCheckbox'
 import {DiamondCheckbox} from '../shared/DiamondCheckbox/DiamondCheckbox'
+import {ProficiencyCheckbox} from '../shared/ProficiencyCheckbox/ProficiencyCheckbox'
+import {ExpertiseCheckbox} from '../shared/ExpertiseCheckbox/ExpertiseCheckbox'
 import type {AbilityDefinition} from '../../data/abilities'
 import {abilityModifier, formatModifier} from '../../data/abilities'
 import type {AbilityData, SkillData} from '../../types'
@@ -33,8 +34,7 @@ function SkillRow({
     return (
         <li className={styles.row}>
             {!isSave && (
-                <InkCheckbox
-                    small
+                <ExpertiseCheckbox
                     checked={skill.expertise}
                     onChange={(expertise) => onChange({...skill, expertise})}
                     className={styles.expertise}
@@ -48,7 +48,7 @@ function SkillRow({
                     aria-label={`${label} proficiency`}
                 />
             ) : (
-                <InkCheckbox
+                <ProficiencyCheckbox
                     checked={skill.proficient}
                     onChange={(proficient) => onChange({...skill, proficient})}
                     aria-label={`${label} proficiency`}
@@ -96,10 +96,18 @@ export function AbilityBlock({definition, data, proficiencyBonus, onChange}: Abi
             </div>
 
             <ul className={styles.rows}>
-                <div className={styles.name}>{definition.name}</div>
+                <div className={styles.nameRow}>
+                    <span className={styles.nameFlourishLeft} aria-hidden="true" />
+                    <div className={styles.name}>{definition.name}</div>
+                    <div className={styles.nameFlourishTail}>
+                        <span className={styles.nameFlourishDot} aria-hidden="true" />
+                        <span className={styles.nameFlourishLine} aria-hidden="true" />
+                        <span className={styles.nameFlourishArrow} aria-hidden="true" />
+                    </div>
+                </div>
 
                 <SkillRow
-                    label="Saving Throw"
+                    label="Saving Throws"
                     skill={data.save}
                     modifier={modifier}
                     proficiencyBonus={proficiencyBonus}

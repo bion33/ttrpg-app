@@ -1,35 +1,46 @@
 import {useCharacterSheet} from '../../context/useCharacterSheet'
-import type {CharacterSheetData} from '../../types'
+import {abilityModifier} from '../../data/abilities'
 import styles from './ProficiencyStatsRow.module.css'
 
-const STAT_FIELDS: { key: keyof Pick<CharacterSheetData, 'proficiencyBonus' | 'passivePerception'>; label: string }[] = [
-    {key: 'proficiencyBonus', label: 'Proficiency'},
-    {key: 'passivePerception', label: 'Passive Perception'},
-]
+function passivePerception(proficiencyBonus: number, wis: {
+    score: number
+    scoreBonus: number
+    skills: Record<string, { proficient: boolean; expertise: boolean }>
+}): number {
+    const perception = wis.skills['Perception']
+    const proficiencyMultiplier = perception?.proficient ? (perception.expertise ? 2 : 1) : 0
+    return 10 + abilityModifier(wis.score, wis.scoreBonus) + proficiencyMultiplier * proficiencyBonus
+}
 
 export function ProficiencyStatsRow() {
     const {sheet, updateSheet} = useCharacterSheet()
 
-    function setField(key: keyof CharacterSheetData, value: number) {
-        updateSheet((current) => ({...current, [key]: value}))
+    function setProficiencyBonus(value: number) {
+        updateSheet((current) => ({...current, proficiencyBonus: value}))
     }
 
     return (
         <div className={styles.row}>
-            {STAT_FIELDS.map(({key, label}) => (
-                <div className={styles.stat} key={key}>
-                    <div className={styles.circle}>
-                        <input
-                            type="number"
-                            className={styles.input}
-                            value={sheet[key]}
-                            onChange={(event) => setField(key, Number(event.target.value) || 0)}
-                            aria-label={label}
-                        />
-                    </div>
-                    <div className={styles.label}>{label}</div>
+            <div className={styles.stat}>
+                <div className={styles.circle}>
+                    <input
+                        type="number"
+                        className={styles.input}
+                        value={sheet.proficiencyBonus}
+                        onChange={(event) => setProficiencyBonus(Number(event.target.value) || 0)}
+                        aria-label="Proficiency"
+                    />
                 </div>
-            ))}
+                <div className={styles.label}>Proficiency</div>
+            </div>
+            <div className={styles.stat}>
+                <div className={styles.circle}>
+                    <span className={styles.input} aria-label="Passive Perception">
+                        {passivePerception(sheet.proficiencyBonus, sheet.abilities.wis)}
+                    </span>
+                </div>
+                <div className={styles.label}>Passive Perception</div>
+            </div>
         </div>
     )
 }

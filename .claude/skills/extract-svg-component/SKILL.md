@@ -97,6 +97,12 @@ Create `src/components/shared/<ComponentName>/`:
   `var(--color-accent)`, etc. — check `src/styles/tokens.css` for the
   right one, never a hard-coded color). State changes (checked, hover)
   toggle `background`, not the mask.
+  Every layer that carries a `background` (masked or not) also needs
+  `print-color-adjust: exact;` (+ `-webkit-print-color-adjust: exact;`) —
+  this sheet is meant to be printed, and browsers drop background fills
+  when printing unless either the user has "print backgrounds" enabled or
+  the element opts in with this property. A `border`/`box-shadow`/`color`
+  layer doesn't need it; only actual `background` fills do.
 
 ## 6. Wire it in and verify
 

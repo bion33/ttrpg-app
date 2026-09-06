@@ -36,7 +36,6 @@ export function createDefaultCharacterSheet(): CharacterSheetData {
             experiencePoints: '',
         },
         proficiencyBonus: 0,
-        passivePerception: 0,
         abilities: createDefaultAbilities(),
         combat: {
             armourClass: 0,

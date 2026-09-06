@@ -2,8 +2,8 @@
     position: relative;
     display: inline-flex;
     flex: none;
-    width: 0.75rem;
-    height: 0.74rem;
+    width: 0.5rem;
+    height: 0.5rem;
     cursor: pointer;
 }
 
@@ -33,14 +33,14 @@
 
 .outline {
     background: var(--color-border-strong);
-    -webkit-mask-image: url('/assets/diamond-checkbox/diamond-checkbox-outline.svg');
-    mask-image: url('/assets/diamond-checkbox/diamond-checkbox-outline.svg');
+    -webkit-mask-image: url('/assets/expertise-checkbox/expertise-checkbox-outline.svg');
+    mask-image: url('/assets/expertise-checkbox/expertise-checkbox-outline.svg');
 }
 
 .mark {
     background: var(--color-input-bg);
-    -webkit-mask-image: url('/assets/diamond-checkbox/diamond-checkbox-mark.svg');
-    mask-image: url('/assets/diamond-checkbox/diamond-checkbox-mark.svg');
+    -webkit-mask-image: url('/assets/expertise-checkbox/expertise-checkbox-mark.svg');
+    mask-image: url('/assets/expertise-checkbox/expertise-checkbox-mark.svg');
     transition: background 0.1s ease-out;
 }
 

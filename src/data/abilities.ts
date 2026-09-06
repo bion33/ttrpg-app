@@ -43,5 +43,5 @@ export function abilityModifier(score: number, bonus: number): number {
 }
 
 export function formatModifier(modifier: number): string {
-    return modifier >= 0 ? `+${modifier}` : `${modifier}`
+    return modifier > 0 ? `+${modifier}` : `${modifier}`
 }

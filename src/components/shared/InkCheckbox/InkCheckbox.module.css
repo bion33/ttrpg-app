@@ -9,6 +9,10 @@
     border-radius: 50%;
     background: var(--color-input-bg);
     cursor: pointer;
+    /* without this, browsers drop background fills when printing unless the
+       user has "print backgrounds" enabled */
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
 }
 
 .checkbox--small {
@@ -27,6 +31,8 @@
     transform: translate(-50%, -50%) scale(0);
     transition: transform 0.1s ease-out;
     background: var(--color-accent);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
 }
 
 .checkbox:checked::before {

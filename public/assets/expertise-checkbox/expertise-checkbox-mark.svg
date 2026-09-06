@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124 124">
+    <!-- Interior fill of the expertise dot marker, traced from
+         character-sheet.svg (id218). Sized to match the boundary that
+         id219's stroke is centered on, so it overlaps the inner half of
+         expertise-checkbox-outline.svg's ring — the overlap is hidden
+         beneath the ring the same way as the proficiency marker. -->
+    <path
+        d="M 61,115 C 90,115 115,90 115,62
+           115,34 90,8 61,8
+           29,8 8,34 8,62
+           8,90 29,115 61,115 Z"
+    />
+</svg>

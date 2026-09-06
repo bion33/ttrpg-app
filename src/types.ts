@@ -90,7 +90,6 @@ export interface ProficienciesData {
 export interface CharacterSheetData {
     overview: OverviewData
     proficiencyBonus: number
-    passivePerception: number
     abilities: Record<AbilityKey, AbilityData>
     combat: CombatData
     weapons: Weapon[]

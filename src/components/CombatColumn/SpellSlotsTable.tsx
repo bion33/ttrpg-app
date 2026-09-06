@@ -32,7 +32,7 @@ export function SpellSlotsTable() {
                     <input
                         type="number"
                         key={index}
-                        className={styles.input}
+                        className={`${styles.input} ${styles.inputUsed}`}
                         value={slot.total}
                         onChange={(event) =>
                             setSlot(index, {...slot, total: Number(event.target.value) || 0})
@@ -46,7 +46,7 @@ export function SpellSlotsTable() {
                     <input
                         type="number"
                         key={index}
-                        className={`${styles.input} ${styles.inputUsed}`}
+                        className={styles.input}
                         value={slot.used}
                         onChange={(event) =>
                             setSlot(index, {...slot, used: Number(event.target.value) || 0})

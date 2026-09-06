@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 124 124">
+    <!-- Ring outline of the expertise dot marker, derived from
+         character-sheet.svg (id219), which draws this circle as a 16-unit
+         stroke rather than a filled ring. Converted here to an evenodd
+         filled ring by scaling id218/id219's traced circle by
+         (radius +/- half the stroke width) around its center, so it
+         composites the same way as proficiency-checkbox-outline.svg. -->
+    <path
+        fill-rule="evenodd"
+        d="M 61,123 C 94,123 123,94 123,62
+           123,30 94,0 61,0
+           24,0 0,30 0,62
+           0,94 24,123 61,123 Z
+           M 61,107 C 86,107 107,86 107,62
+           107,38 86,16 61,16
+           34,16 16,38 16,62
+           16,86 34,107 61,107 Z"
+    />
+</svg>
