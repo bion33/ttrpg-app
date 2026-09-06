@@ -1,9 +1,19 @@
 .column {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0.75rem;
 }
 
 .conditions {
-    height: 62px;
+    height: 3.875rem;
+}
+
+@media print {
+    .column {
+        gap: 0.375rem;
+    }
+
+    .conditions {
+        height: 2.5rem;
+    }
 }

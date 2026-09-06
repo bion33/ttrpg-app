@@ -1,29 +1,37 @@
 .toolbar {
-    width: min(1200px, 100%);
+    width: min(75rem, 100%);
     margin: 0 auto;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 8px;
+    padding: 1rem 0.5rem;
 }
 
 .title {
-    font: 400 22px/1 var(--font-display);
+    font: 400 1.375rem/1 var(--font-display);
     letter-spacing: 0.03em;
     color: var(--color-text);
 }
 
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.printButton,
 .resetButton {
     border: 1px solid var(--color-border-strong);
     border-radius: var(--radius-md);
     background: var(--color-input-bg);
     color: var(--color-accent);
-    font: 400 14px/1 var(--font-serif);
+    font: 400 0.875rem/1 var(--font-serif);
     letter-spacing: 0.04em;
-    padding: 8px 14px;
+    padding: 0.5rem 0.875rem;
     cursor: pointer;
 }
 
+.printButton:hover,
 .resetButton:hover {
     background: var(--color-input-bg-muted);
 }

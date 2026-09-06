@@ -1,6 +1,12 @@
 .field {
     flex: 1;
-    min-height: 120px;
+    min-height: 7.5rem;
     display: flex;
     flex-direction: column;
+}
+
+@media print {
+    .field {
+        min-height: 3.75rem;
+    }
 }

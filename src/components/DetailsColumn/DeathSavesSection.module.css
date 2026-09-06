@@ -1,29 +1,39 @@
 .section {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0.25rem;
 }
 
 .panel {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 0.625rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    padding: 8px 10px;
+    padding: 0.5rem 0.625rem;
     background: var(--color-panel-bg);
 }
 
 .group {
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 0.4375rem;
     align-items: center;
 }
 
 .groupLabel {
-    font: 400 8.5px/1 var(--font-serif);
+    font: 400 0.53125rem/1 var(--font-serif);
     letter-spacing: 0.13em;
     text-transform: uppercase;
     color: var(--color-caption);
+}
+
+@media print {
+    .panel {
+        padding: 0.25rem 0.5rem;
+    }
+
+    .group {
+        gap: 0.25rem;
+    }
 }

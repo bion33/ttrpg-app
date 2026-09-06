@@ -1,9 +1,19 @@
 .list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 0.5rem;
 }
 
 .field {
-    height: 38px;
+    height: 2.375rem;
+}
+
+@media print {
+    .list {
+        gap: 0.25rem;
+    }
+
+    .field {
+        height: 1.625rem;
+    }
 }

@@ -1,7 +1,7 @@
 .field {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 0.25rem;
     height: 100%;
     min-width: 0;
 }
@@ -11,11 +11,11 @@
 }
 
 .label {
-    font: 400 10px/1.2 var(--font-serif);
+    font: 400 0.625rem/1.2 var(--font-serif);
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--color-caption);
-    padding: 0 2px;
+    padding: 0 0.125rem;
 }
 
 .control {
@@ -27,8 +27,8 @@
     border-radius: var(--radius-md);
     background: var(--color-input-bg);
     color: var(--color-ink);
-    font: 400 20px/1.2 var(--font-hand);
-    padding: 4px 8px;
+    font: 400 1.25rem/1.2 var(--font-hand);
+    padding: 0.25rem 0.5rem;
     outline: none;
     resize: none;
 }
@@ -38,6 +38,21 @@
 }
 
 .control--multiline {
-    font-size: 17px;
+    font-size: 1.0625rem;
     line-height: 1.35;
+}
+
+@media print {
+    .field {
+        gap: 0.125rem;
+    }
+
+    .control {
+        font-size: 0.9375rem;
+        padding: 0.125rem 0.375rem;
+    }
+
+    .control--multiline {
+        font-size: 0.8125rem;
+    }
 }

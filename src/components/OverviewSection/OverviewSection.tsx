@@ -43,7 +43,7 @@ export function OverviewSection() {
                         label={label}
                         value={overview[key]}
                         onChange={(value) => setField(key, value)}
-                        labelPosition="top"
+                        labelPosition="bottom"
                     />
                 ))}
             </div>

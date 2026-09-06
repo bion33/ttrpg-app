@@ -28,6 +28,6 @@
     --font-serif: 'EB Garamond', Georgia, serif;
     --font-hand: 'Caveat', cursive;
 
-    --radius-sm: 2px;
-    --radius-md: 3px;
+    --radius-sm: 0.125rem;
+    --radius-md: 0.1875rem;
 }

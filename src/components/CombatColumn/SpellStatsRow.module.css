@@ -1,6 +1,12 @@
 .row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    height: 44px;
+    gap: 0.625rem;
+    height: 2.75rem;
+}
+
+@media print {
+    .row {
+        height: 2rem;
+    }
 }

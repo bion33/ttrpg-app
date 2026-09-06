@@ -18,11 +18,11 @@ export function SpellsTable() {
 
     return (
         <div className={styles.section}>
-            <SectionLabel>Cantrips &amp; Spells</SectionLabel>
+            <SectionLabel>Cantrips</SectionLabel>
 
             <div className={styles.headerRow}>
                 <div/>
-                <ColumnHeading>prepared / name</ColumnHeading>
+                <ColumnHeading>Name</ColumnHeading>
                 <ColumnHeading>damage / type / dc / save</ColumnHeading>
                 <div/>
             </div>
