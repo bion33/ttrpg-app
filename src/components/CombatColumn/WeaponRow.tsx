@@ -23,10 +23,11 @@ export function WeaponRow({weapon, onChange}: WeaponRowProps) {
                 aria-label="Weapon name"
             />
             <input
+                type="number"
                 className={`${styles.input} ${styles.inputCentered}`}
                 value={weapon.attack}
                 onChange={(event) =>
-                    onChange({...weapon, attack: event.target.value})
+                    onChange({...weapon, attack: Number(event.target.value) || 0})
                 }
                 aria-label="Attack bonus"
             />

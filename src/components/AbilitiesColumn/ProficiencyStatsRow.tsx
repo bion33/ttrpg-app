@@ -10,7 +10,7 @@ const STAT_FIELDS: { key: keyof Pick<CharacterSheetData, 'proficiencyBonus' | 'p
 export function ProficiencyStatsRow() {
     const {sheet, updateSheet} = useCharacterSheet()
 
-    function setField(key: keyof CharacterSheetData, value: string) {
+    function setField(key: keyof CharacterSheetData, value: number) {
         updateSheet((current) => ({...current, [key]: value}))
     }
 
@@ -20,10 +20,10 @@ export function ProficiencyStatsRow() {
                 <div className={styles.stat} key={key}>
                     <div className={styles.circle}>
                         <input
-                            type="text"
+                            type="number"
                             className={styles.input}
                             value={sheet[key]}
-                            onChange={(event) => setField(key, event.target.value)}
+                            onChange={(event) => setField(key, Number(event.target.value) || 0)}
                             aria-label={label}
                         />
                     </div>

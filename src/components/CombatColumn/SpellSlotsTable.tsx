@@ -30,11 +30,12 @@ export function SpellSlotsTable() {
                 <div className={styles.rowLabel}>total</div>
                 {sheet.spellSlots.map((slot, index) => (
                     <input
+                        type="number"
                         key={index}
                         className={styles.input}
                         value={slot.total}
                         onChange={(event) =>
-                            setSlot(index, {...slot, total: event.target.value})
+                            setSlot(index, {...slot, total: Number(event.target.value) || 0})
                         }
                         aria-label={`Level ${SPELL_LEVELS[index]} total slots`}
                     />
@@ -43,11 +44,12 @@ export function SpellSlotsTable() {
                 <div className={styles.rowLabel}>used</div>
                 {sheet.spellSlots.map((slot, index) => (
                     <input
+                        type="number"
                         key={index}
                         className={`${styles.input} ${styles.inputUsed}`}
                         value={slot.used}
                         onChange={(event) =>
-                            setSlot(index, {...slot, used: event.target.value})
+                            setSlot(index, {...slot, used: Number(event.target.value) || 0})
                         }
                         aria-label={`Level ${SPELL_LEVELS[index]} used slots`}
                     />

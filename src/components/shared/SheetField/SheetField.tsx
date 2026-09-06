@@ -1,25 +1,19 @@
 import {useId} from 'react'
 import styles from './SheetField.module.css'
 
-interface SheetFieldProps {
+interface SharedProps {
     label: string
-    value: string
-    onChange: (value: string) => void
     labelPosition?: 'top' | 'bottom'
     multiline?: boolean
-    type?: 'text' | 'number'
     className?: string
 }
 
-export function SheetField({
-                               label,
-                               value,
-                               onChange,
-                               labelPosition = 'bottom',
-                               multiline = false,
-                               type = 'text',
-                               className,
-                           }: SheetFieldProps) {
+type SheetFieldProps =
+    | (SharedProps & {type?: 'text'; value: string; onChange: (value: string) => void})
+    | (SharedProps & {type: 'number'; value: number; onChange: (value: number) => void})
+
+export function SheetField(props: SheetFieldProps) {
+    const {label, value, labelPosition = 'bottom', multiline = false, type = 'text', className} = props
     const inputId = useId()
     const fieldClassName = [
         styles.field,
@@ -28,6 +22,14 @@ export function SheetField({
     ]
         .filter(Boolean)
         .join(' ')
+
+    function handleChange(rawValue: string) {
+        if (props.type === 'number') {
+            props.onChange(Number(rawValue) || 0)
+        } else {
+            props.onChange(rawValue)
+        }
+    }
 
     return (
         <div className={fieldClassName}>
@@ -39,7 +41,7 @@ export function SheetField({
                     id={inputId}
                     className={`${styles.control} ${styles['control--multiline']}`}
                     value={value}
-                    onChange={(event) => onChange(event.target.value)}
+                    onChange={(event) => handleChange(event.target.value)}
                 />
             ) : (
                 <input
@@ -47,7 +49,7 @@ export function SheetField({
                     type={type}
                     className={styles.control}
                     value={value}
-                    onChange={(event) => onChange(event.target.value)}
+                    onChange={(event) => handleChange(event.target.value)}
                 />
             )}
         </div>

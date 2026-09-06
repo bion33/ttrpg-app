@@ -21,6 +21,7 @@ export function HitDiceSection() {
             <div className={styles.grid}>
                 {sheet.hitDice.map((track, index) => (
                     <SheetField
+                        type="number"
                         key={`total-${index}`}
                         label="Total"
                         value={track.total}
@@ -31,6 +32,7 @@ export function HitDiceSection() {
                 ))}
                 {sheet.hitDice.map((track, index) => (
                     <SheetField
+                        type="number"
                         key={`used-${index}`}
                         label="Used"
                         value={track.used}

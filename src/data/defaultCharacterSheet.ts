@@ -2,7 +2,7 @@ import {ABILITY_DEFINITIONS} from './abilities'
 import type {AbilityData, AbilityKey, CharacterSheetData, SkillData,} from '../types'
 
 function createEmptySkill(): SkillData {
-    return {proficient: false, bonus: ''}
+    return {proficient: false, bonus: 0}
 }
 
 function createDefaultAbilities(): Record<AbilityKey, AbilityData> {
@@ -35,26 +35,26 @@ export function createDefaultCharacterSheet(): CharacterSheetData {
             alignment: '',
             experiencePoints: '',
         },
-        proficiencyBonus: '',
-        passivePerception: '',
+        proficiencyBonus: 0,
+        passivePerception: 0,
         abilities: createDefaultAbilities(),
         combat: {
-            armourClass: '',
-            shield: '',
-            darkvision: '',
-            initiative: '',
-            run: '',
-            climb: '',
-            swim: '',
-            fly: '',
-            totalHp: '',
-            currentHp: '',
-            temporaryHp: '',
+            armourClass: 0,
+            shield: 0,
+            darkvision: 0,
+            initiative: 0,
+            run: 0,
+            climb: 0,
+            swim: 0,
+            fly: 0,
+            totalHp: 0,
+            currentHp: 0,
+            temporaryHp: 0,
             conditions: '',
         },
         weapons: Array.from({length: 4}, () => ({
             name: '',
-            attack: '',
+            attack: 0,
             damage: '',
             slash: false,
             pierce: false,
@@ -68,16 +68,16 @@ export function createDefaultCharacterSheet(): CharacterSheetData {
             verbal: false,
             material: false,
         })),
-        spellSlots: SPELL_LEVELS.map(() => ({total: '', used: ''})),
+        spellSlots: SPELL_LEVELS.map(() => ({total: 0, used: 0})),
         spellStats: {
-            spellDc: '',
-            spellAttack: '',
-            customStatOne: '',
-            customStatTwo: '',
+            spellDc: 0,
+            spellAttack: 0,
+            customStatOne: 0,
+            customStatTwo: 0,
         },
         hitDice: [
-            {total: '', used: ''},
-            {total: '', used: ''},
+            {total: 0, used: 0},
+            {total: 0, used: 0},
         ],
         deathSaves: {
             failures: [false, false, false],

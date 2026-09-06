@@ -13,7 +13,7 @@ const SPELL_STAT_FIELDS: { key: keyof SpellStatsData; label: string }[] = [
 export function SpellStatsRow() {
     const {sheet, updateSheet} = useCharacterSheet()
 
-    function setField(key: keyof SpellStatsData, value: string) {
+    function setField(key: keyof SpellStatsData, value: number) {
         updateSheet((current) => ({
             ...current,
             spellStats: {...current.spellStats, [key]: value},
@@ -24,6 +24,7 @@ export function SpellStatsRow() {
         <div className={styles.row}>
             {SPELL_STAT_FIELDS.map(({key, label}) => (
                 <SheetField
+                    type="number"
                     key={key}
                     label={label}
                     value={sheet.spellStats[key]}
