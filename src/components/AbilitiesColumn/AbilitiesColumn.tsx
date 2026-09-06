@@ -15,6 +15,7 @@ export function AbilitiesColumn() {
                     key={definition.key}
                     definition={definition}
                     data={sheet.abilities[definition.key]}
+                    proficiencyBonus={sheet.proficiencyBonus}
                     onChange={(data) =>
                         updateSheet((current) => ({
                             ...current,

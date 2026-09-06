@@ -2,7 +2,7 @@ export type AbilityKey = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
 
 export interface SkillData {
     proficient: boolean
-    bonus: number
+    expertise: boolean
 }
 
 export interface AbilityData {

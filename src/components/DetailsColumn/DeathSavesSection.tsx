@@ -46,7 +46,6 @@ export function DeathSavesSection() {
                     {deathSaves.failures.map((checked, index) => (
                         <InkCheckbox
                             key={index}
-                            round
                             checked={checked}
                             onChange={(next) => toggleFailure(index, next)}
                             aria-label={`Death save failure ${index + 1}`}

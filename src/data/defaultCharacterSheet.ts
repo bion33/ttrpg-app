@@ -2,7 +2,7 @@ import {ABILITY_DEFINITIONS} from './abilities'
 import type {AbilityData, AbilityKey, CharacterSheetData, SkillData,} from '../types'
 
 function createEmptySkill(): SkillData {
-    return {proficient: false, bonus: 0}
+    return {proficient: false, expertise: false}
 }
 
 function createDefaultAbilities(): Record<AbilityKey, AbilityData> {

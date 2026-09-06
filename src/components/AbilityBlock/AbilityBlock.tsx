@@ -7,34 +7,46 @@ import styles from './AbilityBlock.module.css'
 interface AbilityBlockProps {
     definition: AbilityDefinition
     data: AbilityData
+    proficiencyBonus: number
     onChange: (data: AbilityData) => void
 }
 
 function SkillRow({
                       label,
                       skill,
+                      modifier,
+                      proficiencyBonus,
                       onChange,
                       isSave = false,
                   }: {
     label: string
     skill: SkillData
+    modifier: number
+    proficiencyBonus: number
     onChange: (skill: SkillData) => void
     isSave?: boolean
 }) {
+    const proficiencyMultiplier = skill.proficient ? (skill.expertise ? 2 : 1) : 0
+    const bonus = modifier + proficiencyMultiplier * proficiencyBonus
+
     return (
         <li className={styles.row}>
+            {!isSave && (
+                <InkCheckbox
+                    small
+                    checked={skill.expertise}
+                    onChange={(expertise) => onChange({...skill, expertise})}
+                    className={styles.expertise}
+                    aria-label={`${label} expertise`}
+                />
+            )}
             <InkCheckbox
                 checked={skill.proficient}
                 onChange={(proficient) => onChange({...skill, proficient})}
+                rotated={isSave}
                 aria-label={`${label} proficiency`}
             />
-            <input
-                type="number"
-                className={styles.rowBonus}
-                value={skill.bonus}
-                onChange={(event) => onChange({...skill, bonus: Number(event.target.value) || 0})}
-                aria-label={`${label} bonus`}
-            />
+            <span className={styles.rowBonus}>{formatModifier(bonus)}</span>
             <span className={`${styles.rowLabel} ${isSave ? styles['rowLabel--save'] : ''}`}>
                 {label}
             </span>
@@ -42,7 +54,7 @@ function SkillRow({
     )
 }
 
-export function AbilityBlock({definition, data, onChange}: AbilityBlockProps) {
+export function AbilityBlock({definition, data, proficiencyBonus, onChange}: AbilityBlockProps) {
     const modifier = abilityModifier(data.score, data.scoreBonus)
 
     return (
@@ -81,6 +93,8 @@ export function AbilityBlock({definition, data, onChange}: AbilityBlockProps) {
                 <SkillRow
                     label="Saving Throw"
                     skill={data.save}
+                    modifier={modifier}
+                    proficiencyBonus={proficiencyBonus}
                     onChange={(save) => onChange({...data, save})}
                     isSave
                 />
@@ -89,6 +103,8 @@ export function AbilityBlock({definition, data, onChange}: AbilityBlockProps) {
                         key={skillName}
                         label={skillName}
                         skill={data.skills[skillName]}
+                        modifier={modifier}
+                        proficiencyBonus={proficiencyBonus}
                         onChange={(skill) =>
                             onChange({
                                 ...data,

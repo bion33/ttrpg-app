@@ -20,6 +20,7 @@ export function SpellRow({spell, onChange}: SpellRowProps) {
     return (
         <div className={styles.row}>
             <InkCheckbox
+                small
                 checked={spell.prepared}
                 onChange={(prepared) => onChange({...spell, prepared})}
                 aria-label="Prepared"
@@ -42,6 +43,7 @@ export function SpellRow({spell, onChange}: SpellRowProps) {
                 {SPELL_COMPONENTS.map(({key, label}) => (
                     <div key={key} className={styles.component}>
                         <InkCheckbox
+                            small
                             checked={spell[key]}
                             onChange={(checked) => onChange({...spell, [key]: checked})}
                             aria-label={label}

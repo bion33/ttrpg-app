@@ -43,6 +43,7 @@ export function WeaponRow({weapon, onChange}: WeaponRowProps) {
                 {DAMAGE_TYPES.map(({key, label}) => (
                     <div key={key} className={styles.damageType}>
                         <InkCheckbox
+                            small
                             checked={weapon[key]}
                             onChange={(checked) => onChange({...weapon, [key]: checked})}
                             aria-label={label}

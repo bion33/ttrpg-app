@@ -3,17 +3,26 @@ import styles from './InkCheckbox.module.css'
 interface InkCheckboxProps {
     checked: boolean
     onChange: (checked: boolean) => void
-    round?: boolean
+    rotated?: boolean
+    small?: boolean
+    className?: string
     'aria-label'?: string
 }
 
 export function InkCheckbox({
                                 checked,
                                 onChange,
-                                round = false,
+                                rotated = false,
+                                small = false,
+                                className: extraClassName,
                                 'aria-label': ariaLabel,
                             }: InkCheckboxProps) {
-    const className = [styles.checkbox, round ? styles['checkbox--round'] : '']
+    const className = [
+        styles.checkbox,
+        rotated ? styles['checkbox--rotated'] : '',
+        small ? styles['checkbox--small'] : '',
+        extraClassName ?? '',
+    ]
         .filter(Boolean)
         .join(' ')
 
