@@ -1,0 +1,29 @@
+.toolbar {
+    width: min(1200px, 100%);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 8px;
+}
+
+.title {
+    font: 400 22px/1 var(--font-display);
+    letter-spacing: 0.03em;
+    color: var(--color-text);
+}
+
+.resetButton {
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-input-bg);
+    color: var(--color-accent);
+    font: 400 14px/1 var(--font-serif);
+    letter-spacing: 0.04em;
+    padding: 8px 14px;
+    cursor: pointer;
+}
+
+.resetButton:hover {
+    background: var(--color-input-bg-muted);
+}

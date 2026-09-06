@@ -1,0 +1,5 @@
+.label {
+    font: 400 12px/1 var(--font-display);
+    letter-spacing: 0.08em;
+    color: var(--color-caption-strong);
+}

@@ -1,0 +1,106 @@
+.block {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 8px 14px;
+    border-bottom: 1px solid var(--color-border-hairline);
+}
+
+.block:last-child {
+    border-bottom: none;
+}
+
+.name {
+    font: 400 15px/1 var(--font-display);
+    letter-spacing: 0.03em;
+    color: var(--color-text);
+}
+
+.scoreArea {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    padding-bottom: 14px;
+}
+
+.modifier {
+    width: 60px;
+    height: 60px;
+    border: 2px solid var(--color-border-strong);
+    border-radius: 9px;
+    background: var(--color-input-bg);
+    display: grid;
+    place-content: center;
+    font: 600 26px/1 var(--font-hand);
+    color: var(--color-ink);
+}
+
+.scoreCircle {
+    position: absolute;
+    bottom: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--color-border-strong);
+    background: var(--color-input-bg);
+    display: grid;
+    place-content: center;
+}
+
+.scoreInput {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+    outline: none;
+    text-align: center;
+    font: 400 15px/1 var(--font-hand);
+    color: var(--color-ink-muted);
+    appearance: textfield;
+}
+
+.rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 14px 1fr 34px;
+    align-items: center;
+    gap: 6px;
+}
+
+.rowLabel {
+    font: 400 12px/1.2 var(--font-serif);
+    color: var(--color-caption-strong);
+}
+
+.rowLabel--save {
+    font-style: italic;
+    color: var(--color-caption);
+}
+
+.rowBonus {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--color-input-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-input-bg);
+    text-align: center;
+    font: 400 14px/1 var(--font-hand);
+    color: var(--color-ink);
+    outline: none;
+    padding: 2px 0;
+}
+
+.rowBonus:focus-visible {
+    border-color: var(--color-border-strong);
+}

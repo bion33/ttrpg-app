@@ -1,0 +1,27 @@
+.row {
+    display: grid;
+    grid-template-columns: 1.1fr 0.8fr 1.1fr;
+    gap: 12px;
+    align-items: end;
+}
+
+.stack {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.fieldTall {
+    height: 52px;
+}
+
+.fieldShort {
+    height: 34px;
+}
+
+.speedGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: 34px;
+    gap: 6px 10px;
+}

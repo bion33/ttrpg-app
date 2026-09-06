@@ -1,0 +1,43 @@
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: 100%;
+    min-width: 0;
+}
+
+.field--labelBottom {
+    flex-direction: column-reverse;
+}
+
+.label {
+    font: 400 10px/1.2 var(--font-serif);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--color-caption);
+    padding: 0 2px;
+}
+
+.control {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-md);
+    background: var(--color-input-bg);
+    color: var(--color-ink);
+    font: 400 20px/1.2 var(--font-hand);
+    padding: 4px 8px;
+    outline: none;
+    resize: none;
+}
+
+.control:focus-visible {
+    border-color: var(--color-accent);
+}
+
+.control--multiline {
+    font-size: 17px;
+    line-height: 1.35;
+}

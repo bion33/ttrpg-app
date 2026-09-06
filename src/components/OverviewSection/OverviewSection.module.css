@@ -1,0 +1,38 @@
+.section {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 18px;
+    align-items: end;
+}
+
+.identity {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.heading {
+    font: 400 28px/1 var(--font-display);
+    letter-spacing: 0.03em;
+}
+
+.nameField {
+    height: 56px;
+}
+
+.details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 40px;
+    gap: 9px 12px;
+}
+
+@media (max-width: 860px) {
+    .section {
+        grid-template-columns: 1fr;
+    }
+
+    .details {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
