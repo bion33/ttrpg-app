@@ -47,6 +47,7 @@ export function createDefaultCharacterSheet(): CharacterSheetData {
             climb: 0,
             swim: 0,
             fly: 0,
+            halveClimbSwim: false,
             totalHp: 0,
             currentHp: 0,
             temporaryHp: 0,

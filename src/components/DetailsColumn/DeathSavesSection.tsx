@@ -39,10 +39,8 @@ export function DeathSavesSection() {
 
     return (
         <div className={styles.section}>
-            <SectionLabel>Death Saves</SectionLabel>
             <div className={styles.panel}>
-                <div className={styles.group}>
-                    <span className={styles.groupLabel}>failure</span>
+                <div className={`${styles.group} ${styles['group--failure']}`}>
                     {deathSaves.failures.map((checked, index) => (
                         <InkCheckbox
                             key={index}
@@ -52,8 +50,14 @@ export function DeathSavesSection() {
                         />
                     ))}
                 </div>
-                <div className={styles.group}>
-                    <span className={styles.groupLabel}>success</span>
+                <img src="/assets/reaper.png" alt="" className={styles.icon} aria-hidden="true" />
+                <img
+                    src="/assets/angel.png"
+                    alt=""
+                    className={`${styles.icon} ${styles['icon--flipped']}`}
+                    aria-hidden="true"
+                />
+                <div className={`${styles.group} ${styles['group--success']}`}>
                     {deathSaves.successes.map((checked, index) => (
                         <InkCheckbox
                             key={index}
@@ -62,6 +66,9 @@ export function DeathSavesSection() {
                             aria-label={`Death save success ${index + 1}`}
                         />
                     ))}
+                </div>
+                <div className={styles.panelLabel}>
+                    <SectionLabel>Death Saves</SectionLabel>
                 </div>
             </div>
         </div>

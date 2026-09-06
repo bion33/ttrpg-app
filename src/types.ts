@@ -64,6 +64,7 @@ export interface CombatData {
     climb: number
     swim: number
     fly: number
+    halveClimbSwim: boolean
     totalHp: number
     currentHp: number
     temporaryHp: number
