@@ -10,6 +10,7 @@ function createDefaultAbilities(): Record<AbilityKey, AbilityData> {
         (abilities, definition) => {
             abilities[definition.key] = {
                 score: 10,
+                scoreBonus: 0,
                 save: createEmptySkill(),
                 skills: Object.fromEntries(
                     definition.skills.map((skill) => [skill, createEmptySkill()]),

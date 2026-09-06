@@ -7,6 +7,7 @@ export interface SkillData {
 
 export interface AbilityData {
     score: number
+    scoreBonus: number
     save: SkillData
     skills: Record<string, SkillData>
 }

@@ -37,8 +37,9 @@ export const ABILITY_DEFINITIONS: AbilityDefinition[] = [
     },
 ]
 
-export function abilityModifier(score: number): number {
-    return Math.floor((score - 10) / 2)
+export function abilityModifier(score: number, bonus: number): number {
+    const total = score && bonus ? score + bonus : score
+    return Math.floor((total - 10) / 2)
 }
 
 export function formatModifier(modifier: number): string {

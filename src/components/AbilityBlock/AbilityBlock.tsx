@@ -46,23 +46,36 @@ function SkillRow({
 }
 
 export function AbilityBlock({definition, data, onChange}: AbilityBlockProps) {
-    const modifier = abilityModifier(data.score)
+    const modifier = abilityModifier(data.score, data.scoreBonus)
 
     return (
         <div className={styles.block}>
             <div className={styles.scoreArea}>
-                <div className={styles.scoreCircle}>
-                    <input
-                        type="number"
-                        className={styles.scoreInput}
-                        value={data.score}
-                        onChange={(event) =>
-                            onChange({...data, score: Number(event.target.value) || 0})
-                        }
-                        aria-label={`${definition.name} score`}
-                    />
+                <div className={styles.modifier}>
+                    <div className={`${styles.scoreCircle} ${styles['scoreCircle--top']}`}>
+                        <input
+                            type="number"
+                            className={styles.scoreInput}
+                            value={data.score}
+                            onChange={(event) =>
+                                onChange({...data, score: Number(event.target.value) || 0})
+                            }
+                            aria-label={`${definition.name} score`}
+                        />
+                    </div>
+                    <div className={`${styles.scoreCircle} ${styles['scoreCircle--bottom']}`}>
+                        <input
+                            type="number"
+                            className={styles.scoreInput}
+                            value={data.scoreBonus}
+                            onChange={(event) =>
+                                onChange({...data, scoreBonus: Number(event.target.value) || 0})
+                            }
+                            aria-label={`${definition.name} score bonus`}
+                        />
+                    </div>
+                    {formatModifier(modifier)}
                 </div>
-                <div className={styles.modifier}>{formatModifier(modifier)}</div>
             </div>
 
             <ul className={styles.rows}>
