@@ -2,7 +2,7 @@ export type AbilityKey = 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
 
 export interface SkillData {
     proficient: boolean
-    bonus: string
+    bonus: number
 }
 
 export interface AbilityData {
@@ -14,7 +14,7 @@ export interface AbilityData {
 
 export interface Weapon {
     name: string
-    attack: string
+    attack: number
     damage: string
     slash: boolean
     pierce: boolean
@@ -31,13 +31,13 @@ export interface Spell {
 }
 
 export interface SpellSlot {
-    total: string
-    used: string
+    total: number
+    used: number
 }
 
 export interface HitDiceTrack {
-    total: string
-    used: string
+    total: number
+    used: number
 }
 
 export interface DeathSaves {
@@ -56,25 +56,25 @@ export interface OverviewData {
 }
 
 export interface CombatData {
-    armourClass: string
-    shield: string
-    darkvision: string
-    initiative: string
-    run: string
-    climb: string
-    swim: string
-    fly: string
-    totalHp: string
-    currentHp: string
-    temporaryHp: string
+    armourClass: number
+    shield: number
+    darkvision: number
+    initiative: number
+    run: number
+    climb: number
+    swim: number
+    fly: number
+    totalHp: number
+    currentHp: number
+    temporaryHp: number
     conditions: string
 }
 
 export interface SpellStatsData {
-    spellDc: string
-    spellAttack: string
-    customStatOne: string
-    customStatTwo: string
+    spellDc: number
+    spellAttack: number
+    customStatOne: number
+    customStatTwo: number
 }
 
 export interface ProficienciesData {
@@ -88,6 +88,8 @@ export interface ProficienciesData {
 
 export interface CharacterSheetData {
     overview: OverviewData
+    proficiencyBonus: number
+    passivePerception: number
     abilities: Record<AbilityKey, AbilityData>
     combat: CombatData
     weapons: Weapon[]

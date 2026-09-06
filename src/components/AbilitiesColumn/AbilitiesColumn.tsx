@@ -1,4 +1,5 @@
 import {AbilityBlock} from '../AbilityBlock/AbilityBlock'
+import {ProficiencyStatsRow} from './ProficiencyStatsRow'
 import {ABILITY_DEFINITIONS} from '../../data/abilities'
 import {useCharacterSheet} from '../../context/useCharacterSheet'
 import styles from './AbilitiesColumn.module.css'
@@ -8,6 +9,7 @@ export function AbilitiesColumn() {
 
     return (
         <div className={styles.column}>
+            <ProficiencyStatsRow/>
             {ABILITY_DEFINITIONS.map((definition) => (
                 <AbilityBlock
                     key={definition.key}

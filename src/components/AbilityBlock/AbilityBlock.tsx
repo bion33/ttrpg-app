@@ -28,19 +28,12 @@ function SkillRow({
                 onChange={(proficient) => onChange({...skill, proficient})}
                 aria-label={`${label} proficiency`}
             />
-            <span
-                className={`${styles.rowLabel} ${isSave ? styles['rowLabel--save'] : ''}`}
-            >
-        {label}
-      </span>
-            <input
-                className={styles.rowBonus}
-                value={skill.bonus}
-                onChange={(event) =>
-                    onChange({...skill, bonus: event.target.value})
-                }
-                aria-label={`${label} bonus`}
-            />
+            <span className={styles.rowBonus}>
+                {skill.bonus}
+            </span>
+            <span className={`${styles.rowLabel} ${isSave ? styles['rowLabel--save'] : ''}`}>
+                {label}
+            </span>
         </li>
     )
 }
