@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 303 299">
-    <!-- Interior fill of the pinched-diamond proficiency marker, traced from
-         character-sheet.svg (id186). Shares its outline with the hole cut
-         into diamond-checkbox-outline.svg so the two align exactly. -->
-    <path
-        d="M 50,148 C 88,181 131,231 152,255 171,231 213,181 252,148
-           213,120 171,71 152,46 131,71 88,120 50,148 Z"
-    />
-</svg>
