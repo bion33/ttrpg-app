@@ -30,6 +30,11 @@ const Fields: FieldDefinition[] = [
     {id: 'temporaryHitPoints', x: 434, y: 265, width: 68.79, height: 18, type: 'number', fontSize: 16, textAlign: 'center'},
     {id: 'currentHitPoints', x: 350, y: 292, width: 110, height: 36, type: 'number', fontSize: 32, textAlign: 'center'},
 
+    {id: 'hitDiceTotalLeft', x: 578, y: 202, width: 26, height: 18, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'hitDiceTotalRight', x: 602, y: 202, width: 26, height: 18, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'hitDiceUsedLeft', x: 578, y: 222, width: 26, height: 18, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'hitDiceUsedRight', x: 602, y: 222, width: 26, height: 18, type: 'number', fontSize: 16, textAlign: 'center'},
+
 ]
 
 function CharacterSheet() {
