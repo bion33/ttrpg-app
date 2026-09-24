@@ -1,0 +1,7 @@
+.sheet-field--multiline {
+  resize: none;
+  overflow: hidden;
+  line-height: 1.15;
+  padding: 1px 2px;
+  white-space: pre-wrap;
+}

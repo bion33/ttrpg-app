@@ -4,6 +4,7 @@ import AutoFitInput from './AutoFitInput'
 import CheckboxInput from './CheckboxInput'
 import NumericInput from './NumericInput'
 import './FieldInput.css'
+import AutoFitTextarea from "./AutoFitTextarea.tsx";
 
 const storageKey = (storagePrefix: string, id: string) => `${storagePrefix}.field.${id}`
 
@@ -33,6 +34,8 @@ function FieldInput({ field, storagePrefix }: { field: FieldDefinition; storageP
       return <NumericInput field={field} value={value} onChange={setValue} />
     case 'text':
       return <AutoFitInput field={field} value={value} onChange={setValue} />
+    case 'textarea':
+      return <AutoFitTextarea field={field} value={value} onChange={setValue} />
     case 'checkbox':
       return <CheckboxInput field={field} value={value} onChange={setValue} />
   }
