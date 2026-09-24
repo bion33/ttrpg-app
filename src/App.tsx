@@ -1,7 +1,7 @@
 import CharacterSheet from './CharacterSheet'
 
 function App() {
-  return <CharacterSheet />
+    return <CharacterSheet/>
 }
 
 export default App
