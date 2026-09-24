@@ -236,6 +236,40 @@ const Fields: FieldDefinition[] = [
 
     // Spell Slots
 
+    {id: 'totalSpellSlots1', x: 302.7, y: 733, width: 12, height: 16, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'usedSpellSlots1', x: 302.7, y: 757, width: 12, height: 18, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'totalSpellSlots2', x: 327.63, y: 733, width: 12, height: 16, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'usedSpellSlots2', x: 327.63, y: 757, width: 12, height: 18, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'totalSpellSlots3', x: 352.57, y: 733, width: 12, height: 16, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'usedSpellSlots3', x: 352.57, y: 757, width: 12, height: 18, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'totalSpellSlots4', x: 377.5, y: 733, width: 12, height: 16, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'usedSpellSlots4', x: 377.5, y: 757, width: 12, height: 18, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'totalSpellSlots5', x: 402.43, y: 733, width: 12, height: 16, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'usedSpellSlots5', x: 402.43, y: 757, width: 12, height: 18, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'totalSpellSlots6', x: 427.5, y: 733, width: 12, height: 16, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'usedSpellSlots6', x: 427.5, y: 757, width: 12, height: 18, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'totalSpellSlots7', x: 452.43, y: 733, width: 12, height: 16, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'usedSpellSlots7', x: 452.43, y: 757, width: 12, height: 18, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'totalSpellSlots8', x: 477.37, y: 733, width: 12, height: 16, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'usedSpellSlots8', x: 477.37, y: 757, width: 12, height: 18, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'totalSpellSlots9', x: 502.3, y: 733, width: 12, height: 16, type: 'number', fontSize: 14, textAlign: 'center'},
+    {id: 'usedSpellSlots9', x: 502.3, y: 757, width: 12, height: 18, type: 'number', fontSize: 14, textAlign: 'center'},
+
+    // Spell Stats
+
+    {id: 'spellSaveDC', x: 296, y: 806, width: 52, height: 30, type: 'number', fontSize: 28, textAlign: 'center'},
+    {id: 'spellAttackBonus', x: 352, y: 806, width: 52, height: 30, type: 'number', fontSize: 28, textAlign: 'center'},
+
+    // Custom Stats
+
+    {id: 'customStat1', x: 411, y: 806, width: 52, height: 30, type: 'number', fontSize: 28, textAlign: 'center'},
+    {id: 'customStat2', x: 469, y: 806, width: 52, height: 30, type: 'number', fontSize: 28, textAlign: 'center'},
+
+    // Custom Stats labels (top title + one under each input)
+    {id: 'customStatTitle', x: 439, y: 782.5, width: 52, height: 15, type: 'text', fontSize: 12, textAlign: 'center'},
+    {id: 'customStat1Label', x: 417, y: 842, width: 40, height: 14, type: 'text', fontSize: 8, textAlign: 'center'},
+    {id: 'customStat2Label', x: 475, y: 842, width: 40, height: 14, type: 'text', fontSize: 8, textAlign: 'center'},
+
     // === NOTES === //
 
     {id: 'notes', x: 44, y: 878, width: 476, height: 154, type: 'textarea', fontSize: 12},
