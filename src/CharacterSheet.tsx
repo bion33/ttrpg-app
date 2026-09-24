@@ -34,9 +34,11 @@ const Fields: FieldDefinition[] = [
     {id: 'strengthExtra', x: 51.03, y: 277.02, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
     {id: 'strengthModifier', x: 70.71, y: 246.34, width: 50.73, height: 39.86, type: 'number', fontSize: 36, textAlign: 'center'},
 
-    {id: 'strengthSavingThrow', x: 136.5, y: 240.5, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
+    {id: 'strengthSavingThrowProficiency', x: 136.5, y: 240.5, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
+    {id: 'strengthSavingThrowBonus', x: 149.2, y: 238, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'athleticsExpertise', x: 134.3, y: 255.7, width: 4, height: 4, type: 'checkbox'},
     {id: 'athleticsProficiency', x: 137, y: 258, width: 8, height: 8, type: 'checkbox'},
+    {id: 'athleticsBonus', x: 149.2, y: 255.3, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
 
     // Dexterity
 
@@ -44,13 +46,17 @@ const Fields: FieldDefinition[] = [
     {id: 'dexterityExtra', x: 51.03, y: 372.44, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
     {id: 'dexterityModifier', x: 70.71, y: 341.76, width: 50.73, height: 39.86, type: 'number', fontSize: 36, textAlign: 'center'},
 
-    {id: 'dexteritySavingThrow', x: 136.5, y: 335.7, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
+    {id: 'dexteritySavingThrowProficiency', x: 136.5, y: 335.7, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
+    {id: 'dexteritySavingThrowBonus', x: 149.2, y: 332.8, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'acrobaticsExpertise', x: 134.3, y: 349.2, width: 4, height: 4, type: 'checkbox'},
     {id: 'acrobaticsProficiency', x: 137, y: 351.1, width: 8, height: 8, type: 'checkbox'},
+    {id: 'acrobaticsBonus', x: 149.2, y: 348.8, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'sleightOfHandExpertise', x: 134.3, y: 365.2, width: 4, height: 4, type: 'checkbox'},
     {id: 'sleightOfHandProficiency', x: 137, y: 367.4, width: 8, height: 8, type: 'checkbox'},
+    {id: 'sleightOfHandBonus', x: 149.2, y: 364.9, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'stealthExpertise', x: 134, y: 382.3, width: 4, height: 4, type: 'checkbox'},
     {id: 'stealthProficiency', x: 137, y: 383.9, width: 8, height: 8, type: 'checkbox'},
+    {id: 'stealthBonus', x: 149.2, y: 381, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
 
     // Constitution
 
@@ -58,7 +64,8 @@ const Fields: FieldDefinition[] = [
     {id: 'constitutionExtra', x: 51.03, y: 468.57, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
     {id: 'constitutionModifier', x: 70.71, y: 437.89, width: 50.73, height: 39.86, type: 'number', fontSize: 36, textAlign: 'center'},
 
-    {id: 'constitutionSavingThrow', x: 136.5, y: 431.1, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
+    {id: 'constitutionSavingThrowProficiency', x: 136.5, y: 431.1, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
+    {id: 'constitutionSavingThrowBonus', x: 149.2, y: 428.7, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
 
     // Intelligence
 
@@ -66,17 +73,23 @@ const Fields: FieldDefinition[] = [
     {id: 'intelligenceExtra', x: 51.03, y: 568.17, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
     {id: 'intelligenceModifier', x: 70.71, y: 537.49, width: 50.73, height: 39.86, type: 'number', fontSize: 36, textAlign: 'center'},
 
-    {id: 'intelligenceSavingThrow', x: 136.5, y: 530.7, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
+    {id: 'intelligenceSavingThrowProficiency', x: 136.5, y: 530.7, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
+    {id: 'intelligenceSavingThrowBonus', x: 149.2, y: 527.7, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'arcanaExpertise', x: 134.3, y: 543.9, width: 4, height: 4, type: 'checkbox'},
     {id: 'arcanaProficiency', x: 137, y: 546, width: 8, height: 8, type: 'checkbox'},
+    {id: 'arcanaBonus', x: 149.2, y: 543.7, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'historyExpertise', x: 134.3, y: 559.3, width: 4, height: 4, type: 'checkbox'},
     {id: 'historyProficiency', x: 137, y: 561.6, width: 8, height: 8, type: 'checkbox'},
+    {id: 'historyBonus', x: 149.2, y: 559.2, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'investigationExpertise', x: 134.3, y: 575.3, width: 4, height: 4, type: 'checkbox'},
     {id: 'investigationProficiency', x: 137, y: 577.5, width: 8, height: 8, type: 'checkbox'},
+    {id: 'investigationBonus', x: 149.2, y: 574.8, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'natureExpertise', x: 134.3, y: 590.8, width: 4, height: 4, type: 'checkbox'},
     {id: 'natureProficiency', x: 137, y: 593.1, width: 8, height: 8, type: 'checkbox'},
+    {id: 'natureBonus', x: 149.2, y: 590.4, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'religionExpertise', x: 134.3, y: 606.3, width: 4, height: 4, type: 'checkbox'},
     {id: 'religionProficiency', x: 137, y: 608.5, width: 8, height: 8, type: 'checkbox'},
+    {id: 'religionBonus', x: 149.2, y: 605.9, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
 
     // Wisdom
 
@@ -84,17 +97,23 @@ const Fields: FieldDefinition[] = [
     {id: 'wisdomExtra', x: 51.03, y: 686.17, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
     {id: 'wisdomModifier', x: 70.71, y: 655.49, width: 50.73, height: 39.86, type: 'number', fontSize: 36, textAlign: 'center'},
 
-    {id: 'wisdomSavingThrow', x: 136.5, y: 648.8, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
+    {id: 'wisdomSavingThrowProficiency', x: 136.5, y: 648.8, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
+    {id: 'wisdomSavingThrowBonus', x: 149.2, y: 646.4, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'animalHandlingExpertise', x: 134.3, y: 663.3, width: 4, height: 4, type: 'checkbox'},
     {id: 'animalHandlingProficiency', x: 137, y: 665.4, width: 8, height: 8, type: 'checkbox'},
+    {id: 'animalHandlingBonus', x: 149.2, y: 662.4, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'insightExpertise', x: 134.3, y: 678.7, width: 4, height: 4, type: 'checkbox'},
     {id: 'insightProficiency', x: 137, y: 680.9, width: 8, height: 8, type: 'checkbox'},
+    {id: 'insightBonus', x: 149.2, y: 678, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'medicineExpertise', x: 134.3, y: 693.6, width: 4, height: 4, type: 'checkbox'},
     {id: 'medicineProficiency', x: 137, y: 695.9, width: 8, height: 8, type: 'checkbox'},
+    {id: 'medicineBonus', x: 149.2, y: 693.6, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'perceptionExpertise', x: 134.3, y: 709.5, width: 4, height: 4, type: 'checkbox'},
     {id: 'perceptionProficiency', x: 137, y: 711.7, width: 8, height: 8, type: 'checkbox'},
+    {id: 'perceptionBonus', x: 149.2, y: 709.2, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'survivalExpertise', x: 134.3, y: 724.4, width: 4, height: 4, type: 'checkbox'},
     {id: 'survivalProficiency', x: 137, y: 726.5, width: 8, height: 8, type: 'checkbox'},
+    {id: 'survivalBonus', x: 149.2, y: 724.4, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
 
     // Charisma
 
@@ -102,15 +121,20 @@ const Fields: FieldDefinition[] = [
     {id: 'charismaExtra', x: 51.03, y: 808.62, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
     {id: 'charismaModifier', x: 70.71, y: 777.94, width: 50.73, height: 39.86, type: 'number', fontSize: 36, textAlign: 'center'},
 
-    {id: 'charismaSavingThrow', x: 136.5, y: 771.3, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
+    {id: 'charismaSavingThrowProficiency', x: 136.5, y: 771.3, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
+    {id: 'charismaSavingThrowBonus', x: 149.2, y: 769.1, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'deceptionExpertise', x: 134.3, y: 785.6, width: 4, height: 4, type: 'checkbox'},
     {id: 'deceptionProficiency', x: 137, y: 787.8, width: 8, height: 8, type: 'checkbox'},
+    {id: 'deceptionBonus', x: 149.2, y: 785.2, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'intimidationExpertise', x: 134.3, y: 800.9, width: 4, height: 4, type: 'checkbox'},
     {id: 'intimidationProficiency', x: 137, y: 803, width: 8, height: 8, type: 'checkbox'},
+    {id: 'intimidationBonus', x: 149.2, y: 800.6, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'performanceExpertise', x: 134.3, y: 816.8, width: 4, height: 4, type: 'checkbox'},
     {id: 'performanceProficiency', x: 137, y: 818.8, width: 8, height: 8, type: 'checkbox'},
+    {id: 'performanceBonus', x: 149.2, y: 815.9, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'persuasionExpertise', x: 134.3, y: 832.3, width: 4, height: 4, type: 'checkbox'},
     {id: 'persuasionProficiency', x: 137, y: 834.3, width: 8, height: 8, type: 'checkbox'},
+    {id: 'persuasionBonus', x: 149.2, y: 831.3, width: 16, height: 14, type: 'number', fontSize: 12, textAlign: 'center'},
 
     // === COMBAT STATS  === //
 
@@ -128,7 +152,7 @@ const Fields: FieldDefinition[] = [
 
     // HP
 
-    {id: 'maxHitPoints', x: 387, y: 252, width: 36, height: 24, type: 'number', fontSize: 24, textAlign: 'center'},
+    {id: 'maxHitPoints', x: 386, y: 252, width: 36, height: 24, type: 'number', fontSize: 24, textAlign: 'center'},
     {id: 'temporaryHitPoints', x: 434, y: 265, width: 68.79, height: 18, type: 'number', fontSize: 16, textAlign: 'center'},
     {id: 'currentHitPoints', x: 350, y: 292, width: 110, height: 36, type: 'number', fontSize: 32, textAlign: 'center'},
 
