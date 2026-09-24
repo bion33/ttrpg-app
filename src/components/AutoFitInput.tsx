@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import type { FieldDefinition } from '../types/FieldDefinition.ts'
+import FieldForeignObject from './FieldForeignObject'
 
 const DEFAULT_FONT_SIZE = 9
 const MIN_FONT_SIZE = 6
@@ -34,14 +35,16 @@ function AutoFitInput({
   }, [value, maxFontSize])
 
   return (
-    <input
-      ref={inputRef}
-      className="sheet-field"
-      type={field.type}
-      style={{ fontSize, textAlign: field.textAlign }}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
+    <FieldForeignObject field={field}>
+      <input
+        ref={inputRef}
+        className="sheet-field"
+        type={field.type}
+        style={{ fontSize, textAlign: field.textAlign }}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </FieldForeignObject>
   )
 }
 

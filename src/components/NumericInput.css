@@ -1,0 +1,10 @@
+.sheet-field[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.sheet-field[type='number']::-webkit-outer-spin-button,
+.sheet-field[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

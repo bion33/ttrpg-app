@@ -1,4 +1,6 @@
 import type { FieldDefinition } from '../types/FieldDefinition.ts'
+import FieldForeignObject from './FieldForeignObject'
+import './NumericInput.css'
 
 function NumericInput({
   field,
@@ -10,15 +12,17 @@ function NumericInput({
   onChange: (value: string) => void
 }) {
   return (
-    <input
-      className="sheet-field"
-      type="text"
-      inputMode="numeric"
-      pattern="[+-]?[0-9]*"
-      style={{ fontSize: field.fontSize, textAlign: field.textAlign }}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    />
+    <FieldForeignObject field={field}>
+      <input
+        className="sheet-field"
+        type="text"
+        inputMode="numeric"
+        pattern="[+-]?[0-9]*"
+        style={{ fontSize: field.fontSize, textAlign: field.textAlign }}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </FieldForeignObject>
   )
 }
 

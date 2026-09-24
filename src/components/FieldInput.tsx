@@ -3,6 +3,7 @@ import type { FieldDefinition } from '../types/FieldDefinition.ts'
 import AutoFitInput from './AutoFitInput'
 import CheckboxInput from './CheckboxInput'
 import NumericInput from './NumericInput'
+import './FieldInput.css'
 
 const storageKey = (storagePrefix: string, id: string) => `${storagePrefix}.field.${id}`
 
@@ -20,7 +21,11 @@ function FieldInput({ field, storagePrefix }: { field: FieldDefinition; storageP
   )
 
   useEffect(() => {
-    localStorage.setItem(storageKey(storagePrefix, field.id), value)
+    try {
+      localStorage.setItem(storageKey(storagePrefix, field.id), value)
+    } catch {
+      // ignore storage failures (e.g. private mode)
+    }
   }, [storagePrefix, field.id, value])
 
   switch (field.type) {

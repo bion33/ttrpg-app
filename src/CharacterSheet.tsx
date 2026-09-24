@@ -93,15 +93,7 @@ function CharacterSheet() {
         >
             <g dangerouslySetInnerHTML={{__html: artworkMarkup}}/>
             {Fields.map((field) => (
-                <foreignObject
-                    key={field.id}
-                    x={field.x}
-                    y={field.y}
-                    width={field.width}
-                    height={field.height}
-                >
-                    <FieldInput field={field} storagePrefix={STORAGE_PREFIX}/>
-                </foreignObject>
+                <FieldInput key={field.id} field={field} storagePrefix={STORAGE_PREFIX}/>
             ))}
         </svg>
     )
