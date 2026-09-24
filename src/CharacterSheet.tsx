@@ -160,6 +160,8 @@ const Fields: FieldDefinition[] = [
 
     // === WEAPONS, CANTRIPS & SPELLS === //
 
+    // Weapons
+
     {id: 'weaponName1', x: 301, y: 456, width: 99, height: 16, type: 'text', fontSize: 12},
     {id: 'weaponAttack1', x: 406.2, y: 454.88, width: 24, height: 18, type: 'number', fontSize: 12, textAlign: 'center'},
     {id: 'weaponDamage1', x: 435, y: 456, width: 73, height: 16, type: 'text', fontSize: 12},
@@ -187,6 +189,52 @@ const Fields: FieldDefinition[] = [
     {id: 'weaponSlashing4', x: 511.2, y: 536.8, width: 4.67, height: 4.67, type: 'check'},
     {id: 'weaponPiercing4', x: 511.2, y: 542.8, width: 4.67, height: 4.67, type: 'check'},
     {id: 'weaponBludgeoning4', x: 511.2, y: 548.67, width: 4.67, height: 4.67, type: 'check'},
+
+    // Cantrips
+
+    {id: 'cantripPrepared1', x: 290.4, y: 577.07, width: 4.67, height: 4.67, type: 'check'},
+    {id: 'cantripName1', x: 302, y: 569.07, width: 92, height: 16, type: 'text', fontSize: 12},
+    {id: 'cantripEffect1', x: 408, y: 569.07, width: 100, height: 16, type: 'text', fontSize: 12},
+    {id: 'cantripSomatic1', x: 510.3, y: 568.4, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+    {id: 'cantripVerbal1', x: 510.3, y: 574.3, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+    {id: 'cantripMaterial1', x: 510.3, y: 580.1, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+
+    {id: 'cantripPrepared2', x: 290.4, y: 600.40, width: 4.67, height: 4.67, type: 'check'},
+    {id: 'cantripName2', x: 302, y: 592.4, width: 92, height: 16, type: 'text', fontSize: 12},
+    {id: 'cantripEffect2', x: 408, y: 592.4, width: 100, height: 16, type: 'text', fontSize: 12},
+    {id: 'cantripSomatic2', x: 510.3, y: 592.0, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+    {id: 'cantripVerbal2', x: 510.3, y: 597.7, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+    {id: 'cantripMaterial2', x: 510.3, y: 603.6, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+
+    {id: 'cantripPrepared3', x: 290.4, y: 623.87, width: 4.67, height: 4.67, type: 'check'},
+    {id: 'cantripName3', x: 302, y: 615.87, width: 92, height: 16, type: 'text', fontSize: 12},
+    {id: 'cantripEffect3', x: 408, y: 615.87, width: 100, height: 16, type: 'text', fontSize: 12},
+    {id: 'cantripSomatic3', x: 510.3, y: 615.2, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+    {id: 'cantripVerbal3', x: 510.3, y: 621.1, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+    {id: 'cantripMaterial3', x: 510.3, y: 626.9, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+
+    {id: 'cantripPrepared4', x: 290.4, y: 647.33, width: 4.67, height: 4.67, type: 'check'},
+    {id: 'cantripName4', x: 302, y: 639.33, width: 92, height: 16, type: 'text', fontSize: 12},
+    {id: 'cantripEffect4', x: 408, y: 639.33, width: 100, height: 16, type: 'text', fontSize: 12},
+    {id: 'cantripSomatic4', x: 510.3, y: 638.8, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+    {id: 'cantripVerbal4', x: 510.3, y: 644.5, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+    {id: 'cantripMaterial4', x: 510.3, y: 650.4, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+
+    {id: 'cantripPrepared5', x: 290.4, y: 670.53, width: 4.67, height: 4.67, type: 'check'},
+    {id: 'cantripName5', x: 302, y: 662.53, width: 92, height: 16, type: 'text', fontSize: 12},
+    {id: 'cantripEffect5', x: 408, y: 662.53, width: 100, height: 16, type: 'text', fontSize: 12},
+    {id: 'cantripSomatic5', x: 510.3, y: 662.0, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+    {id: 'cantripVerbal5', x: 510.3, y: 667.9, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+    {id: 'cantripMaterial5', x: 510.3, y: 673.7, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+
+    {id: 'cantripPrepared6', x: 290.4, y: 693.87, width: 4.67, height: 4.67, type: 'check'},
+    {id: 'cantripName6', x: 302, y: 685.87, width: 92, height: 16, type: 'text', fontSize: 12},
+    {id: 'cantripEffect6', x: 408, y: 685.87, width: 100, height: 16, type: 'text', fontSize: 12},
+    {id: 'cantripSomatic6', x: 510.3, y: 685.2, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+    {id: 'cantripVerbal6', x: 510.3, y: 691.1, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+    {id: 'cantripMaterial6', x: 510.3, y: 697.0, width: 4.67, height: 4.67, type: 'check', shape: 'diamond'},
+
+    // Spell Slots
 
     // === NOTES === //
 
