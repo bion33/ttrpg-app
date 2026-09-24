@@ -9,6 +9,8 @@ export type FieldDefinition = {
   width: number
   height: number
   type: 'text' | 'number' | 'checkbox'
+  shape?: 'circle' | 'diamond' | 'star'
+  color?: string
   fontSize?: number
   textAlign?: 'left' | 'center' | 'right'
   defaultValue?: string

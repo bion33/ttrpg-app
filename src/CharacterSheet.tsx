@@ -20,6 +20,8 @@ const Fields: FieldDefinition[] = [
     {id: 'experiencePoints', x: 639.1, y: 98, width: 116, height: 22, type: 'text', fontSize: 18},
 
     {id: 'inspiration', x: 151, y: 172, width: 11, height: 11, type: 'checkbox'},
+    {id: 'enablePassivePerceptionCalc', x: 152.98, y: 208.17, width: 7.25, height: 9, type: 'checkbox', shape: 'star'},
+    {id: 'enableSpeedCalc', x: 480.01, y: 180.05, width: 7.25, height: 9, type: 'checkbox', shape: 'star'},
 
     {id: 'armorClass', x: 308, y: 206, width: 42, height: 32, type: 'number', fontSize: 28, textAlign: 'center'},
     {id: 'darkvision', x: 392, y: 172, width: 26, height: 16, type: 'number', fontSize: 14, textAlign: 'center'},
@@ -48,38 +50,97 @@ const Fields: FieldDefinition[] = [
     {id: 'deathSaveSuccess2', x: 750.93, y: 211.2, width: 11, height: 11, type: 'checkbox'},
     {id: 'deathSaveSuccess3', x: 743.33, y: 228.8, width: 11, height: 11, type: 'checkbox'},
 
+    {id: 'bludgeoningImmunity', x: 560.67, y: 271.73, width: 5.87, height: 6, type: 'checkbox', color: 'green'},
+    {id: 'bludgeoningResistance', x: 567.33, y: 271.73, width: 5.87, height: 6, type: 'checkbox', color: 'goldenrod'},
+    {id: 'bludgeoningVulnerability', x: 573.87, y: 271.73, width: 6, height: 6, type: 'checkbox', color: 'firebrick'},
+
+    {id: 'piercingImmunity', x: 560.67, y: 284.4, width: 5.87, height: 6, type: 'checkbox', color: 'green'},
+    {id: 'piercingResistance', x: 567.33, y: 284.4, width: 5.87, height: 6, type: 'checkbox', color: 'goldenrod'},
+    {id: 'piercingVulnerability', x: 573.87, y: 284.4, width: 6, height: 6, type: 'checkbox', color: 'firebrick'},
+
+    {id: 'slashingImmunity', x: 560.67, y: 297.07, width: 5.87, height: 6, type: 'checkbox', color: 'green'},
+    {id: 'slashingResistance', x: 567.33, y: 297.07, width: 5.87, height: 6, type: 'checkbox', color: 'goldenrod'},
+    {id: 'slashingVulnerability', x: 573.87, y: 297.07, width: 6, height: 6, type: 'checkbox', color: 'firebrick'},
+
+    {id: 'coldImmunity', x: 560.67, y: 309.73, width: 5.87, height: 6, type: 'checkbox', color: 'green'},
+    {id: 'coldResistance', x: 567.33, y: 309.73, width: 5.87, height: 6, type: 'checkbox', color: 'goldenrod'},
+    {id: 'coldVulnerability', x: 573.87, y: 309.73, width: 6, height: 6, type: 'checkbox', color: 'firebrick'},
+
+    {id: 'fireImmunity', x: 560.93, y: 322.4, width: 5.87, height: 6, type: 'checkbox', color: 'green'},
+    {id: 'fireResistance', x: 567.6, y: 322.4, width: 5.87, height: 6, type: 'checkbox', color: 'goldenrod'},
+    {id: 'fireVulnerability', x: 574.13, y: 322.4, width: 6, height: 6, type: 'checkbox', color: 'firebrick'},
+
+    {id: 'poisonImmunity', x: 628.53, y: 271.73, width: 6, height: 6, type: 'checkbox', color: 'green'},
+    {id: 'poisonResistance', x: 635.2, y: 271.73, width: 6, height: 6, type: 'checkbox', color: 'goldenrod'},
+    {id: 'poisonVulnerability', x: 641.87, y: 271.73, width: 6, height: 6, type: 'checkbox', color: 'firebrick'},
+
+    {id: 'acidImmunity', x: 628.53, y: 284.4, width: 6, height: 6, type: 'checkbox', color: 'green'},
+    {id: 'acidResistance', x: 635.2, y: 284.4, width: 6, height: 6, type: 'checkbox', color: 'goldenrod'},
+    {id: 'acidVulnerability', x: 641.87, y: 284.4, width: 6, height: 6, type: 'checkbox', color: 'firebrick'},
+
+    {id: 'psychicImmunity', x: 628.53, y: 297.07, width: 6, height: 6, type: 'checkbox', color: 'green'},
+    {id: 'psychicResistance', x: 635.2, y: 297.07, width: 6, height: 6, type: 'checkbox', color: 'goldenrod'},
+    {id: 'psychicVulnerability', x: 641.87, y: 297.07, width: 6, height: 6, type: 'checkbox', color: 'firebrick'},
+
+    {id: 'necroticImmunity', x: 628.53, y: 309.73, width: 6, height: 6, type: 'checkbox', color: 'green'},
+    {id: 'necroticResistance', x: 635.2, y: 309.73, width: 6, height: 6, type: 'checkbox', color: 'goldenrod'},
+    {id: 'necroticVulnerability', x: 641.87, y: 309.73, width: 6, height: 6, type: 'checkbox', color: 'firebrick'},
+
+    {id: 'radiantImmunity', x: 697.87, y: 271.73, width: 6, height: 6, type: 'checkbox', color: 'green'},
+    {id: 'radiantResistance', x: 704.53, y: 271.73, width: 6, height: 6, type: 'checkbox', color: 'goldenrod'},
+    {id: 'radiantVulnerability', x: 711.2, y: 271.73, width: 6, height: 6, type: 'checkbox', color: 'firebrick'},
+
+    {id: 'lightningImmunity', x: 697.87, y: 284.4, width: 6, height: 6, type: 'checkbox', color: 'green'},
+    {id: 'lightningResistance', x: 704.53, y: 284.4, width: 6, height: 6, type: 'checkbox', color: 'goldenrod'},
+    {id: 'lightningVulnerability', x: 711.2, y: 284.4, width: 6, height: 6, type: 'checkbox', color: 'firebrick'},
+
+    {id: 'thunderImmunity', x: 697.87, y: 297.07, width: 6, height: 6, type: 'checkbox', color: 'green'},
+    {id: 'thunderResistance', x: 704.53, y: 297.07, width: 6, height: 6, type: 'checkbox', color: 'goldenrod'},
+    {id: 'thunderVulnerability', x: 711.2, y: 297.07, width: 6, height: 6, type: 'checkbox', color: 'firebrick'},
+
+    {id: 'forceImmunity', x: 697.87, y: 309.73, width: 6, height: 6, type: 'checkbox', color: 'green'},
+    {id: 'forceResistance', x: 704.53, y: 309.73, width: 6, height: 6, type: 'checkbox', color: 'goldenrod'},
+    {id: 'forceVulnerability', x: 711.2, y: 309.73, width: 6, height: 6, type: 'checkbox', color: 'firebrick'},
+
+    {id: 'strengthSavingThrow', x: 136.5, y: 240.5, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
     {id: 'athleticsExpertise', x: 134.3, y: 255.7, width: 4, height: 4, type: 'checkbox'},
     {id: 'athleticsProficiency', x: 137, y: 258, width: 8, height: 8, type: 'checkbox'},
 
+    {id: 'dexteritySavingThrow', x: 136.5, y: 335.7, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
     {id: 'acrobaticsExpertise', x: 134.3, y: 349.2, width: 4, height: 4, type: 'checkbox'},
-    {id: 'acrobaticsProficiency', x: 137, y: 351, width: 8, height: 8, type: 'checkbox'},
+    {id: 'acrobaticsProficiency', x: 137, y: 351.1, width: 8, height: 8, type: 'checkbox'},
     {id: 'sleightOfHandExpertise', x: 134.3, y: 365.2, width: 4, height: 4, type: 'checkbox'},
-    {id: 'sleightOfHandProficiency', x: 137, y: 367.5, width: 8, height: 8, type: 'checkbox'},
+    {id: 'sleightOfHandProficiency', x: 137, y: 367.4, width: 8, height: 8, type: 'checkbox'},
     {id: 'stealthExpertise', x: 134, y: 382.3, width: 4, height: 4, type: 'checkbox'},
     {id: 'stealthProficiency', x: 137, y: 383.9, width: 8, height: 8, type: 'checkbox'},
 
+    {id: 'constitutionSavingThrow', x: 136.5, y: 431.1, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
+
+    {id: 'intelligenceSavingThrow', x: 136.5, y: 530.7, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
     {id: 'arcanaExpertise', x: 134.3, y: 543.9, width: 4, height: 4, type: 'checkbox'},
     {id: 'arcanaProficiency', x: 137, y: 546, width: 8, height: 8, type: 'checkbox'},
     {id: 'historyExpertise', x: 134.3, y: 559.3, width: 4, height: 4, type: 'checkbox'},
-    {id: 'historyProficiency', x: 137, y: 561.7, width: 8, height: 8, type: 'checkbox'},
+    {id: 'historyProficiency', x: 137, y: 561.6, width: 8, height: 8, type: 'checkbox'},
     {id: 'investigationExpertise', x: 134.3, y: 575.3, width: 4, height: 4, type: 'checkbox'},
     {id: 'investigationProficiency', x: 137, y: 577.5, width: 8, height: 8, type: 'checkbox'},
     {id: 'natureExpertise', x: 134.3, y: 590.8, width: 4, height: 4, type: 'checkbox'},
     {id: 'natureProficiency', x: 137, y: 593.1, width: 8, height: 8, type: 'checkbox'},
     {id: 'religionExpertise', x: 134.3, y: 606.3, width: 4, height: 4, type: 'checkbox'},
-    {id: 'religionProficiency', x: 137, y: 608.8, width: 8, height: 8, type: 'checkbox'},
+    {id: 'religionProficiency', x: 137, y: 608.5, width: 8, height: 8, type: 'checkbox'},
 
+    {id: 'wisdomSavingThrow', x: 136.5, y: 648.8, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
     {id: 'animalHandlingExpertise', x: 134.3, y: 663.3, width: 4, height: 4, type: 'checkbox'},
-    {id: 'animalHandlingProficiency', x: 137, y: 665.3, width: 8, height: 8, type: 'checkbox'},
+    {id: 'animalHandlingProficiency', x: 137, y: 665.4, width: 8, height: 8, type: 'checkbox'},
     {id: 'insightExpertise', x: 134.3, y: 678.7, width: 4, height: 4, type: 'checkbox'},
-    {id: 'insightProficiency', x: 137, y: 680.8, width: 8, height: 8, type: 'checkbox'},
+    {id: 'insightProficiency', x: 137, y: 680.9, width: 8, height: 8, type: 'checkbox'},
     {id: 'medicineExpertise', x: 134.3, y: 693.6, width: 4, height: 4, type: 'checkbox'},
-    {id: 'medicineProficiency', x: 137, y: 696, width: 8, height: 8, type: 'checkbox'},
+    {id: 'medicineProficiency', x: 137, y: 695.9, width: 8, height: 8, type: 'checkbox'},
     {id: 'perceptionExpertise', x: 134.3, y: 709.5, width: 4, height: 4, type: 'checkbox'},
-    {id: 'perceptionProficiency', x: 137, y: 711.6, width: 8, height: 8, type: 'checkbox'},
+    {id: 'perceptionProficiency', x: 137, y: 711.7, width: 8, height: 8, type: 'checkbox'},
     {id: 'survivalExpertise', x: 134.3, y: 724.4, width: 4, height: 4, type: 'checkbox'},
     {id: 'survivalProficiency', x: 137, y: 726.5, width: 8, height: 8, type: 'checkbox'},
 
+    {id: 'charismaSavingThrow', x: 136.5, y: 771.3, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
     {id: 'deceptionExpertise', x: 134.3, y: 785.6, width: 4, height: 4, type: 'checkbox'},
     {id: 'deceptionProficiency', x: 137, y: 787.8, width: 8, height: 8, type: 'checkbox'},
     {id: 'intimidationExpertise', x: 134.3, y: 800.9, width: 4, height: 4, type: 'checkbox'},
@@ -88,7 +149,6 @@ const Fields: FieldDefinition[] = [
     {id: 'performanceProficiency', x: 137, y: 818.8, width: 8, height: 8, type: 'checkbox'},
     {id: 'persuasionExpertise', x: 134.3, y: 832.3, width: 4, height: 4, type: 'checkbox'},
     {id: 'persuasionProficiency', x: 137, y: 834.3, width: 8, height: 8, type: 'checkbox'},
-
 ]
 
 function CharacterSheet() {
