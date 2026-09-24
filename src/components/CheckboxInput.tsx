@@ -4,10 +4,10 @@ import './CheckboxInput.css'
 
 // The checked mark is drawn as a native SVG shape (a <circle>, or a <polygon>
 // diamond/star) in the artwork's own coordinate space (not a CSS fill inside
-// the <foreignObject>). Firefox snaps
-// foreignObject content to device pixels differently for screen vs. print, so
-// a CSS-drawn dot drifts on the x-axis when printed; an SVG circle does not.
-// The <input> stays purely as a transparent hit target.
+// the <foreignObject>). Firefox snaps foreignObject content to device pixels
+// differently for screen vs. print, so a CSS-drawn dot drifts on the x-axis
+// when printed; an SVG circle does not. The <input> functions purely as a
+// transparent hit target.
 
 // Points for a regular n-pointed star, first point at the top (12 o'clock),
 // alternating between the outer radius and innerRatio * outer radius.

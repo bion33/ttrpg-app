@@ -1,9 +1,9 @@
 ---
-name: locate-svg-checkboxes
+name: locate-svg-checks
 description: Find small hand-drawn/traced circles (or other round shapes) inside a rendered, inline SVG — e.g. the tick-boxes on a scanned/traced character sheet — and get their bounding boxes, in the SVG's own viewBox coordinates, for overlaying interactive checkbox elements (typically a <foreignObject> input) on top of them. Use whenever placing checkbox overlays against circular marks in SVG background art — "turn the death saves circles into checkboxes", "where are the proficiency dots", etc. Requires the app's dev server to already be running with the SVG inlined in the DOM (not an <img>/<object> reference).
 ---
 
-# locate-svg-checkboxes
+# locate-svg-checks
 
 Sibling skill to [[locate-svg-label]] — use that one for text-label-relative
 field placement, this one for circular tick-box art. Same underlying
@@ -16,15 +16,15 @@ to be chased by hand), applied to shape geometry instead of text content.
 PDF-trace tools almost never emit `<circle>`/`<ellipse>` tags for round
 marks — a circle is usually a small square-ish `<path>`. So "find the
 circles" really means "find small paths whose bounding box is roughly
-square", not a tag selector. Groups of checkboxes are also frequently
+square", not a tag selector. Groups of checks are also frequently
 **not** on a straight grid — e.g. a chain-of-circles motif that staggers
 each circle in/out along a curve — so don't assume a uniform row/column
 spacing; take each box's own reported position.
 
 Also: text proximity is not a reliable filter by itself. A label like
 "DEATH SAVES" can sit directly above an *unrelated* checkbox grid for a
-different section (e.g. damage-resistance boxes) that happens to be closer
-in the layout than the checkboxes that actually belong to that label. Always
+different section (e.g. damage-resistance checks) that happens to be closer
+in the layout than the checks that actually belong to that label. Always
 sanity-check candidates against a cropped screenshot (see below) before
 trusting the geometry search.
 
@@ -46,7 +46,7 @@ must be inlined in the page DOM.
 Anchor near a text label (searches a square region around it):
 
 ```bash
-node .claude/skills/locate-svg-checkboxes/tool/locate-circles.mjs \
+node .claude/skills/locate-svg-checks/tool/locate-circles.mjs \
   --near "DEATH SAVES" --selector "svg.character-sheet" --radius 90
 ```
 
@@ -54,7 +54,7 @@ Or give an explicit region directly (viewBox user units: `x,y,width,height`)
 once you know roughly where to look, e.g. from a cropped screenshot:
 
 ```bash
-node .claude/skills/locate-svg-checkboxes/tool/locate-circles.mjs \
+node .claude/skills/locate-svg-checks/tool/locate-circles.mjs \
   --region "660,175,130,70" --selector "svg.character-sheet"
 ```
 
@@ -83,7 +83,7 @@ Own isolated dependency, same pattern as `locate-svg-label`'s tool — kept
 separate from the app's own `package.json`/lockfile:
 
 ```bash
-cd .claude/skills/locate-svg-checkboxes/tool && npm install --no-audit --no-fund
+cd .claude/skills/locate-svg-checks/tool && npm install --no-audit --no-fund
 ```
 
 Reuses the Chromium binary Playwright already has cached

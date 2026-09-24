@@ -8,7 +8,7 @@ export type FieldDefinition = {
   y: number
   width: number
   height: number
-  type: 'text' | 'textarea' | 'number' | 'checkbox'
+  type: 'text' | 'textarea' | 'number' | 'check'
   shape?: 'circle' | 'diamond' | 'star'
   color?: string
   fontSize?: number

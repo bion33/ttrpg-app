@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FieldDefinition } from '../types/FieldDefinition.ts'
 import AutoFitInput from './AutoFitInput'
-import CheckboxInput from './CheckboxInput'
+import CheckInput from './CheckboxInput'
 import NumericInput from './NumericInput'
 import './FieldInput.css'
 import AutoFitTextarea from "./AutoFitTextarea.tsx";
@@ -36,8 +36,8 @@ function FieldInput({ field, storagePrefix }: { field: FieldDefinition; storageP
       return <AutoFitInput field={field} value={value} onChange={setValue} />
     case 'textarea':
       return <AutoFitTextarea field={field} value={value} onChange={setValue} />
-    case 'checkbox':
-      return <CheckboxInput field={field} value={value} onChange={setValue} />
+    case 'check':
+      return <CheckInput field={field} value={value} onChange={setValue} />
   }
 }
 
