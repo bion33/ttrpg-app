@@ -8,7 +8,8 @@ export type FieldDefinition = {
   y: number
   width: number
   height: number
-  type: 'text' | 'number'
+  type: 'text' | 'number' | 'checkbox'
   fontSize?: number
   textAlign?: 'left' | 'center' | 'right'
+  defaultValue?: string
 }

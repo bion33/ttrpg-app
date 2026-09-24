@@ -1,11 +1,11 @@
-import type { FieldDef } from './types'
+import type { FieldDefinition } from '../types/FieldDefinition.ts'
 
 function NumericInput({
   field,
   value,
   onChange,
 }: {
-  field: FieldDef
+  field: FieldDefinition
   value: string
   onChange: (value: string) => void
 }) {

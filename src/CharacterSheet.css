@@ -36,3 +36,32 @@
   -webkit-appearance: none;
   margin: 0;
 }
+
+.sheet-checkbox {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  cursor: pointer;
+  position: relative;
+}
+
+.sheet-checkbox:hover {
+  background: rgba(170, 59, 255, 0.08);
+}
+
+.sheet-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  inset: 18%;
+  border-radius: 50%;
+  background: #231f20;
+}
