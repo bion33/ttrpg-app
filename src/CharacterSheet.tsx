@@ -48,6 +48,25 @@ const Fields: FieldDefinition[] = [
     {id: 'deathSaveSuccess2', x: 750.93, y: 211.2, width: 11, height: 11, type: 'checkbox'},
     {id: 'deathSaveSuccess3', x: 743.33, y: 228.8, width: 11, height: 11, type: 'checkbox'},
 
+    {id: 'athleticsProficiency', x: 137, y: 258, width: 8, height: 8, type: 'checkbox'},
+    {id: 'acrobaticsProficiency', x: 137, y: 351, width: 8, height: 8, type: 'checkbox'},
+    {id: 'sleightOfHandProficiency', x: 137, y: 367.5, width: 8, height: 8, type: 'checkbox'},
+    {id: 'stealthProficiency', x: 137, y: 383.9, width: 8, height: 8, type: 'checkbox'},
+    {id: 'arcanaProficiency', x: 137, y: 546, width: 8, height: 8, type: 'checkbox'},
+    {id: 'historyProficiency', x: 137, y: 561.7, width: 8, height: 8, type: 'checkbox'},
+    {id: 'investigationProficiency', x: 137, y: 577.5, width: 8, height: 8, type: 'checkbox'},
+    {id: 'natureProficiency', x: 137, y: 593.1, width: 8, height: 8, type: 'checkbox'},
+    {id: 'religionProficiency', x: 137, y: 608.8, width: 8, height: 8, type: 'checkbox'},
+    {id: 'animalHandlingProficiency', x: 137, y: 665.3, width: 8, height: 8, type: 'checkbox'},
+    {id: 'insightProficiency', x: 137, y: 680.8, width: 8, height: 8, type: 'checkbox'},
+    {id: 'medicineProficiency', x: 137, y: 696, width: 8, height: 8, type: 'checkbox'},
+    {id: 'perceptionProficiency', x: 137, y: 711.6, width: 8, height: 8, type: 'checkbox'},
+    {id: 'survivalProficiency', x: 137, y: 726.5, width: 8, height: 8, type: 'checkbox'},
+    {id: 'deceptionProficiency', x: 137, y: 787.8, width: 8, height: 8, type: 'checkbox'},
+    {id: 'intimidationProficiency', x: 137, y: 803, width: 8, height: 8, type: 'checkbox'},
+    {id: 'performanceProficiency', x: 137, y: 818.8, width: 8, height: 8, type: 'checkbox'},
+    {id: 'persuasionProficiency', x: 137, y: 834.3, width: 8, height: 8, type: 'checkbox'},
+
 ]
 
 function CharacterSheet() {
