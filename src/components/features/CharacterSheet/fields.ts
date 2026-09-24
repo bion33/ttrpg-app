@@ -1,4 +1,4 @@
-import type {FieldDefinition} from './types/FieldDefinition.ts'
+import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
 
 // All coordinates are in the artwork's viewBox units (see FieldDefinition).
 // The many repeating regions of the sheet (ability blocks, skills, weapons,

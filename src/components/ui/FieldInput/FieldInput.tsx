@@ -1,10 +1,10 @@
 import {useEffect, useState} from 'react'
-import type {FieldDefinition} from '../types/FieldDefinition.ts'
-import AutoFitInput from './AutoFitInput'
-import CheckInput from './CheckboxInput'
-import NumericInput from './NumericInput'
+import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
+import AutoFitInput from '../AutoFitInput/AutoFitInput'
+import CheckInput from '../CheckboxInput/CheckboxInput'
+import NumericInput from '../NumericInput/NumericInput'
 import './FieldInput.css'
-import AutoFitTextarea from "./AutoFitTextarea.tsx";
+import AutoFitTextarea from '../AutoFitTextarea/AutoFitTextarea'
 
 const storageKey = (storagePrefix: string, id: string) => `${storagePrefix}.field.${id}`
 

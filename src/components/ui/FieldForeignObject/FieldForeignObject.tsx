@@ -1,5 +1,5 @@
 import type {ReactNode} from 'react'
-import type {FieldDefinition} from '../types/FieldDefinition.ts'
+import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
 
 // Positions HTML form controls in the artwork's SVG coordinate space.
 function FieldForeignObject({field, children}: { field: FieldDefinition; children: ReactNode }) {

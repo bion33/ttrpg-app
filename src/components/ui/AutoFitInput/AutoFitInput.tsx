@@ -1,6 +1,6 @@
 import {useLayoutEffect, useRef, useState} from 'react'
-import type {FieldDefinition} from '../types/FieldDefinition.ts'
-import FieldForeignObject from './FieldForeignObject'
+import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
+import FieldForeignObject from '../FieldForeignObject/FieldForeignObject'
 
 const DEFAULT_FONT_SIZE = 9
 const MIN_FONT_SIZE = 6

@@ -1,5 +1,5 @@
-import type {FieldDefinition} from '../types/FieldDefinition.ts'
-import FieldForeignObject from './FieldForeignObject'
+import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
+import FieldForeignObject from '../FieldForeignObject/FieldForeignObject'
 import './CheckboxInput.css'
 
 // The checked mark is drawn as a native SVG shape (a <circle>, or a <polygon>

@@ -1,6 +1,6 @@
 import {useEffect, useRef, useState} from 'react'
 import './CharacterSheet.css'
-import FieldInput from './components/FieldInput'
+import FieldInput from '../../ui/FieldInput/FieldInput'
 import {Fields} from './fields.ts'
 
 const SVG_URL = '/character-sheet/character-sheet.svg'

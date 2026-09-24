@@ -1,5 +1,5 @@
-import type {FieldDefinition} from '../types/FieldDefinition.ts'
-import FieldForeignObject from './FieldForeignObject'
+import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
+import FieldForeignObject from '../FieldForeignObject/FieldForeignObject'
 import './NumericInput.css'
 
 function NumericInput({
