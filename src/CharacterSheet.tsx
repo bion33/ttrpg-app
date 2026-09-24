@@ -28,9 +28,21 @@ const Fields: FieldDefinition[] = [
     {id: 'enablePassivePerceptionCalc', x: 152.98, y: 208.17, width: 7.25, height: 9, type: 'checkbox', shape: 'star'},
     {id: 'passivePerception', x: 229.33, y: 166.27, width: 40, height: 32, type: 'number', fontSize: 28, textAlign: 'center'},
 
+    // Strength
+
+    {id: 'strengthScore', x: 51.03, y: 242.22, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'strengthExtra', x: 51.03, y: 277.02, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'strengthModifier', x: 70.71, y: 246.34, width: 50.73, height: 39.86, type: 'number', fontSize: 36, textAlign: 'center'},
+
     {id: 'strengthSavingThrow', x: 136.5, y: 240.5, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
     {id: 'athleticsExpertise', x: 134.3, y: 255.7, width: 4, height: 4, type: 'checkbox'},
     {id: 'athleticsProficiency', x: 137, y: 258, width: 8, height: 8, type: 'checkbox'},
+
+    // Dexterity
+
+    {id: 'dexterityScore', x: 51.03, y: 337.64, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'dexterityExtra', x: 51.03, y: 372.44, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'dexterityModifier', x: 70.71, y: 341.76, width: 50.73, height: 39.86, type: 'number', fontSize: 36, textAlign: 'center'},
 
     {id: 'dexteritySavingThrow', x: 136.5, y: 335.7, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
     {id: 'acrobaticsExpertise', x: 134.3, y: 349.2, width: 4, height: 4, type: 'checkbox'},
@@ -40,7 +52,19 @@ const Fields: FieldDefinition[] = [
     {id: 'stealthExpertise', x: 134, y: 382.3, width: 4, height: 4, type: 'checkbox'},
     {id: 'stealthProficiency', x: 137, y: 383.9, width: 8, height: 8, type: 'checkbox'},
 
+    // Constitution
+
+    {id: 'constitutionScore', x: 51.03, y: 433.69, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'constitutionExtra', x: 51.03, y: 468.57, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'constitutionModifier', x: 70.71, y: 437.89, width: 50.73, height: 39.86, type: 'number', fontSize: 36, textAlign: 'center'},
+
     {id: 'constitutionSavingThrow', x: 136.5, y: 431.1, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
+
+    // Intelligence
+
+    {id: 'intelligenceScore', x: 51.03, y: 533.37, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'intelligenceExtra', x: 51.03, y: 568.17, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'intelligenceModifier', x: 70.71, y: 537.49, width: 50.73, height: 39.86, type: 'number', fontSize: 36, textAlign: 'center'},
 
     {id: 'intelligenceSavingThrow', x: 136.5, y: 530.7, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
     {id: 'arcanaExpertise', x: 134.3, y: 543.9, width: 4, height: 4, type: 'checkbox'},
@@ -54,6 +78,12 @@ const Fields: FieldDefinition[] = [
     {id: 'religionExpertise', x: 134.3, y: 606.3, width: 4, height: 4, type: 'checkbox'},
     {id: 'religionProficiency', x: 137, y: 608.5, width: 8, height: 8, type: 'checkbox'},
 
+    // Wisdom
+
+    {id: 'wisdomScore', x: 51.03, y: 651.37, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'wisdomExtra', x: 51.03, y: 686.17, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'wisdomModifier', x: 70.71, y: 655.49, width: 50.73, height: 39.86, type: 'number', fontSize: 36, textAlign: 'center'},
+
     {id: 'wisdomSavingThrow', x: 136.5, y: 648.8, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
     {id: 'animalHandlingExpertise', x: 134.3, y: 663.3, width: 4, height: 4, type: 'checkbox'},
     {id: 'animalHandlingProficiency', x: 137, y: 665.4, width: 8, height: 8, type: 'checkbox'},
@@ -65,6 +95,12 @@ const Fields: FieldDefinition[] = [
     {id: 'perceptionProficiency', x: 137, y: 711.7, width: 8, height: 8, type: 'checkbox'},
     {id: 'survivalExpertise', x: 134.3, y: 724.4, width: 4, height: 4, type: 'checkbox'},
     {id: 'survivalProficiency', x: 137, y: 726.5, width: 8, height: 8, type: 'checkbox'},
+
+    // Charisma
+
+    {id: 'charismaScore', x: 51.03, y: 773.82, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'charismaExtra', x: 51.03, y: 808.62, width: 20.49, height: 16.1, type: 'number', fontSize: 16, textAlign: 'center'},
+    {id: 'charismaModifier', x: 70.71, y: 777.94, width: 50.73, height: 39.86, type: 'number', fontSize: 36, textAlign: 'center'},
 
     {id: 'charismaSavingThrow', x: 136.5, y: 771.3, width: 9, height: 9, type: 'checkbox', shape: 'diamond'},
     {id: 'deceptionExpertise', x: 134.3, y: 785.6, width: 4, height: 4, type: 'checkbox'},
@@ -82,11 +118,15 @@ const Fields: FieldDefinition[] = [
     {id: 'darkvision', x: 392, y: 172, width: 26, height: 16, type: 'number', fontSize: 14, textAlign: 'center'},
     {id: 'initiative', x: 380, y: 206, width: 50, height: 32, type: 'number', fontSize: 28, textAlign: 'center'},
 
+    // Speed
+
     {id: 'enableSpeedCalc', x: 480.01, y: 180.05, width: 7.25, height: 9, type: 'checkbox', shape: 'star'},
     {id: 'runSpeed', x: 458, y: 202, width: 26, height: 18, type: 'number', fontSize: 16, textAlign: 'center'},
     {id: 'climbSpeed', x: 482, y: 202, width: 26, height: 18, type: 'number', fontSize: 16, textAlign: 'center'},
     {id: 'swimSpeed', x: 458, y: 222, width: 26, height: 18, type: 'number', fontSize: 16, textAlign: 'center'},
     {id: 'flySpeed', x: 482, y: 222, width: 26, height: 18, type: 'number', fontSize: 16, textAlign: 'center'},
+
+    // HP
 
     {id: 'maxHitPoints', x: 387, y: 252, width: 36, height: 24, type: 'number', fontSize: 24, textAlign: 'center'},
     {id: 'temporaryHitPoints', x: 434, y: 265, width: 68.79, height: 18, type: 'number', fontSize: 16, textAlign: 'center'},
