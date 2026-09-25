@@ -1,0 +1,13 @@
+.placeholder-page {
+    max-width: 816px;
+    margin: 90px auto 0;
+    padding: 0 24px;
+    font-family: 'Times-Roman', serif;
+    color: #333;
+    text-align: center;
+}
+
+.placeholder-page h1 {
+    font-size: 32px;
+    margin-bottom: 12px;
+}

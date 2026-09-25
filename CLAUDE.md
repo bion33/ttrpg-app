@@ -75,9 +75,23 @@ jotai atom holding its value. Position and state are one object.
     unit-tested in `formulas.test.ts`. Atoms wire these into derived fields.
   - `CharacterSheet.tsx` — fetches/injects the artwork SVG and renders `Fields`.
 
+### App shell & navigation (`src/App.tsx`)
+
+`App` holds the `PAGES` registry — one `Page` per navigable page (`stats` →
+`CharacterSheet`, plus `description`/`equipment`/`spells` placeholders) — and
+renders the active page in a `.page` wrapper (`App.css`, which only carries the
+drop shadow and reserves room for the tabs — the page content styles itself)
+beside `VerticalTabs`, both inside a full-width `.app-shell`. The active page id persists in `localStorage`
+via `atomWithStorage('activePage', …)`. Add a page by appending to `PAGES`; each
+entry pairs tab metadata with a `render()` returning its element. Real pages
+replace their `PlaceholderPage` stub.
+
 ### UI controls (`src/components/ui/`)
 
-`FieldInput` picks the control for a field's `type`: `NumericInput`,
+`VerticalTabs` is the binder-style tab strip anchored to the page's right edge:
+labels rotated 90° CCW (`writing-mode: vertical-rl` + 180° rotation), one muted
+paper-tab hue per tab index. The strip sits flush against the page's right edge
+(the page reserves its width); the active tab is lifted with a drop shadow. `FieldInput` picks the control for a field's `type`: `NumericInput`,
 `AutoFitInput` (text), `AutoFitTextarea`, `CheckInput`. `FieldForeignObject`
 positions any control in SVG coordinate space. Writable fields two-way bind to
 their atom (and go read-only when their optional `readOnlyAtom` is true); derived
