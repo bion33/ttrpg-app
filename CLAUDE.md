@@ -72,7 +72,7 @@ jotai atom holding its value. Position and state are one object.
 ### UI controls (`src/components/ui/`)
 
 `FieldInput` picks the control for a field's `type`: `NumericInput`,
-`AutoFitInput` (text), `AutoFitTextarea`, `CheckboxInput`. `FieldForeignObject`
+`AutoFitInput` (text), `AutoFitTextarea`, `CheckInput`. `FieldForeignObject`
 positions any control in SVG coordinate space. Writable fields two-way bind to
 their atom; derived fields subscribe read-only.
 

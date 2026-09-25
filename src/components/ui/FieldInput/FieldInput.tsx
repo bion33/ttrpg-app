@@ -2,10 +2,11 @@ import {useAtom, useAtomValue} from 'jotai'
 import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
 import type {FieldNode} from '../../../types/FieldNode.ts'
 import AutoFitInput from '../AutoFitInput/AutoFitInput'
-import CheckInput from '../CheckboxInput/CheckboxInput'
+import CheckInput from '../CheckInput/CheckInput'
 import NumericInput from '../NumericInput/NumericInput'
 import './FieldInput.css'
 import AutoFitTextarea from '../AutoFitTextarea/AutoFitTextarea'
+import type {CheckFieldDefinition} from "../../../types/CheckFieldDefinition.ts";
 
 /**
  * No-op onChange for read-only derived fields.
@@ -31,7 +32,7 @@ function control(
         case 'textarea':
             return <AutoFitTextarea field={field} value={value} onChange={onChange}/>
         case 'check':
-            return <CheckInput field={field} value={value} onChange={onChange}/>
+            return <CheckInput field={field as CheckFieldDefinition} value={value} onChange={onChange}/>
     }
 }
 

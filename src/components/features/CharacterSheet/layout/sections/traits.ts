@@ -1,6 +1,6 @@
-import type {FieldDefinition} from '../../../../../types/FieldDefinition.ts'
 import type {FieldNode} from '../../../../../types/FieldNode.ts'
 import {inputNode} from '../nodes.ts'
+import type {CheckFieldDefinition} from "../../../../../types/CheckFieldDefinition.ts";
 
 // ---- INTERNAL CONSTANTS ----
 
@@ -17,7 +17,7 @@ const DAMAGE_BLOCKS: DamageBlock[] = [
     {x: 697.87, types: ['radiant', 'lightning', 'thunder', 'force']},
 ]
 
-const DAMAGE_LEVELS: { suffix: string; color: FieldDefinition['color'] }[] = [
+const DAMAGE_LEVELS: { suffix: string; color: CheckFieldDefinition['color'] }[] = [
     {suffix: 'Immunity', color: 'green'},
     {suffix: 'Resistance', color: 'goldenrod'},
     {suffix: 'Vulnerability', color: 'firebrick'},
@@ -77,7 +77,7 @@ function damageTypeRow(type: string, blockX: number, y: number): FieldNode[] {
         height: 6,
         type: 'check',
         color: lvl.color,
-    }))
+    } as CheckFieldDefinition))
 }
 
 /**

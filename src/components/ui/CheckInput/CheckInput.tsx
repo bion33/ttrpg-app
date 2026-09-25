@@ -1,6 +1,6 @@
-import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
 import FieldForeignObject from '../FieldForeignObject/FieldForeignObject'
-import './CheckboxInput.css'
+import './CheckInput.css'
+import type {CheckFieldDefinition} from "../../../types/CheckFieldDefinition.ts";
 
 /**
  * The checked mark is drawn as a native SVG shape (circle, diamond, or star) in
@@ -22,12 +22,12 @@ function starPoints(cx: number, cy: number, outer: number, innerRatio = 0.4, n =
 /**
  * Checkbox field control; renders the checked mark as an SVG shape.
  */
-function CheckboxInput({
+function CheckInput({
                            field,
                            value,
                            onChange,
                        }: {
-    field: FieldDefinition
+    field: CheckFieldDefinition
     value: string
     onChange: (value: string) => void
 }) {
@@ -69,4 +69,4 @@ function CheckboxInput({
     )
 }
 
-export default CheckboxInput
+export default CheckInput

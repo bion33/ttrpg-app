@@ -3,6 +3,8 @@ import type {DerivedNode, InputNode} from '../../../../../types/FieldNode.ts'
 import {abilityModifier, formatModifier, skillBonus} from '../../logic/formulas.ts'
 import {derivedNode, inputNode} from '../nodes.ts'
 
+import type {CheckFieldDefinition} from "../../../../../types/CheckFieldDefinition.ts";
+
 // ---- INTERNAL CONSTANTS ----
 
 /**
@@ -117,8 +119,9 @@ export const abilityMeta = {
         width: 7.25,
         height: 9,
         type: 'check',
-        shape: 'star'
-    }),
+        shape: 'star',
+        defaultValue: true
+    } as CheckFieldDefinition),
     passivePerception: inputNode({
         id: 'passivePerception',
         x: 229.33,
@@ -185,7 +188,7 @@ function abilityNodes<A extends AbilityConfig>(a: A): AbilityNodes<A> {
     const saveProficiency = inputNode({
         id: `${a.name}SavingThrowProficiency`, x: 136.5, y: a.scoreY + a.saveOffset,
         width: 9, height: 9, type: 'check', shape: 'diamond',
-    })
+    } as CheckFieldDefinition)
 
     // the saving-throw bonus input sits this far above its check
     const SAVE_BONUS_GAP = 2.5

@@ -1,6 +1,8 @@
 import type {FieldNode} from '../../../../../types/FieldNode.ts'
 import {inputNode} from '../nodes.ts'
 
+import type {CheckFieldDefinition} from "../../../../../types/CheckFieldDefinition.ts";
+
 // ---- INTERNAL CONSTANTS ----
 
 const WEAPON_ROW_STEP = 27       // vertical gap between weapon rows
@@ -114,7 +116,7 @@ function cantripRow(n: number): FieldNode[] {
             height: 16,
             type: 'text',
             fontSize: 12
-        }),
+        } as CheckFieldDefinition),
         inputNode({
             id: `cantripSomatic${n}`,
             x: 510.3,
@@ -123,7 +125,7 @@ function cantripRow(n: number): FieldNode[] {
             height: 4.67,
             type: 'check',
             shape: 'diamond'
-        }),
+        } as CheckFieldDefinition),
         inputNode({
             id: `cantripVerbal${n}`,
             x: 510.3,
@@ -132,7 +134,7 @@ function cantripRow(n: number): FieldNode[] {
             height: 4.67,
             type: 'check',
             shape: 'diamond'
-        }),
+        } as CheckFieldDefinition),
         inputNode({
             id: `cantripMaterial${n}`,
             x: 510.3,
@@ -141,7 +143,7 @@ function cantripRow(n: number): FieldNode[] {
             height: 4.67,
             type: 'check',
             shape: 'diamond'
-        }),
+        } as CheckFieldDefinition),
     ]
 }
 

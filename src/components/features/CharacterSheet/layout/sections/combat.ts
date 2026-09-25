@@ -1,6 +1,8 @@
 import {numberGrid} from '../../../../../lib/fieldNodes.ts'
 import {inputNode} from '../nodes.ts'
 
+import type {CheckFieldDefinition} from "../../../../../types/CheckFieldDefinition.ts";
+
 /**
  * Combat fields: armor class, speeds, hit points, and conditions.
  */
@@ -15,8 +17,9 @@ export const combat = {
         width: 7.25,
         height: 9,
         type: 'check',
-        shape: 'star'
-    }),
+        shape: 'star',
+        defaultValue: true
+    } as CheckFieldDefinition),
     speed: numberGrid(
         inputNode,
         [

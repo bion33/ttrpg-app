@@ -3,6 +3,7 @@ import {atom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
 import type {FieldDefinition} from '../types/FieldDefinition.ts'
 import type {DerivedNode, FieldNode, InputNode, NodeTree} from '../types/FieldNode.ts'
+import type {CheckFieldDefinition} from "../types/CheckFieldDefinition.ts";
 
 /**
  * A generic system for overlaying form fields on artwork, backed by jotai atoms.
@@ -27,10 +28,12 @@ export function createFieldFactory(storagePrefix: string) {
     /**
      * Builds a writable, persisted field node from its definition.
      */
-    function inputNode(def: FieldDefinition): InputNode {
+    function inputNode(def: FieldDefinition | CheckFieldDefinition): InputNode {
+        // Field values are stored as strings; normalize any default (number/boolean) to match.
+        const initial = def.defaultValue === undefined ? '' : String(def.defaultValue)
         return {
             def,
-            atom: atomWithStorage(storageKey(def.id), def.defaultValue ?? '', undefined, {getOnInit: true}),
+            atom: atomWithStorage(storageKey(def.id), initial, undefined, {getOnInit: true}),
         }
     }
 
@@ -40,7 +43,7 @@ export function createFieldFactory(storagePrefix: string) {
 /**
  * Builds a read-only field node whose value is computed from other atoms.
  */
-export function derivedNode(def: FieldDefinition, read: (get: Getter) => string): DerivedNode {
+export function derivedNode(def: FieldDefinition | CheckFieldDefinition, read: (get: Getter) => string): DerivedNode {
     return {
         def,
         readOnly: true,
