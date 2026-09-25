@@ -2,15 +2,15 @@ import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
 import FieldForeignObject from '../FieldForeignObject/FieldForeignObject'
 import './CheckboxInput.css'
 
-// The checked mark is drawn as a native SVG shape (a <circle>, or a <polygon>
-// diamond/star) in the artwork's own coordinate space (not a CSS fill inside
-// the <foreignObject>). Firefox snaps foreignObject content to device pixels
-// differently for screen vs. print, so a CSS-drawn dot drifts on the x-axis
-// when printed; an SVG circle does not. The <input> functions purely as a
-// transparent hit target.
+/**
+ * The checked mark is drawn as a native SVG shape (circle, diamond, or star) in
+ * the artwork's coordinate space; the <input> is a transparent hit target. An
+ * SVG shape, unlike a CSS fill in the <foreignObject>, stays put when printed.
+ */
 
-// Points for a regular n-pointed star, first point at the top (12 o'clock),
-// alternating between the outer radius and innerRatio * outer radius.
+/**
+ * Points for a regular n-pointed star, first point at the top (12 o'clock).
+ */
 function starPoints(cx: number, cy: number, outer: number, innerRatio = 0.4, n = 5) {
     return Array.from({length: n * 2}, (_, i) => {
         const radius = i % 2 === 0 ? outer : outer * innerRatio
@@ -19,6 +19,9 @@ function starPoints(cx: number, cy: number, outer: number, innerRatio = 0.4, n =
     }).join(' ')
 }
 
+/**
+ * Checkbox field control; renders the checked mark as an SVG shape.
+ */
 function CheckboxInput({
                            field,
                            value,
@@ -33,7 +36,7 @@ function CheckboxInput({
     const cx = field.x + field.width / 2
     const cy = field.y + field.height / 2
     const r = Math.min(field.width, field.height) * 0.32
-    // 'black' (and omitted) fall through to the CSS default fill (the artwork ink).
+    // Non-default colors override the CSS fill.
     const fillStyle = field.color && field.color !== 'black' ? {fill: field.color} : undefined
 
     return (

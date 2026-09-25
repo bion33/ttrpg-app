@@ -5,9 +5,9 @@ import FieldForeignObject from '../FieldForeignObject/FieldForeignObject'
 const DEFAULT_FONT_SIZE = 9
 const MIN_FONT_SIZE = 6
 
-// Shrinks the input's font size (from its configured/max size) just enough
-// that the text stops overflowing the field, and grows it back toward that
-// max as room frees up (e.g. after deleting characters).
+/**
+ * Text input whose font size auto-fits its value to the field width.
+ */
 function AutoFitInput({
                           field,
                           value,

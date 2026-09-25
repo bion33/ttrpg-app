@@ -1,12 +1,14 @@
 import {useEffect, useRef, useState} from 'react'
 import './CharacterSheet.css'
 import FieldInput from '../../ui/FieldInput/FieldInput'
-import {Fields} from './fields.ts'
+import {Fields} from './layout/sheet.ts'
 
 const SVG_URL = '/character-sheet/character-sheet.svg'
 const VIEW_BOX = '0 0 816 1055.867'
-const STORAGE_PREFIX = 'characterSheet'
 
+/**
+ * Fetches and injects the artwork SVG and renders the overlay fields inside it.
+ */
 function CharacterSheet() {
     const [artworkMarkup, setArtworkMarkup] = useState<string | null>(null)
     const svgRef = useRef<SVGSVGElement>(null)
@@ -30,8 +32,8 @@ function CharacterSheet() {
             xmlns="http://www.w3.org/2000/svg"
         >
             <g dangerouslySetInnerHTML={{__html: artworkMarkup}}/>
-            {Fields.map((field) => (
-                <FieldInput key={field.id} field={field} storagePrefix={STORAGE_PREFIX}/>
+            {Fields.map((node) => (
+                <FieldInput key={node.def.id} node={node}/>
             ))}
         </svg>
     )

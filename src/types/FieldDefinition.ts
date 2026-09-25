@@ -1,7 +1,6 @@
-// Overlay field positions, in the *same* coordinate space as the artwork's
-// viewBox (not pixels). Because both the <image>/<path> artwork and these
-// <foreignObject> inputs live inside one <svg viewBox="...">, the browser
-// scales them together - no separate resize-tracking logic needed.
+/**
+ * Layout for one overlay field, in the artwork's viewBox coordinate space (not pixels).
+ */
 export type FieldDefinition = {
     id: string
     x: number

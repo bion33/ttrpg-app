@@ -1,3 +1,17 @@
+/* Fonts referenced by the artwork SVG (and the overlaid form controls), bundled so the sheet renders
+   identically without relying on host-installed fonts. "Times-Roman" maps to metric-compatible Liberation Serif. */
+@font-face {
+    font-family: 'Mongolian Baiti';
+    src: url('/fonts/MongolianBaiti.ttf') format('truetype');
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Times-Roman';
+    src: url('/fonts/LiberationSerif.ttf') format('truetype');
+    font-display: swap;
+}
+
 .character-sheet {
     display: block;
     width: 100%;

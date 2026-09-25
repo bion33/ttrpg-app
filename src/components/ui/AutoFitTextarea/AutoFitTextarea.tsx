@@ -6,9 +6,9 @@ import './AutoFitTextarea.css'
 const DEFAULT_FONT_SIZE = 9
 const MIN_FONT_SIZE = 6
 
-// Multi-line variant of AutoFitInput: shrinks the font size (from its
-// configured/max size) just enough that the text stops overflowing the field
-// vertically, and grows it back toward that max as room frees up.
+/**
+ * Multi-line variant of AutoFitInput: font size auto-fits the value to the field height.
+ */
 function AutoFitTextarea({
                              field,
                              value,
