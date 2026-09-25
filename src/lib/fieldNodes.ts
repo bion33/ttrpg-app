@@ -10,6 +10,8 @@ import type {DerivedNode, FieldNode, InputNode, NodeTree} from '../types/FieldNo
  * holds its value, so a field's position and its state are one thing.
  */
 
+// ---- EXPORTED FUNCTIONS ----
+
 /**
  * A factory bound to a storage-key prefix. Instantiate once per form so every
  * input field shares the prefix (and thus a stable localStorage key namespace).
@@ -56,13 +58,6 @@ export function collectNodes(tree: NodeTree): FieldNode[] {
 }
 
 /**
- * Whether a tree is a single field node rather than a group.
- */
-function isFieldNode(tree: NodeTree): tree is FieldNode {
-    return 'def' in tree
-}
-
-/**
  * Places number fields on a grid; ids[row][col] is each cell's field id.
  */
 export function numberGrid(
@@ -81,4 +76,13 @@ export function numberGrid(
             fontSize: opts.fontSize,
         })),
     )
+}
+
+// ---- PRIVATE FUNCTIONS ----
+
+/**
+ * Whether a tree is a single field node rather than a group.
+ */
+function isFieldNode(tree: NodeTree): tree is FieldNode {
+    return 'def' in tree
 }

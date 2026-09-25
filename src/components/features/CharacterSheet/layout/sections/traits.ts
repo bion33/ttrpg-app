@@ -2,14 +2,10 @@ import type {FieldDefinition} from '../../../../../types/FieldDefinition.ts'
 import type {FieldNode} from '../../../../../types/FieldNode.ts'
 import {inputNode} from '../nodes.ts'
 
+// ---- INTERNAL CONSTANTS ----
+
 const DAMAGE_ROW_STEP = 12.67    // vertical gap between damage-type rows
 const DAMAGE_COL_STEP = 6.67     // horizontal gap: immunity -> resistance -> vulnerability
-
-/**
- * One damage-type column group: its x anchor and the types stacked in it.
- */
-type DamageBlock = { x: number; types: string[] }
-
 const DAMAGE_BLOCK_Y = 271.73
 
 /**
@@ -27,29 +23,14 @@ const DAMAGE_LEVELS: { suffix: string; color: FieldDefinition['color'] }[] = [
     {suffix: 'Vulnerability', color: 'firebrick'},
 ]
 
-/**
- * Immunity/resistance/vulnerability checkboxes for one damage type.
- */
-function damageTypeRow(type: string, blockX: number, y: number): FieldNode[] {
-    return DAMAGE_LEVELS.map((lvl, col) => inputNode({
-        id: `${type}${lvl.suffix}`,
-        x: blockX + col * DAMAGE_COL_STEP,
-        y,
-        width: 6,
-        height: 6,
-        type: 'check',
-        color: lvl.color,
-    }))
-}
+// ---- INTERNAL TYPES ----
 
 /**
- * All damage-type rows for one column group.
+ * One damage-type column group: its x anchor and the types stacked in it.
  */
-function damageBlock(block: DamageBlock): FieldNode[] {
-    return block.types.flatMap((type, row) =>
-        damageTypeRow(type, block.x, DAMAGE_BLOCK_Y + row * DAMAGE_ROW_STEP),
-    )
-}
+type DamageBlock = { x: number; types: string[] }
+
+// ---- EXPORTED CONSTANTS ----
 
 /**
  * Free-text notes field.
@@ -80,4 +61,30 @@ export const proficiencies = {
         type: 'textarea',
         fontSize: 12
     }),
+}
+
+// ---- PRIVATE FUNCTIONS ----
+
+/**
+ * Immunity/resistance/vulnerability checkboxes for one damage type.
+ */
+function damageTypeRow(type: string, blockX: number, y: number): FieldNode[] {
+    return DAMAGE_LEVELS.map((lvl, col) => inputNode({
+        id: `${type}${lvl.suffix}`,
+        x: blockX + col * DAMAGE_COL_STEP,
+        y,
+        width: 6,
+        height: 6,
+        type: 'check',
+        color: lvl.color,
+    }))
+}
+
+/**
+ * All damage-type rows for one column group.
+ */
+function damageBlock(block: DamageBlock): FieldNode[] {
+    return block.types.flatMap((type, row) =>
+        damageTypeRow(type, block.x, DAMAGE_BLOCK_Y + row * DAMAGE_ROW_STEP),
+    )
 }
