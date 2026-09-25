@@ -23,10 +23,10 @@ function starPoints(cx: number, cy: number, outer: number, innerRatio = 0.4, n =
  * Checkbox field control; renders the checked mark as an SVG shape.
  */
 function CheckInput({
-                           field,
-                           value,
-                           onChange,
-                       }: {
+                        field,
+                        value,
+                        onChange,
+                    }: {
     field: CheckFieldDefinition
     value: string
     onChange: (value: string) => void

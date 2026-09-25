@@ -1,7 +1,36 @@
+import type {Getter} from 'jotai'
+import {atom} from 'jotai'
 import {numberGrid} from '../../../../../lib/fieldNodes.ts'
-import {inputNode} from '../nodes.ts'
+import {halfSpeed} from '../../logic/formulas.ts'
+import {computedInputNode, inputNode} from '../nodes.ts'
 
 import type {CheckFieldDefinition} from "../../../../../types/CheckFieldDefinition.ts";
+
+// Toggle for the climb/swim speed auto-calculation; when checked, both are derived from run speed.
+const enableSpeedCalc = inputNode({
+    id: 'enableSpeedCalc',
+    x: 480.01,
+    y: 180.05,
+    width: 7.25,
+    height: 9,
+    type: 'check',
+    shape: 'star',
+    defaultValue: true
+} as CheckFieldDefinition)
+
+// True while climb/swim speeds should be auto-calculated rather than typed in.
+const speedCalcEnabled = atom((get) => get(enableSpeedCalc.atom) === 'true')
+
+// The walking speed both climb and swim are derived from when auto-calc is on.
+const runSpeed = inputNode({id: 'runSpeed', x: 458, y: 202, width: 26, height: 18, type: 'number', fontSize: 16})
+
+// Climb/swim = half the walking speed while auto-calc is on, an editable input otherwise.
+function halfRunSpeed(get: Getter): string {
+    const raw = get(runSpeed.atom).trim()
+    if (raw === '') return ''
+    const value = Number(raw)
+    return Number.isNaN(value) ? '' : String(halfSpeed(value))
+}
 
 /**
  * Combat fields: armor class, speeds, hit points, and conditions.
@@ -10,24 +39,21 @@ export const combat = {
     armorClass: inputNode({id: 'armorClass', x: 308, y: 206, width: 42, height: 32, type: 'number', fontSize: 28}),
     darkvision: inputNode({id: 'darkvision', x: 392, y: 172, width: 26, height: 16, type: 'number', fontSize: 14}),
     initiative: inputNode({id: 'initiative', x: 380, y: 206, width: 50, height: 32, type: 'number', fontSize: 28}),
-    enableSpeedCalc: inputNode({
-        id: 'enableSpeedCalc',
-        x: 480.01,
-        y: 180.05,
-        width: 7.25,
-        height: 9,
-        type: 'check',
-        shape: 'star',
-        defaultValue: true
-    } as CheckFieldDefinition),
-    speed: numberGrid(
-        inputNode,
-        [
-            ['runSpeed', 'climbSpeed'],
-            ['swimSpeed', 'flySpeed'],
-        ],
-        {x0: 458, y0: 202, colStep: 24, rowStep: 20, width: 26, height: 18, fontSize: 16},
-    ),
+    enableSpeedCalc,
+    speed: {
+        runSpeed,
+        climbSpeed: computedInputNode(
+            {id: 'climbSpeed', x: 482, y: 202, width: 26, height: 18, type: 'number', fontSize: 16},
+            speedCalcEnabled,
+            halfRunSpeed,
+        ),
+        swimSpeed: computedInputNode(
+            {id: 'swimSpeed', x: 458, y: 222, width: 26, height: 18, type: 'number', fontSize: 16},
+            speedCalcEnabled,
+            halfRunSpeed,
+        ),
+        flySpeed: inputNode({id: 'flySpeed', x: 482, y: 222, width: 26, height: 18, type: 'number', fontSize: 16}),
+    },
     maxHitPoints: inputNode({id: 'maxHitPoints', x: 387, y: 252, width: 36, height: 24, type: 'number', fontSize: 22}),
     temporaryHitPoints: inputNode({
         id: 'temporaryHitPoints',

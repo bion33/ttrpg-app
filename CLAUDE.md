@@ -39,13 +39,19 @@ jotai atom holding its value. Position and state are one object.
 - `FieldDefinition` — layout for one field: `id`, `x/y/width/height` (viewBox
   units, **not pixels**), `type` (`text | textarea | number | check`), and
   optional `shape`, `color`, `fontSize`, `textAlign`, `defaultValue`.
-- `FieldNode` — an `InputNode` (writable, persisted atom via `atomWithStorage`)
-  or a `DerivedNode` (read-only atom computed from other atoms, not persisted).
-- `createFieldFactory(prefix)` returns an `inputNode` builder bound to a
-  storage-key prefix. **One factory instance per form** — see
-  `layout/nodes.ts`; do not create another, or fields would split across
+- `FieldNode` — an `InputNode` (writable atom; either persisted via
+  `atomWithStorage` or computed-with-fallback) or a `DerivedNode` (read-only
+  atom computed from other atoms, not persisted). An `InputNode` may carry an
+  optional `readOnlyAtom` that locks editing at runtime.
+- `createFieldFactory(prefix)` returns `inputNode` and `computedInputNode`
+  builders bound to a storage-key prefix. **One factory instance per form** —
+  see `layout/nodes.ts`; do not create another, or fields would split across
   localStorage namespaces.
 - `derivedNode(def, read)` builds a computed field.
+- `computedInputNode(def, enabled, compute)` builds a hybrid field: while the
+  `enabled` atom is true it shows `compute(get)` and is read-only; otherwise it
+  is an ordinary editable, persisted input (e.g. passive Perception, auto-calc
+  toggled by a checkbox).
 - `collectNodes(tree)` flattens a `NodeTree` (nodes nested in arrays / records)
   into a flat render list. `numberGrid(...)` is a helper for grid-placed number
   fields.
@@ -74,7 +80,8 @@ jotai atom holding its value. Position and state are one object.
 `FieldInput` picks the control for a field's `type`: `NumericInput`,
 `AutoFitInput` (text), `AutoFitTextarea`, `CheckInput`. `FieldForeignObject`
 positions any control in SVG coordinate space. Writable fields two-way bind to
-their atom; derived fields subscribe read-only.
+their atom (and go read-only when their optional `readOnlyAtom` is true); derived
+fields subscribe read-only.
 
 ## Conventions
 

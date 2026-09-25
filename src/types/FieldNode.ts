@@ -1,4 +1,4 @@
-import type {Atom} from 'jotai'
+import type {Atom, WritableAtom} from 'jotai'
 import type {atomWithStorage} from 'jotai/utils'
 import type {FieldDefinition} from './FieldDefinition.ts'
 
@@ -8,9 +8,20 @@ import type {FieldDefinition} from './FieldDefinition.ts'
 export type StoredAtom = ReturnType<typeof atomWithStorage<string>>
 
 /**
- * An editable field: its atom is writable and persisted to localStorage.
+ * Any string-valued atom the UI can two-way bind: a stored atom or a computed writable atom.
  */
-export type InputNode = { readOnly?: false; def: FieldDefinition; atom: StoredAtom }
+export type WritableStringAtom = WritableAtom<string, [string], void>
+
+/**
+ * An editable field: its atom is writable (persisted, or computed-with-fallback). `readOnlyAtom`, when
+ * present, toggles editability at runtime (e.g. a computed field locked while its auto-calc is enabled).
+ */
+export type InputNode = {
+    readOnly?: false
+    def: FieldDefinition
+    atom: WritableStringAtom
+    readOnlyAtom?: Atom<boolean>
+}
 
 /**
  * A computed field: read-only, derived from other atoms, never persisted.

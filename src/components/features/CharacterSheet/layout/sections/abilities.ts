@@ -1,7 +1,8 @@
 import type {Getter} from 'jotai'
+import {atom} from 'jotai'
 import type {DerivedNode, InputNode} from '../../../../../types/FieldNode.ts'
-import {abilityModifier, formatModifier, skillBonus} from '../../logic/formulas.ts'
-import {derivedNode, inputNode} from '../nodes.ts'
+import {abilityModifier, formatModifier, passivePerception, skillBonus} from '../../logic/formulas.ts'
+import {computedInputNode, derivedNode, inputNode} from '../nodes.ts'
 
 import type {CheckFieldDefinition} from "../../../../../types/CheckFieldDefinition.ts";
 
@@ -98,6 +99,21 @@ export type AbilityNodes<A extends AbilityConfig> = {
 
 // ---- EXPORTED CONSTANTS ----
 
+// Toggle for the passive-perception auto-calculation; when checked, passive Perception is derived.
+const enablePassivePerceptionCalc = inputNode({
+    id: 'enablePassivePerceptionCalc',
+    x: 152.98,
+    y: 208.17,
+    width: 7.25,
+    height: 9,
+    type: 'check',
+    shape: 'star',
+    defaultValue: true
+} as CheckFieldDefinition)
+
+// True while passive Perception should be auto-calculated rather than typed in.
+const passivePerceptionCalcEnabled = atom((get) => get(enablePassivePerceptionCalc.atom) === 'true')
+
 /**
  * Ability-area meta fields: proficiency bonus, inspiration, passive perception.
  */
@@ -112,25 +128,25 @@ export const abilityMeta = {
         fontSize: 28
     }),
     inspiration: inputNode({id: 'inspiration', x: 151, y: 172, width: 11, height: 11, type: 'check'}),
-    enablePassivePerceptionCalc: inputNode({
-        id: 'enablePassivePerceptionCalc',
-        x: 152.98,
-        y: 208.17,
-        width: 7.25,
-        height: 9,
-        type: 'check',
-        shape: 'star',
-        defaultValue: true
-    } as CheckFieldDefinition),
-    passivePerception: inputNode({
-        id: 'passivePerception',
-        x: 229.33,
-        y: 166.27,
-        width: 40,
-        height: 32,
-        type: 'number',
-        fontSize: 28
-    }),
+    enablePassivePerceptionCalc,
+    passivePerception: computedInputNode(
+        {
+            id: 'passivePerception',
+            x: 229.33,
+            y: 166.27,
+            width: 40,
+            height: 32,
+            type: 'number',
+            fontSize: 28
+        },
+        passivePerceptionCalcEnabled,
+        (get) => {
+            const rawBonus = get(abilities.wisdom.skills.perception.bonus.atom).trim()
+            if (rawBonus === '') return ''
+            const bonus = Number(rawBonus)
+            return Number.isNaN(bonus) ? '' : String(passivePerception(bonus))
+        },
+    ),
 }
 
 /**

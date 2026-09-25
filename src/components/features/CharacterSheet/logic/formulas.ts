@@ -25,3 +25,17 @@ export function skillBonus(modifier: number, proficiencyBonus: number, proficien
 export function formatModifier(modifier: number): string {
     return modifier >= 0 ? `+${modifier}` : `${modifier}`
 }
+
+/**
+ * The D&D 5e passive Perception score: 10 plus the creature's Perception check modifier.
+ */
+export function passivePerception(perceptionModifier: number): number {
+    return 10 + perceptionModifier
+}
+
+/**
+ * The D&D 5e climb/swim speed derived from a walking speed: half of it, rounded down.
+ */
+export function halfSpeed(walkingSpeed: number): number {
+    return Math.floor(walkingSpeed / 2)
+}

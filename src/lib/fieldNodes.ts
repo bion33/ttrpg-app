@@ -1,4 +1,4 @@
-import type {Getter} from 'jotai'
+import type {Atom, Getter} from 'jotai'
 import {atom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
 import type {FieldDefinition} from '../types/FieldDefinition.ts'
@@ -37,7 +37,27 @@ export function createFieldFactory(storagePrefix: string) {
         }
     }
 
-    return {inputNode}
+    /**
+     * Builds a field that shows a computed value while `enabled` holds, and is an editable persisted input otherwise.
+     */
+    function computedInputNode(
+        def: FieldDefinition | CheckFieldDefinition,
+        enabled: Atom<boolean>,
+        compute: (get: Getter) => string,
+    ): InputNode {
+        const initial = def.defaultValue === undefined ? '' : String(def.defaultValue)
+        const stored = atomWithStorage(storageKey(def.id), initial, undefined, {getOnInit: true})
+        const value = atom(
+            (get) => (get(enabled) ? compute(get) : get(stored)),
+            (get, set, next: string) => {
+                // Writes are dropped while the computed value is in effect.
+                if (!get(enabled)) set(stored, next)
+            },
+        )
+        return {def, atom: value, readOnlyAtom: enabled}
+    }
+
+    return {inputNode, computedInputNode}
 }
 
 /**

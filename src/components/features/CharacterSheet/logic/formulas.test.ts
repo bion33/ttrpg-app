@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {abilityModifier, formatModifier, skillBonus} from './formulas.ts'
+import {abilityModifier, formatModifier, halfSpeed, passivePerception, skillBonus} from './formulas.ts'
 
 describe('abilityModifier', () => {
     it('is 0 for the baseline scores 10 and 11', () => {
@@ -47,5 +47,21 @@ describe('formatModifier', () => {
     it('keeps the minus sign on negative modifiers', () => {
         expect(formatModifier(-1)).toBe('-1')
         expect(formatModifier(-5)).toBe('-5')
+    })
+})
+
+describe('passivePerception', () => {
+    it('is 10 plus the Perception modifier', () => {
+        expect(passivePerception(0)).toBe(10)
+        expect(passivePerception(3)).toBe(13)
+        expect(passivePerception(-2)).toBe(8)
+    })
+})
+
+describe('halfSpeed', () => {
+    it('halves the walking speed, rounding down', () => {
+        expect(halfSpeed(30)).toBe(15)
+        expect(halfSpeed(25)).toBe(12)
+        expect(halfSpeed(0)).toBe(0)
     })
 })

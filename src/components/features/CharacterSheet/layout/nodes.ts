@@ -6,5 +6,5 @@ import {createFieldFactory, derivedNode} from '../../../../lib/fieldNodes.ts'
  * 'characterSheet' storage prefix - do NOT create another factory elsewhere, or
  * fields would diverge onto different localStorage key namespaces.
  */
-export const {inputNode} = createFieldFactory('characterSheet')
+export const {inputNode, computedInputNode} = createFieldFactory('characterSheet')
 export {derivedNode}
