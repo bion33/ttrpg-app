@@ -37,6 +37,9 @@ function halfRunSpeed(get: Getter): string {
  */
 export const combat = {
     armorClass: inputNode({id: 'armorClass', x: 308, y: 206, width: 42, height: 32, type: 'number', fontSize: 28}),
+    shield: inputNode(
+        {id: 'shield', x: 342.5, y: 234.5, width: 14, height: 14, type: 'check', shape: 'diamond'} as CheckFieldDefinition
+    ),
     darkvision: inputNode({id: 'darkvision', x: 392, y: 172, width: 26, height: 16, type: 'number', fontSize: 14}),
     initiative: inputNode({id: 'initiative', x: 380, y: 206, width: 50, height: 32, type: 'number', fontSize: 28}),
     enableSpeedCalc,
