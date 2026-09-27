@@ -1,8 +1,7 @@
 import {Plus} from 'lucide-react'
 import type {CSSProperties, PointerEvent} from 'react'
-import {useRef, useState} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import './Tabs.css'
-import {tabHue} from './logic/tabHue.ts'
 
 /**
  * One selectable tab: its stable key and the label shown on the rotated paper tab.
@@ -10,6 +9,8 @@ import {tabHue} from './logic/tabHue.ts'
 export interface TabItem {
     id: string
     label: string
+    // Paper-tab hue (degrees), fixed when the page is created so it survives reordering.
+    hue: number
 }
 
 /**
@@ -47,6 +48,15 @@ function Tabs({tabs, activeId, onSelect, onAdd, onReorder}: TabsProps) {
     const [drag, setDrag] = useState<{id: string; fromIndex: number; tops: number[]} | null>(null)
     const [dragOffset, setDragOffset] = useState(0)
     const [target, setTarget] = useState(0)
+    // True for the single commit frame after a drop, while tabs snap to their reordered slots without gliding.
+    const [committing, setCommitting] = useState(false)
+
+    // Re-enables the glide once the reorder has painted, so the snap-to-new-slot frame is not itself animated.
+    useEffect(() => {
+        if (!committing) return
+        const frame = requestAnimationFrame(() => setCommitting(false))
+        return () => cancelAnimationFrame(frame)
+    }, [committing])
 
     // Begins dragging a tab, capturing the pointer and each tab's current top.
     function onPointerDown(event: PointerEvent<HTMLButtonElement>, index: number, id: string) {
@@ -83,7 +93,10 @@ function Tabs({tabs, activeId, onSelect, onAdd, onReorder}: TabsProps) {
         const state = dragRef.current
         if (!state) return
         dragRef.current = null
-        if (state.target !== state.fromIndex) onReorder(state.fromIndex, state.target)
+        if (state.target !== state.fromIndex) {
+            onReorder(state.fromIndex, state.target)
+            setCommitting(true)
+        }
         setDrag(null)
         setDragOffset(0)
     }
@@ -113,13 +126,14 @@ function Tabs({tabs, activeId, onSelect, onAdd, onReorder}: TabsProps) {
                     type="button"
                     className={`tabs__tab${tab.id === activeId ? ' tabs__tab--active' : ''}`}
                     style={{
-                        '--hue': tabHue(index),
+                        '--hue': tab.hue,
                         // The dragged tab rides above everything; otherwise the active tab (over the page at z 10)
                         // notches the border, and among inactive tabs earlier ones stack over later ones.
                         zIndex: tab.id === drag?.id ? 200 : tab.id === activeId ? 100 : tabs.length - index,
                         transform: tabTransform(index),
-                        // The dragged tab tracks the pointer with no easing; the displaced tabs keep the CSS glide.
-                        transition: tab.id === drag?.id ? 'none' : undefined,
+                        // The dragged tab tracks the pointer with no easing, and on drop every tab snaps to its
+                        // reordered slot for one frame without gliding; otherwise displaced tabs keep the CSS glide.
+                        transition: tab.id === drag?.id || committing ? 'none' : undefined,
                     } as CSSProperties}
                     aria-current={tab.id === activeId ? 'page' : undefined}
                     onPointerDown={(event) => onPointerDown(event, index, tab.id)}

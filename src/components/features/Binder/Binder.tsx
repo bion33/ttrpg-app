@@ -43,7 +43,7 @@ function Binder() {
     // Appends a new page of the chosen type, its id (and character-sheet storage prefix) derived from the name.
     function createPage(name: string, type: PageType) {
         const id = uniqueId(name, pages.map((page) => page.id))
-        setPages([...pages, {id, label: name, type, storagePrefix: id}])
+        setPages([...pages, {id, label: name, type, storagePrefix: id, hue: tabHue(pages.length)}])
         setActiveId(id)
         setAdding(false)
     }
@@ -59,7 +59,7 @@ function Binder() {
     }
 
     return (
-        <div className="app-shell" style={{'--active-hue': tabHue(activeIndex)} as CSSProperties}>
+        <div className="app-shell" style={{'--active-hue': active?.hue ?? 0} as CSSProperties}>
             <main className="page">{active ? renderPage(active) : <EmptyPage/>}</main>
             <Tabs tabs={pages} activeId={active?.id ?? ''} onSelect={setActiveId} onAdd={() => setAdding(true)}
                   onReorder={reorderPages}/>
