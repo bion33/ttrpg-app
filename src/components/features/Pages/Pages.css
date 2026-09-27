@@ -4,7 +4,7 @@
 .app-shell {
     position: relative;
     /* ~5% gutters: left of the page and right of the tab strip. */
-    margin: 40px 5%;
+    margin: 2.5rem 5%;
 }
 
 .page {
@@ -12,7 +12,7 @@
     /* Above the inactive tabs (which they tuck under) but below the active tab (which notches the border). */
     z-index: 10;
     /* Reserve the full tab-strip width on the right so the tabs sit flush against the page edge, not over it. */
-    margin-right: 34px;
+    margin-right: 2.125rem;
     /* Border matches the active tab's border colour (--active-hue set in App.tsx) so the two read as one unit. */
     border: 1px solid hsl(var(--active-hue, 38) 45% 40%);
     box-shadow: 0 6px 22px rgba(0, 0, 0, 0.22);

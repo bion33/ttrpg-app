@@ -1,3 +1,4 @@
+import {Plus} from 'lucide-react'
 import './VerticalTabs.css'
 import {tabHue} from './tabHue.ts'
 
@@ -16,12 +17,14 @@ interface VerticalTabsProps {
     tabs: TabItem[]
     activeId: string
     onSelect: (id: string) => void
+    // Invoked by the trailing "+" tab to request a new page.
+    onAdd: () => void
 }
 
 /**
  * Vertical, right-aligned tab strip styled like coloured paper binder tabs, with each label rotated 90° CCW.
  */
-function VerticalTabs({tabs, activeId, onSelect}: VerticalTabsProps) {
+function VerticalTabs({tabs, activeId, onSelect, onAdd}: VerticalTabsProps) {
     return (
         <nav className="vertical-tabs" aria-label="Pages">
             {tabs.map((tab, index) => (
@@ -41,6 +44,16 @@ function VerticalTabs({tabs, activeId, onSelect}: VerticalTabsProps) {
                     <span className="vertical-tabs__label">{tab.label}</span>
                 </button>
             ))}
+            <button
+                type="button"
+                className="vertical-tabs__tab vertical-tabs__tab--add"
+                style={{zIndex: 0} as React.CSSProperties}
+                aria-label="Add tab"
+                title="Add tab"
+                onClick={onAdd}
+            >
+                <Plus className="vertical-tabs__add-icon" aria-hidden="true"/>
+            </button>
         </nav>
     )
 }

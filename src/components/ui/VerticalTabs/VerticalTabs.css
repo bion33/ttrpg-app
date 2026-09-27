@@ -1,5 +1,5 @@
 /* Coloured paper binder tabs sitting flush against the right edge of the page (the page reserves the strip's
-   34px width). Each tab picks a hue from --tab-hue (its index) so the strip cycles through the muted binder-tab
+   2.125rem width). Each tab picks a hue from --tab-hue (its index) so the strip cycles through the muted binder-tab
    palette; the active tab is lifted with a drop shadow to read as the pulled-out, attached tab. */
 
 .vertical-tabs {
@@ -11,19 +11,20 @@
 }
 
 .vertical-tabs__tab {
-    /* --hue (degrees) is set per tab from tabHue(index) in VerticalTabs.tsx. */
+    /* --hue (degrees) is set per tab from tabHue(index) in VerticalTabs.tsx; the fallback keeps it defined. */
+    --hue: 0;
     position: relative;
-    width: 34px;
-    min-height: 96px;
-    /* Every tab overlaps the page's right border by 2px so their right edges stay aligned; only the active tab
-       sits above the page (via z-index), covering the border into a gap — inactive tabs stay tucked behind it. */
-    left: -2px;
+    width: 2.125rem;
+    min-height: 6rem;
+    /* Every tab overlaps the page's right border by 0.125rem so their right edges stay aligned; only the active
+       tab sits above the page (via z-index), covering the border into a gap — inactive tabs stay tucked behind it. */
+    left: -0.125rem;
     /* Pull each tab up so its top slips under the previous tab's bottom (z-index set per tab). */
-    margin-top: -10px;
+    margin-top: -0.625rem;
     padding: 0;
     border: 1px solid rgba(0, 0, 0, 0.22);
     border-left: none;
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 0.5rem 0.5rem 0;
     background: hsl(var(--hue) 55% 82%);
     color: hsl(var(--hue) 45% 22%);
     cursor: pointer;
@@ -39,27 +40,36 @@
 }
 
 .vertical-tabs__tab--active {
-    background: hsl(var(--hue) 62% 90%);
-    border-color: hsl(var(--hue) 45% 40%);
     /* Lift outward (down/right, away from the page) so it reads as the pulled-out, attached tab. */
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
 }
 
-/* The bundled label font has no bold face, so thicken the glyphs with a stroke instead of a (no-op) weight. */
-.vertical-tabs__tab--active .vertical-tabs__label {
-    font-weight: bold;
-    -webkit-text-stroke: 0.4px currentColor;
+/* The "+" tab is the only colourless tab — neutral grey paper — carrying the plus icon instead of a label. */
+.vertical-tabs__tab--add {
+    background: hsl(0 0% 85%);
+    color: hsl(0 0% 30%);
+}
+
+.vertical-tabs__tab--add:hover {
+    background: hsl(0 0% 89%);
+}
+
+.vertical-tabs__add-icon {
+    display: block;
+    width: 1rem;
+    height: 1rem;
+    margin: 1rem auto;
 }
 
 .vertical-tabs__label {
     display: block;
     /* vertical-rl + 180° rotation reads bottom-to-top (text rotated 90° counter-clockwise). */
-    writing-mode: vertical-rl;
+    writing-mode: vertical-lr;
     transform: rotate(180deg);
-    padding: 12px 0;
-    font-family: 'Times-Roman', serif;
-    font-size: 15px;
-    letter-spacing: 0.04em;
+    padding: 2rem .4rem;
+    font-family: 'Mongolian Baiti', serif;
+    font-size: 1rem;
+    text-transform: uppercase;
     white-space: nowrap;
     user-select: none;
 }

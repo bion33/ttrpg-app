@@ -75,16 +75,22 @@ jotai atom holding its value. Position and state are one object.
     unit-tested in `formulas.test.ts`. Atoms wire these into derived fields.
   - `CharacterSheet.tsx` — fetches/injects the artwork SVG and renders `Fields`.
 
-### App shell & navigation (`src/App.tsx`)
+### App shell & navigation (`src/App.tsx`, `src/components/features/Pages/`)
 
-`App` holds the `PAGES` registry — one `Page` per navigable page (`stats` →
-`CharacterSheet`, plus `description`/`equipment`/`spells` placeholders) — and
-renders the active page in a `.page` wrapper (`App.css`, which only carries the
-drop shadow and reserves room for the tabs — the page content styles itself)
-beside `VerticalTabs`, both inside a full-width `.app-shell`. The active page id persists in `localStorage`
-via `atomWithStorage('activePage', …)`. Add a page by appending to `PAGES`; each
-entry pairs tab metadata with a `render()` returning its element. Real pages
-replace their `PlaceholderPage` stub.
+`App` is a thin root that just renders the `Pages` feature. `Pages`
+(`Pages.tsx`) owns the whole page area: it renders the active page in a `.page`
+wrapper (`Pages.css`, which only carries the drop shadow and reserves room for
+the tabs — the page content styles itself) beside `VerticalTabs`, both inside a
+full-width `.app-shell`.
+
+The page list is **dynamic and persisted**: a `Page` is just serialisable tab
+metadata (`id`, `label`), and `renderPage(page)` resolves it to an element —
+`stats` → `CharacterSheet`, every other id → a `PlaceholderPage` titled by its
+label (render functions are not serialisable, so pages store metadata only). The
+list lives in `atomWithStorage('pages', …)`, defaulting to just the `stats`
+page; the active page id persists via `atomWithStorage('activePage', …)`.
+`VerticalTabs` always shows a trailing "+" tab (its required `onAdd`) that
+prompts for a name and appends a new placeholder page.
 
 ### UI controls (`src/components/ui/`)
 

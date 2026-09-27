@@ -1,13 +1,13 @@
 .placeholder-page {
-    max-width: 816px;
-    margin: 90px auto 0;
-    padding: 0 24px;
+    max-width: 51rem;
+    margin: 5.625rem auto 0;
+    padding: 0 1.5rem;
     font-family: 'Times-Roman', serif;
     color: #333;
     text-align: center;
 }
 
 .placeholder-page h1 {
-    font-size: 32px;
-    margin-bottom: 12px;
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
 }
