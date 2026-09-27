@@ -75,13 +75,15 @@ jotai atom holding its value. Position and state are one object.
     unit-tested in `formulas.test.ts`. Atoms wire these into derived fields.
   - `CharacterSheet.tsx` — fetches/injects the artwork SVG and renders `Fields`.
 
-### App shell & navigation (`src/App.tsx`, `src/components/features/Pages/`)
+### Binder feature (`src/App.tsx`, `src/components/features/Binder/`)
 
-`App` is a thin root that just renders the `Pages` feature. `Pages`
-(`Pages.tsx`) owns the whole page area: it renders the active page in a `.page`
-wrapper (`Pages.css`, which only carries the drop shadow and reserves room for
-the tabs — the page content styles itself) beside `VerticalTabs`, both inside a
-full-width `.app-shell`.
+`App` is a thin root that just renders the `Binder` feature. `Binder`
+(`Binder.tsx`) owns the whole page area: it renders the active page in a `.page`
+wrapper (`Binder.css`, which only carries the drop shadow and reserves room for
+the tabs — the page content styles itself) beside its `Tabs` strip
+(`Tabs.tsx`/`Tabs.css`), both inside a full-width `.app-shell`. `Tabs` is
+feature-specific, so it lives in the feature folder, not in `ui/`;
+`logic/tabHue.ts` holds its pure per-index hue function.
 
 The page list is **dynamic and persisted**: a `Page` is just serialisable tab
 metadata (`id`, `label`), and `renderPage(page)` resolves it to an element —
@@ -89,15 +91,21 @@ metadata (`id`, `label`), and `renderPage(page)` resolves it to an element —
 label (render functions are not serialisable, so pages store metadata only). The
 list lives in `atomWithStorage('pages', …)`, defaulting to just the `stats`
 page; the active page id persists via `atomWithStorage('activePage', …)`.
-`VerticalTabs` always shows a trailing "+" tab (its required `onAdd`) that
+`Tabs` always shows a trailing "+" tab (its required `onAdd`) that
 prompts for a name and appends a new placeholder page.
+
+`Tabs` is the binder-style tab strip anchored to the page's right edge:
+labels rotated 90° CCW (`writing-mode: vertical-rl` + 180° rotation), one muted
+paper-tab hue per tab index. The strip sits flush against the page's right edge
+(the page reserves its width); the active tab is lifted with a drop shadow. Tabs can be
+dragged vertically to reorder (transform-based, so displaced tabs glide via the CSS
+`transform` transition); the drag also navigates to the tab (its click fires as normal),
+and drops are committed via `onReorder(from, to)` (`Binder` reorders and persists the
+`pages` list).
 
 ### UI controls (`src/components/ui/`)
 
-`VerticalTabs` is the binder-style tab strip anchored to the page's right edge:
-labels rotated 90° CCW (`writing-mode: vertical-rl` + 180° rotation), one muted
-paper-tab hue per tab index. The strip sits flush against the page's right edge
-(the page reserves its width); the active tab is lifted with a drop shadow. `FieldInput` picks the control for a field's `type`: `NumericInput`,
+`FieldInput` picks the control for a field's `type`: `NumericInput`,
 `AutoFitInput` (text), `AutoFitTextarea`, `CheckInput`. `FieldForeignObject`
 positions any control in SVG coordinate space. Writable fields two-way bind to
 their atom (and go read-only when their optional `readOnlyAtom` is true); derived

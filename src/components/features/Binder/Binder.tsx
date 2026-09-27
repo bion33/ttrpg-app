@@ -1,9 +1,9 @@
 import type {ReactNode} from 'react'
 import {useAtom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
-import './Pages.css'
-import VerticalTabs, {type TabItem} from '../../ui/VerticalTabs/VerticalTabs'
-import {tabHue} from '../../ui/VerticalTabs/tabHue.ts'
+import './Binder.css'
+import Tabs, {type TabItem} from './Tabs.tsx'
+import {tabHue} from './logic/tabHue.ts'
 import CharacterSheet from '../CharacterSheet/CharacterSheet'
 import PlaceholderPage from '../PlaceholderPage/PlaceholderPage'
 
@@ -31,7 +31,7 @@ function renderPage(page: Page): ReactNode {
 /**
  * The whole page area: the active page beside the binder-tab strip, with a "+" tab that appends a new page.
  */
-function Pages() {
+function Binder() {
     const [pages, setPages] = useAtom(pagesAtom)
     const [activeId, setActiveId] = useAtom(activePageAtom)
     const activeIndex = Math.max(0, pages.findIndex((page) => page.id === activeId))
@@ -46,12 +46,23 @@ function Pages() {
         setActiveId(id)
     }
 
+    // Moves the page at index `from` to index `to`, persisting the new tab order.
+    function reorderPages(from: number, to: number) {
+        setPages((prev) => {
+            const next = prev.slice()
+            const [moved] = next.splice(from, 1)
+            next.splice(to, 0, moved)
+            return next
+        })
+    }
+
     return (
         <div className="app-shell" style={{'--active-hue': tabHue(activeIndex)} as React.CSSProperties}>
             <main className="page">{renderPage(active)}</main>
-            <VerticalTabs tabs={pages} activeId={active.id} onSelect={setActiveId} onAdd={addPage}/>
+            <Tabs tabs={pages} activeId={active.id} onSelect={setActiveId} onAdd={addPage}
+                  onReorder={reorderPages}/>
         </div>
     )
 }
 
-export default Pages
+export default Binder

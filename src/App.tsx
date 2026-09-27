@@ -1,10 +1,10 @@
-import Pages from './components/features/Pages/Pages.tsx'
+import Binder from './components/features/Binder/Binder.tsx'
 
 /**
  * Application root; renders the navigable page area.
  */
 function App() {
-    return <Pages/>
+    return <Binder/>
 }
 
 export default App

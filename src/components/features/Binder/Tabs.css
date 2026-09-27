@@ -2,7 +2,7 @@
    2.125rem width). Each tab picks a hue from --tab-hue (its index) so the strip cycles through the muted binder-tab
    palette; the active tab is lifted with a drop shadow to read as the pulled-out, attached tab. */
 
-.vertical-tabs {
+.tabs {
     position: absolute;
     top: 0;
     right: 0;
@@ -10,8 +10,8 @@
     flex-direction: column;
 }
 
-.vertical-tabs__tab {
-    /* --hue (degrees) is set per tab from tabHue(index) in VerticalTabs.tsx; the fallback keeps it defined. */
+.tabs__tab {
+    /* --hue (degrees) is set per tab from tabHue(index) in Tabs.tsx; the fallback keeps it defined. */
     --hue: 0;
     position: relative;
     width: 2.125rem;
@@ -28,40 +28,42 @@
     background: hsl(var(--hue) 55% 82%);
     color: hsl(var(--hue) 45% 22%);
     cursor: pointer;
+    /* Claim vertical drag gestures so touch pointers reorder tabs instead of scrolling the page. */
+    touch-action: none;
     transition: background 0.15s ease, transform 0.15s ease;
 }
 
-.vertical-tabs__tab:first-child {
+.tabs__tab:first-child {
     margin-top: 0;
 }
 
-.vertical-tabs__tab:hover {
+.tabs__tab:hover {
     background: hsl(var(--hue) 60% 86%);
 }
 
-.vertical-tabs__tab--active {
+.tabs__tab--active {
     /* Lift outward (down/right, away from the page) so it reads as the pulled-out, attached tab. */
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
 }
 
 /* The "+" tab is the only colourless tab — neutral grey paper — carrying the plus icon instead of a label. */
-.vertical-tabs__tab--add {
+.tabs__tab--add {
     background: hsl(0 0% 85%);
     color: hsl(0 0% 30%);
 }
 
-.vertical-tabs__tab--add:hover {
+.tabs__tab--add:hover {
     background: hsl(0 0% 89%);
 }
 
-.vertical-tabs__add-icon {
+.tabs__add-icon {
     display: block;
     width: 1rem;
     height: 1rem;
     margin: 1rem auto;
 }
 
-.vertical-tabs__label {
+.tabs__label {
     display: block;
     /* vertical-rl + 180° rotation reads bottom-to-top (text rotated 90° counter-clockwise). */
     writing-mode: vertical-lr;
