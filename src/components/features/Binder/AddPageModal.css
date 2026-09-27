@@ -1,0 +1,47 @@
+.add-page-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.add-page-modal__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    font-size: 0.9375rem;
+}
+
+.add-page-modal__field input,
+.add-page-modal__field select {
+    padding: 0.5rem;
+    font: inherit;
+    border: 1px solid #b7a97f;
+    border-radius: 0.25rem;
+    background: #fff;
+}
+
+.add-page-modal__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.add-page-modal__actions button {
+    padding: 0.5rem 1rem;
+    font: inherit;
+    border: 1px solid #b7a97f;
+    border-radius: 0.25rem;
+    background: #efe8d5;
+    cursor: pointer;
+}
+
+.add-page-modal__actions button[type='submit'] {
+    background: hsl(38 45% 40%);
+    border-color: hsl(38 45% 30%);
+    color: #fff;
+}
+
+.add-page-modal__actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

@@ -1,6 +1,5 @@
 import type {FieldNode} from '../../../../../types/FieldNode.ts'
-import {inputNode} from '../nodes.ts'
-
+import type {SheetFactory} from '../nodes.ts'
 import type {CheckFieldDefinition} from "../../../../../types/CheckFieldDefinition.ts";
 
 // ---- INTERNAL CONSTANTS ----
@@ -9,70 +8,63 @@ const WEAPON_ROW_STEP = 27       // vertical gap between weapon rows
 const CANTRIP_ROW_STEP = 23.33   // vertical gap between cantrip rows
 const SPELL_SLOT_X_STEP = 24.93  // horizontal gap between spell-slot columns
 
-// ---- EXPORTED CONSTANTS ----
+// ---- EXPORTED FUNCTIONS ----
 
 /**
- * Weapon rows.
+ * Builds the spellcasting fields: weapon rows, cantrip rows, spell-slot columns, and the save/attack/custom stats.
  */
-export const weapons = [1, 2, 3, 4].map(weaponRow)
+export function buildSpells({inputNode}: SheetFactory) {
+    const weapons = [1, 2, 3, 4].map((n) => weaponRow(inputNode, n))
+    const cantrips = [1, 2, 3, 4, 5, 6].map((n) => cantripRow(inputNode, n))
+    const spellSlots = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => spellSlotColumn(inputNode, n))
 
-/**
- * Cantrip rows.
- */
-export const cantrips = [1, 2, 3, 4, 5, 6].map(cantripRow)
+    const spellcasting = {
+        spellSaveDC: inputNode({id: 'spellSaveDC', x: 296, y: 806, width: 52, height: 30, type: 'number', fontSize: 28}),
+        spellAttackBonus: inputNode({
+            id: 'spellAttackBonus',
+            x: 352,
+            y: 806,
+            width: 52,
+            height: 30,
+            type: 'number',
+            fontSize: 28
+        }),
 
-/**
- * Spell-slot columns, one per spell level.
- */
-export const spellSlots = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(spellSlotColumn)
+        customStatTitle: inputNode({
+            id: 'customStatTitle',
+            x: 439,
+            y: 782.5,
+            width: 52,
+            height: 15,
+            type: 'text',
+            fontSize: 12,
+            textAlign: 'center'
+        }),
+        customStat1: inputNode({id: 'customStat1', x: 411, y: 806, width: 52, height: 30, type: 'number', fontSize: 28}),
+        customStat1Label: inputNode({
+            id: 'customStat1Label',
+            x: 417,
+            y: 842,
+            width: 40,
+            height: 14,
+            type: 'text',
+            fontSize: 8,
+            textAlign: 'center'
+        }),
+        customStat2: inputNode({id: 'customStat2', x: 469, y: 806, width: 52, height: 30, type: 'number', fontSize: 28}),
+        customStat2Label: inputNode({
+            id: 'customStat2Label',
+            x: 475,
+            y: 842,
+            width: 40,
+            height: 14,
+            type: 'text',
+            fontSize: 8,
+            textAlign: 'center'
+        }),
+    }
 
-/**
- * Spellcasting fields: save DC, attack bonus, and custom stats.
- */
-export const spellcasting = {
-    spellSaveDC: inputNode({id: 'spellSaveDC', x: 296, y: 806, width: 52, height: 30, type: 'number', fontSize: 28}),
-    spellAttackBonus: inputNode({
-        id: 'spellAttackBonus',
-        x: 352,
-        y: 806,
-        width: 52,
-        height: 30,
-        type: 'number',
-        fontSize: 28
-    }),
-
-    customStatTitle: inputNode({
-        id: 'customStatTitle',
-        x: 439,
-        y: 782.5,
-        width: 52,
-        height: 15,
-        type: 'text',
-        fontSize: 12,
-        textAlign: 'center'
-    }),
-    customStat1: inputNode({id: 'customStat1', x: 411, y: 806, width: 52, height: 30, type: 'number', fontSize: 28}),
-    customStat1Label: inputNode({
-        id: 'customStat1Label',
-        x: 417,
-        y: 842,
-        width: 40,
-        height: 14,
-        type: 'text',
-        fontSize: 8,
-        textAlign: 'center'
-    }),
-    customStat2: inputNode({id: 'customStat2', x: 469, y: 806, width: 52, height: 30, type: 'number', fontSize: 28}),
-    customStat2Label: inputNode({
-        id: 'customStat2Label',
-        x: 475,
-        y: 842,
-        width: 40,
-        height: 14,
-        type: 'text',
-        fontSize: 8,
-        textAlign: 'center'
-    }),
+    return {weapons, cantrips, spellSlots, spellcasting}
 }
 
 // ---- PRIVATE FUNCTIONS ----
@@ -80,7 +72,7 @@ export const spellcasting = {
 /**
  * Fields for the n-th weapon row.
  */
-function weaponRow(n: number): FieldNode[] {
+function weaponRow(inputNode: SheetFactory['inputNode'], n: number): FieldNode[] {
     const dy = (n - 1) * WEAPON_ROW_STEP
     return [
         inputNode({id: `weaponName${n}`, x: 301, y: 456 + dy, width: 99, height: 16, type: 'text', fontSize: 12}),
@@ -103,7 +95,7 @@ function weaponRow(n: number): FieldNode[] {
 /**
  * Fields for the n-th cantrip row.
  */
-function cantripRow(n: number): FieldNode[] {
+function cantripRow(inputNode: SheetFactory['inputNode'], n: number): FieldNode[] {
     const dy = (n - 1) * CANTRIP_ROW_STEP
     return [
         inputNode({id: `cantripPrepared${n}`, x: 290.4, y: 577.07 + dy, width: 4.67, height: 4.67, type: 'check'}),
@@ -150,7 +142,7 @@ function cantripRow(n: number): FieldNode[] {
 /**
  * Total/used fields for the n-th spell level's slot column.
  */
-function spellSlotColumn(n: number): FieldNode[] {
+function spellSlotColumn(inputNode: SheetFactory['inputNode'], n: number): FieldNode[] {
     const x = 302.7 + (n - 1) * SPELL_SLOT_X_STEP
     return [
         inputNode({id: `totalSpellSlots${n}`, x, y: 733, width: 12, height: 16, type: 'number', fontSize: 14}),

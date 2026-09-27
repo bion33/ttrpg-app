@@ -1,6 +1,13 @@
 /* The active page's content defines its own look; this wrapper only carries the drop shadow and reserves room
    on the right for the tab strip, which sits flush against the page's right edge. */
 
+/* The active tab's hue, set at runtime on .app-shell in Binder.tsx; registered here for a typed default. */
+@property --active-hue {
+    syntax: '<number>';
+    inherits: true;
+    initial-value: 38;
+}
+
 .app-shell {
     position: relative;
     /* ~5% gutters: left of the page and right of the tab strip. */
@@ -13,7 +20,7 @@
     z-index: 10;
     /* Reserve the full tab-strip width on the right so the tabs sit flush against the page edge, not over it. */
     margin-right: 2.125rem;
-    /* Border matches the active tab's border colour (--active-hue set in App.tsx) so the two read as one unit. */
+    /* Border matches the active tab's border colour (--active-hue set in Binder.tsx) so the two read as one unit. */
     border: 1px solid hsl(var(--active-hue, 38) 45% 40%);
     box-shadow: 0 6px 22px rgba(0, 0, 0, 0.22);
 }

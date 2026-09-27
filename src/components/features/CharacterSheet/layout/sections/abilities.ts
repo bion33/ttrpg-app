@@ -2,7 +2,7 @@ import type {Getter} from 'jotai'
 import {atom} from 'jotai'
 import type {DerivedNode, InputNode} from '../../../../../types/FieldNode.ts'
 import {abilityModifier, formatModifier, passivePerception, skillBonus} from '../../logic/formulas.ts'
-import {computedInputNode, derivedNode, inputNode} from '../nodes.ts'
+import type {SheetFactory} from '../nodes.ts'
 
 import type {CheckFieldDefinition} from "../../../../../types/CheckFieldDefinition.ts";
 
@@ -97,146 +97,189 @@ export type AbilityNodes<A extends AbilityConfig> = {
     skills: { [S in A['skills'][number]]: SkillNodes }
 }
 
-// ---- EXPORTED CONSTANTS ----
+/**
+ * The ability-area meta fields (proficiency bonus, inspiration, passive perception) and the six ability blocks.
+ */
+export type AbilitiesSection = {
+    abilityMeta: {
+        proficiencyBonus: InputNode
+        inspiration: InputNode
+        enablePassivePerceptionCalc: InputNode
+        passivePerception: InputNode
+    }
+    abilities: { [A in Ability as A['name']]: AbilityNodes<A> }
+}
 
-// Toggle for the passive-perception auto-calculation; when checked, passive Perception is derived.
-const enablePassivePerceptionCalc = inputNode({
-    id: 'enablePassivePerceptionCalc',
-    x: 152.98,
-    y: 208.17,
-    width: 7.25,
-    height: 9,
-    type: 'check',
-    shape: 'star',
-    defaultValue: true
-} as CheckFieldDefinition)
-
-// True while passive Perception should be auto-calculated rather than typed in.
-const passivePerceptionCalcEnabled = atom((get) => get(enablePassivePerceptionCalc.atom) === 'true')
+// ---- EXPORTED FUNCTIONS ----
 
 /**
- * Ability-area meta fields: proficiency bonus, inspiration, passive perception.
+ * Builds the ability-block fields and their meta fields; the passive-perception and saving-throw derivations wire
+ * the two together, so they are created in one factory-bound scope.
  */
-export const abilityMeta = {
-    proficiencyBonus: inputNode({
-        id: 'proficiencyBonus',
-        x: 44,
-        y: 166.27,
-        width: 40,
-        height: 32,
-        type: 'number',
-        fontSize: 28
-    }),
-    inspiration: inputNode({id: 'inspiration', x: 151, y: 172, width: 11, height: 11, type: 'check'}),
-    enablePassivePerceptionCalc,
-    passivePerception: computedInputNode(
-        {
-            id: 'passivePerception',
-            x: 229.33,
+export function buildAbilities(f: SheetFactory): AbilitiesSection {
+    const {inputNode, computedInputNode, derivedNode} = f
+
+    // Toggle for the passive-perception auto-calculation; when checked, passive Perception is derived.
+    const enablePassivePerceptionCalc = inputNode({
+        id: 'enablePassivePerceptionCalc',
+        x: 152.98,
+        y: 208.17,
+        width: 7.25,
+        height: 9,
+        type: 'check',
+        shape: 'star',
+        defaultValue: true
+    } as CheckFieldDefinition)
+
+    // True while passive Perception should be auto-calculated rather than typed in.
+    const passivePerceptionCalcEnabled = atom((get) => get(enablePassivePerceptionCalc.atom) === 'true')
+
+    const abilities = Object.fromEntries(
+        ABILITIES.map((a) => [a.name, abilityNodes(a)]),
+    ) as { [A in Ability as A['name']]: AbilityNodes<A> }
+
+    const abilityMeta = {
+        proficiencyBonus: inputNode({
+            id: 'proficiencyBonus',
+            x: 44,
             y: 166.27,
             width: 40,
             height: 32,
             type: 'number',
             fontSize: 28
-        },
-        passivePerceptionCalcEnabled,
-        (get) => {
-            const rawBonus = get(abilities.wisdom.skills.perception.bonus.atom).trim()
-            if (rawBonus === '') return ''
-            const bonus = Number(rawBonus)
-            return Number.isNaN(bonus) ? '' : String(passivePerception(bonus))
-        },
-    ),
-}
+        }),
+        inspiration: inputNode({id: 'inspiration', x: 151, y: 172, width: 11, height: 11, type: 'check'}),
+        enablePassivePerceptionCalc,
+        passivePerception: computedInputNode(
+            {
+                id: 'passivePerception',
+                x: 229.33,
+                y: 166.27,
+                width: 40,
+                height: 32,
+                type: 'number',
+                fontSize: 28
+            },
+            passivePerceptionCalcEnabled,
+            (get) => {
+                const rawBonus = get(abilities.wisdom.skills.perception.bonus.atom).trim()
+                if (rawBonus === '') return ''
+                const bonus = Number(rawBonus)
+                return Number.isNaN(bonus) ? '' : String(passivePerception(bonus))
+            },
+        ),
+    }
 
-/**
- * The six ability blocks' field nodes, keyed by ability name.
- */
-export const abilities = Object.fromEntries(
-    ABILITIES.map((a) => [a.name, abilityNodes(a)]),
-) as { [A in Ability as A['name']]: AbilityNodes<A> }
+    return {abilityMeta, abilities}
+
+    // Builds all field nodes for one ability block: score, extra, derived modifier, saving throw, and skill rows.
+    function abilityNodes<A extends AbilityConfig>(a: A): AbilityNodes<A> {
+        // The ability base score
+        const score = inputNode({
+            id: `${a.name}Score`,
+            x: 51.03,
+            y: a.scoreY,
+            width: 20.49,
+            height: 16.1,
+            type: 'number',
+            fontSize: 16
+        })
+
+        // Extra ability score points to add
+        const extra = inputNode({
+            id: `${a.name}Extra`,
+            x: 51.03,
+            y: a.scoreY + 34.8,
+            width: 20.49,
+            height: 16.1,
+            type: 'number',
+            fontSize: 16
+        })
+
+        // Read-only modifier derived from this block's score and extra atoms.
+        const modifier = derivedNode(
+            {
+                id: `${a.name}Modifier`,
+                x: 70.71,
+                y: a.scoreY + 4.12,
+                width: 50.73,
+                height: 39.86,
+                type: 'number',
+                fontSize: 36
+            },
+            (get) => {
+                const modifier = abilityModifierValue(get, score, extra)
+                return modifier === null ? '' : formatModifier(modifier)
+            },
+        )
+
+        const saveProficiency = inputNode({
+            id: `${a.name}SavingThrowProficiency`, x: 136.5, y: a.scoreY + a.saveOffset,
+            width: 9, height: 9, type: 'check', shape: 'diamond',
+        } as CheckFieldDefinition)
+
+        // the saving-throw bonus input sits this far above its check
+        const SAVE_BONUS_GAP = 2.5
+
+        // A saving throw is the ability modifier plus the proficiency bonus when proficient (no expertise).
+        const saveBonus = derivedNode(
+            {
+                id: `${a.name}SavingThrowBonus`, x: 149.2, y: a.scoreY + a.saveOffset - SAVE_BONUS_GAP,
+                width: 16, height: 14, type: 'number', fontSize: 12,
+            },
+            (get) => {
+                const modifierValue = abilityModifierValue(get, score, extra)
+                if (modifierValue === null) return ''
+                const rawProfBonus = get(abilityMeta.proficiencyBonus.atom).trim()
+                const profBonus = rawProfBonus === '' ? 0 : Number(rawProfBonus)
+                if (Number.isNaN(profBonus)) return ''
+                const proficient = get(saveProficiency.atom) === 'true'
+                return formatModifier(skillBonus(modifierValue, profBonus, proficient, false))
+            },
+        )
+
+        const skills = Object.fromEntries(
+            a.skills.map(
+                (skill, i, arr) => [
+                    skill,
+                    skillNodes(skill, skillExpertiseY(a, i, arr.length), score, extra)
+                ]
+            ),
+        ) as { [S in A['skills'][number]]: SkillNodes }
+
+        return {score, extra, modifier, saveProficiency, saveBonus, skills}
+    }
+
+    // A skill row: expertise + proficiency checkboxes and the derived bonus.
+    function skillNodes(id: string, expertiseY: number, score: InputNode, extra: InputNode): SkillNodes {
+        const expertise = inputNode({id: `${id}Expertise`, x: 134.3, y: expertiseY, width: 4, height: 4, type: 'check'})
+        const proficiency = inputNode({
+            id: `${id}Proficiency`,
+            x: 137,
+            y: expertiseY + 2.2,
+            width: 8,
+            height: 8,
+            type: 'check'
+        })
+        // Bonus = ability modifier, plus the proficiency bonus once (proficient) or twice (expertise).
+        const bonus = derivedNode(
+            {id: `${id}Bonus`, x: 149.2, y: expertiseY - 0.4, width: 16, height: 14, type: 'number', fontSize: 12},
+            (get) => {
+                const modifier = abilityModifierValue(get, score, extra)
+                if (modifier === null) return ''
+                const rawProfBonus = get(abilityMeta.proficiencyBonus.atom).trim()
+                const profBonus = rawProfBonus === '' ? 0 : Number(rawProfBonus)
+                if (Number.isNaN(profBonus)) return ''
+                const proficient = get(proficiency.atom) === 'true'
+                const expert = get(expertise.atom) === 'true'
+                return formatModifier(skillBonus(modifier, profBonus, proficient, expert))
+            },
+        )
+        return {expertise, proficiency, bonus}
+    }
+}
 
 // ---- PRIVATE FUNCTIONS ----
-
-/**
- * Builds all field nodes for one ability block: score, extra, derived modifier, saving throw, and skill rows.
- */
-function abilityNodes<A extends AbilityConfig>(a: A): AbilityNodes<A> {
-    // The ability base score
-    const score = inputNode({
-        id: `${a.name}Score`,
-        x: 51.03,
-        y: a.scoreY,
-        width: 20.49,
-        height: 16.1,
-        type: 'number',
-        fontSize: 16
-    })
-
-    // Extra ability score points to add
-    const extra = inputNode({
-        id: `${a.name}Extra`,
-        x: 51.03,
-        y: a.scoreY + 34.8,
-        width: 20.49,
-        height: 16.1,
-        type: 'number',
-        fontSize: 16
-    })
-
-    // Read-only modifier derived from this block's score and extra atoms.
-    const modifier = derivedNode(
-        {
-            id: `${a.name}Modifier`,
-            x: 70.71,
-            y: a.scoreY + 4.12,
-            width: 50.73,
-            height: 39.86,
-            type: 'number',
-            fontSize: 36
-        },
-        (get) => {
-            const modifier = abilityModifierValue(get, score, extra)
-            return modifier === null ? '' : formatModifier(modifier)
-        },
-    )
-
-    const saveProficiency = inputNode({
-        id: `${a.name}SavingThrowProficiency`, x: 136.5, y: a.scoreY + a.saveOffset,
-        width: 9, height: 9, type: 'check', shape: 'diamond',
-    } as CheckFieldDefinition)
-
-    // the saving-throw bonus input sits this far above its check
-    const SAVE_BONUS_GAP = 2.5
-
-    // A saving throw is the ability modifier plus the proficiency bonus when proficient (no expertise).
-    const saveBonus = derivedNode(
-        {
-            id: `${a.name}SavingThrowBonus`, x: 149.2, y: a.scoreY + a.saveOffset - SAVE_BONUS_GAP,
-            width: 16, height: 14, type: 'number', fontSize: 12,
-        },
-        (get) => {
-            const modifierValue = abilityModifierValue(get, score, extra)
-            if (modifierValue === null) return ''
-            const rawProfBonus = get(abilityMeta.proficiencyBonus.atom).trim()
-            const profBonus = rawProfBonus === '' ? 0 : Number(rawProfBonus)
-            if (Number.isNaN(profBonus)) return ''
-            const proficient = get(saveProficiency.atom) === 'true'
-            return formatModifier(skillBonus(modifierValue, profBonus, proficient, false))
-        },
-    )
-
-    const skills = Object.fromEntries(
-        a.skills.map(
-            (skill, i, arr) => [
-                skill,
-                skillNodes(skill, skillExpertiseY(a, i, arr.length), score, extra)
-            ]
-        ),
-    ) as { [S in A['skills'][number]]: SkillNodes }
-
-    return {score, extra, modifier, saveProficiency, saveBonus, skills}
-}
 
 /**
  * Numeric ability modifier from a block's score and extra atoms, or null when the score is blank.
@@ -247,36 +290,6 @@ function abilityModifierValue(get: Getter, score: InputNode, extra: InputNode): 
     if (rawScore === '' && rawExtra === '') return null
     const total = (rawScore === '' ? 0 : Number(rawScore)) + (rawExtra === '' ? 0 : Number(rawExtra))
     return Number.isNaN(total) ? null : abilityModifier(total)
-}
-
-/**
- * A skill row: expertise + proficiency checkboxes and the derived bonus.
- */
-function skillNodes(id: string, expertiseY: number, score: InputNode, extra: InputNode): SkillNodes {
-    const expertise = inputNode({id: `${id}Expertise`, x: 134.3, y: expertiseY, width: 4, height: 4, type: 'check'})
-    const proficiency = inputNode({
-        id: `${id}Proficiency`,
-        x: 137,
-        y: expertiseY + 2.2,
-        width: 8,
-        height: 8,
-        type: 'check'
-    })
-    // Bonus = ability modifier, plus the proficiency bonus once (proficient) or twice (expertise).
-    const bonus = derivedNode(
-        {id: `${id}Bonus`, x: 149.2, y: expertiseY - 0.4, width: 16, height: 14, type: 'number', fontSize: 12},
-        (get) => {
-            const modifier = abilityModifierValue(get, score, extra)
-            if (modifier === null) return ''
-            const rawProfBonus = get(abilityMeta.proficiencyBonus.atom).trim()
-            const profBonus = rawProfBonus === '' ? 0 : Number(rawProfBonus)
-            if (Number.isNaN(profBonus)) return ''
-            const proficient = get(proficiency.atom) === 'true'
-            const expert = get(expertise.atom) === 'true'
-            return formatModifier(skillBonus(modifier, profBonus, proficient, expert))
-        },
-    )
-    return {expertise, proficiency, bonus}
 }
 
 /**

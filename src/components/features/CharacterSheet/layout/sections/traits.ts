@@ -1,5 +1,5 @@
 import type {FieldNode} from '../../../../../types/FieldNode.ts'
-import {inputNode} from '../nodes.ts'
+import type {SheetFactory} from '../nodes.ts'
 import type {CheckFieldDefinition} from "../../../../../types/CheckFieldDefinition.ts";
 
 // ---- INTERNAL CONSTANTS ----
@@ -30,37 +30,35 @@ const DAMAGE_LEVELS: { suffix: string; color: CheckFieldDefinition['color'] }[] 
  */
 type DamageBlock = { x: number; types: string[] }
 
-// ---- EXPORTED CONSTANTS ----
+// ---- EXPORTED FUNCTIONS ----
 
 /**
- * Free-text notes field.
+ * Builds the trait fields: free-text notes, the damage immunity/resistance/vulnerability grid, and proficiencies.
  */
-export const notes = inputNode({id: 'notes', x: 44, y: 878, width: 476, height: 154, type: 'textarea', fontSize: 12})
+export function buildTraits({inputNode}: SheetFactory) {
+    const notes = inputNode({id: 'notes', x: 44, y: 878, width: 476, height: 154, type: 'textarea', fontSize: 12})
 
-/**
- * Damage immunity/resistance/vulnerability checkboxes for every column group.
- */
-export const damage = DAMAGE_BLOCKS.map(damageBlock)
+    const damage = DAMAGE_BLOCKS.map((block) => damageBlock(inputNode, block))
 
-/**
- * Proficiency fields: languages, tools, features, and other traits.
- */
-export const proficiencies = {
-    languages: inputNode({id: 'languages', x: 548, y: 364, width: 224, height: 50, type: 'textarea', fontSize: 12}),
-    weapons: inputNode({id: 'weapons', x: 594, y: 417, width: 177, height: 12, type: 'text', fontSize: 12}),
-    armor: inputNode({id: 'armor', x: 583, y: 432, width: 187, height: 12, type: 'text', fontSize: 12}),
-    tools: inputNode({id: 'tools', x: 579, y: 447, width: 191, height: 12, type: 'text', fontSize: 12}),
-    advantages: inputNode({id: 'advantages', x: 548, y: 474, width: 224, height: 12, type: 'text', fontSize: 12}),
-    disadvantages: inputNode({id: 'disadvantages', x: 548, y: 500, width: 224, height: 12, type: 'text', fontSize: 12}),
-    featuresAndTraits: inputNode({
-        id: 'featuresAndTraits',
-        x: 548,
-        y: 528,
-        width: 224,
-        height: 504,
-        type: 'textarea',
-        fontSize: 12
-    }),
+    const proficiencies = {
+        languages: inputNode({id: 'languages', x: 548, y: 364, width: 224, height: 50, type: 'textarea', fontSize: 12}),
+        weapons: inputNode({id: 'weapons', x: 594, y: 417, width: 177, height: 12, type: 'text', fontSize: 12}),
+        armor: inputNode({id: 'armor', x: 583, y: 432, width: 187, height: 12, type: 'text', fontSize: 12}),
+        tools: inputNode({id: 'tools', x: 579, y: 447, width: 191, height: 12, type: 'text', fontSize: 12}),
+        advantages: inputNode({id: 'advantages', x: 548, y: 474, width: 224, height: 12, type: 'text', fontSize: 12}),
+        disadvantages: inputNode({id: 'disadvantages', x: 548, y: 500, width: 224, height: 12, type: 'text', fontSize: 12}),
+        featuresAndTraits: inputNode({
+            id: 'featuresAndTraits',
+            x: 548,
+            y: 528,
+            width: 224,
+            height: 504,
+            type: 'textarea',
+            fontSize: 12
+        }),
+    }
+
+    return {notes, damage, proficiencies}
 }
 
 // ---- PRIVATE FUNCTIONS ----
@@ -68,7 +66,7 @@ export const proficiencies = {
 /**
  * Immunity/resistance/vulnerability checkboxes for one damage type.
  */
-function damageTypeRow(type: string, blockX: number, y: number): FieldNode[] {
+function damageTypeRow(inputNode: SheetFactory['inputNode'], type: string, blockX: number, y: number): FieldNode[] {
     return DAMAGE_LEVELS.map((lvl, col) => inputNode({
         id: `${type}${lvl.suffix}`,
         x: blockX + col * DAMAGE_COL_STEP,
@@ -83,8 +81,8 @@ function damageTypeRow(type: string, blockX: number, y: number): FieldNode[] {
 /**
  * All damage-type rows for one column group.
  */
-function damageBlock(block: DamageBlock): FieldNode[] {
+function damageBlock(inputNode: SheetFactory['inputNode'], block: DamageBlock): FieldNode[] {
     return block.types.flatMap((type, row) =>
-        damageTypeRow(type, block.x, DAMAGE_BLOCK_Y + row * DAMAGE_ROW_STEP),
+        damageTypeRow(inputNode, type, block.x, DAMAGE_BLOCK_Y + row * DAMAGE_ROW_STEP),
     )
 }

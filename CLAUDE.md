@@ -44,9 +44,12 @@ jotai atom holding its value. Position and state are one object.
   atom computed from other atoms, not persisted). An `InputNode` may carry an
   optional `readOnlyAtom` that locks editing at runtime.
 - `createFieldFactory(prefix)` returns `inputNode` and `computedInputNode`
-  builders bound to a storage-key prefix. **One factory instance per form** —
-  see `layout/nodes.ts`; do not create another, or fields would split across
-  localStorage namespaces.
+  builders bound to a storage-key prefix. **One factory instance per sheet
+  instance** — `layout/nodes.ts`'s `createSheetFactory(prefix)` bundles those
+  two with `derivedNode` into a `SheetFactory`, and each sheet page passes its
+  own prefix so its fields get an isolated localStorage namespace. Within one
+  sheet, all fields must come from that single factory, or they would split
+  across namespaces.
 - `derivedNode(def, read)` builds a computed field.
 - `computedInputNode(def, enabled, compute)` builds a hybrid field: while the
   `enabled` atom is true it shows `compute(get)` and is read-only; otherwise it
@@ -58,22 +61,31 @@ jotai atom holding its value. Position and state are one object.
 
 ### CharacterSheet feature (`src/components/features/CharacterSheet/`)
 
-- `layout/` — the **single source of truth** for the sheet's fields.
-  - `sheet.ts` — assembles all sections into the `sheet` tree and exports the
-    flat `Fields` list (`collectNodes(sheet)`). Each field is created exactly
-    once, in its section module.
-  - `layout/nodes.ts` — the one shared `inputNode` factory (prefix
-    `'characterSheet'`).
-  - `layout/sections/*.ts` — field definitions grouped by sheet region
-    (`header`, `abilities`, `combat`, `spells`, `traits`). Each section owns the
+- `layout/` — the **single source of truth** for the sheet's fields. The sheet
+  is built **per instance** from a storage prefix (so multiple sheet pages get
+  isolated namespaces), not as module-level singletons.
+  - `sheet.ts` — exports `buildSheet(storagePrefix)`, which creates the sheet's
+    factory, calls each section builder with it, and returns `{tree, fields}`
+    (the structured tree for logic access + the flat `collectNodes(tree)` render
+    list). Each field is created exactly once, in its section builder.
+  - `layout/nodes.ts` — `createSheetFactory(prefix)`, the per-instance factory
+    (`inputNode`/`computedInputNode`/`derivedNode`) every section builder draws
+    from.
+  - `layout/sections/*.ts` — each exports a `build<Section>(factory)` function
+    returning that region's nodes (`buildHeader`, `buildAbilities`,
+    `buildCombat`, `buildSpells`, `buildTraits`). A section owns the
     repeated-row builders and step constants it alone uses — the ability-block
     generator in `abilities.ts` (skill rows interpolated between real artwork
-    anchors), the weapon/cantrip/spell-slot builders in `spells.ts`, the
-    damage-grid builder in `traits.ts`. Only builders/constants shared by more
-    than one section belong in a common `generators.ts`/`constants.ts` module.
+    anchors; `buildAbilities` returns both `abilityMeta` and `abilities` since
+    their derivations reference each other), the weapon/cantrip/spell-slot
+    builders in `spells.ts`, the damage-grid builder in `traits.ts`. Only
+    builders/constants shared by more than one section belong in a common
+    `generators.ts`/`constants.ts` module.
   - `logic/formulas.ts` — **pure** D&D 5e rules math (no atoms/React/storage),
     unit-tested in `formulas.test.ts`. Atoms wire these into derived fields.
-  - `CharacterSheet.tsx` — fetches/injects the artwork SVG and renders `Fields`.
+  - `CharacterSheet.tsx` — takes a `storagePrefix` prop, memoizes
+    `buildSheet(prefix)`, fetches/injects the artwork SVG, and renders the
+    resulting `fields`.
 
 ### Binder feature (`src/App.tsx`, `src/components/features/Binder/`)
 
@@ -85,14 +97,25 @@ the tabs — the page content styles itself) beside its `Tabs` strip
 feature-specific, so it lives in the feature folder, not in `ui/`;
 `logic/tabHue.ts` holds its pure per-index hue function.
 
-The page list is **dynamic and persisted**: a `Page` is just serialisable tab
-metadata (`id`, `label`), and `renderPage(page)` resolves it to an element —
-`stats` → `CharacterSheet`, every other id → a `PlaceholderPage` titled by its
-label (render functions are not serialisable, so pages store metadata only). The
-list lives in `atomWithStorage('pages', …)`, defaulting to just the `stats`
-page; the active page id persists via `atomWithStorage('activePage', …)`.
-`Tabs` always shows a trailing "+" tab (its required `onAdd`) that
-prompts for a name and appends a new placeholder page.
+The page list is **dynamic and persisted**: a `Page` is serialisable tab
+metadata (`id`, `label`, `type`, `storagePrefix`), and `renderPage(page)`
+resolves it to an element by `type` — `characterSheet` → `CharacterSheet` bound
+to the page's `storagePrefix`, `empty` → an `EmptyPage` titled by its label.
+Page types live in `pageTypes.ts` (`PageType`, `PAGE_TYPES`). The list lives in
+`atomWithStorage('pages', …)`, **empty by default** — the binder starts with no
+pages (just the "+" tab) until the user adds one; the active page id persists via
+`atomWithStorage('activePage', …)`. `EmptyPage`
+(`features/EmptyPage/`) is both the stand-in for an `empty`-type page and the
+page shown when the binder has no active page (`Binder` renders `<EmptyPage/>`
+untitled in that case). The `empty` type is offered in the add-page menu for now
+but is slated for removal from that list later.
+
+`Tabs` always shows a trailing "+" tab (its required `onAdd`) that opens
+`AddPageModal` (`AddPageModal.tsx`/`.css`) — a proper modal (not `window.prompt`)
+asking for a **name** and a **type**. On submit `Binder.createPage` derives the
+id from the name via `logic/pageId.ts` (`slugify` + `uniqueId`, unit-tested in
+`pageId.test.ts`); that id is also the character sheet's `storagePrefix`, and the
+new page becomes active.
 
 `Tabs` is the binder-style tab strip anchored to the page's right edge:
 labels rotated 90° CCW (`writing-mode: vertical-rl` + 180° rotation), one muted
@@ -111,6 +134,15 @@ positions any control in SVG coordinate space. Writable fields two-way bind to
 their atom (and go read-only when their optional `readOnlyAtom` is true); derived
 fields subscribe read-only.
 
+`PaperPage` is the shared white, A4-proportioned document-style page shell (its
+one style, so it never drifts): both `EmptyPage` and the `CharacterSheet`
+loading state wrap their content in it.
+
+`Modal` is the shared dialogue shell: a titled box over a dimmed backdrop that
+closes on a backdrop click or Escape, with callers supplying the body. `Binder`'s
+`AddPageModal` is built on it (the modal frame lives in `Modal`; only the
+add-page form and its styling stay in the feature).
+
 ## Conventions
 
 ### Documentation
@@ -128,7 +160,7 @@ All code documentation is concise and purpose-driven.
   /**
    * Flattens a node tree into a render list of its field nodes.
    */
-  export function collectNodes(tree: NodeTree): FieldNode[] { … }
+  export function collectNodes(tree: NodeTree): FieldNode[] { }
   ```
 
   Section dividers (`// ---- … ----`), inline comments inside a function body,

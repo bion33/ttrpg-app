@@ -1,0 +1,23 @@
+.paper-page {
+    /* Occupy an A4 footprint (210:297) so the page reads as a full sheet, like the character sheet does. */
+    width: 100%;
+    aspect-ratio: 210 / 297;
+    box-sizing: border-box;
+    /* Word-document margins: generous, with text flowing from the top-left rather than centred. */
+    padding: 4rem 4.5rem;
+    background: #fff;
+    font-family: 'Times-Roman', serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #333;
+    text-align: left;
+}
+
+.paper-page h1 {
+    font-size: 1.75rem;
+    margin: 0 0 1rem;
+}
+
+.paper-page p {
+    margin: 0 0 1rem;
+}

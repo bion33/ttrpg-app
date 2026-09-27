@@ -38,7 +38,7 @@ export function createFieldFactory(storagePrefix: string) {
     }
 
     /**
-     * Builds a field that shows a computed value while `enabled` holds, and is an editable persisted input otherwise.
+     * Builds a field that shows a computed value while `enabled` holds, and is an editable and persisted input otherwise.
      */
     function computedInputNode(
         def: FieldDefinition | CheckFieldDefinition,

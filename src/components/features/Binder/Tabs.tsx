@@ -1,4 +1,5 @@
 import {Plus} from 'lucide-react'
+import type {CSSProperties, PointerEvent} from 'react'
 import {useRef, useState} from 'react'
 import './Tabs.css'
 import {tabHue} from './logic/tabHue.ts'
@@ -48,7 +49,7 @@ function Tabs({tabs, activeId, onSelect, onAdd, onReorder}: TabsProps) {
     const [target, setTarget] = useState(0)
 
     // Begins dragging a tab, capturing the pointer and each tab's current top.
-    function onPointerDown(event: React.PointerEvent<HTMLButtonElement>, index: number, id: string) {
+    function onPointerDown(event: PointerEvent<HTMLButtonElement>, index: number, id: string) {
         if (event.button !== 0) return
         const tops = tabRefs.current.slice(0, tabs.length).map((el) => el?.offsetTop ?? 0)
         dragRef.current = {fromIndex: index, startY: event.clientY, tops, target: index}
@@ -59,7 +60,7 @@ function Tabs({tabs, activeId, onSelect, onAdd, onReorder}: TabsProps) {
     }
 
     // Tracks the pointer: moves the dragged tab and recomputes which slot it would drop into.
-    function onPointerMove(event: React.PointerEvent<HTMLButtonElement>) {
+    function onPointerMove(event: PointerEvent<HTMLButtonElement>) {
         const state = dragRef.current
         if (!state) return
         const dy = event.clientY - state.startY
@@ -119,7 +120,7 @@ function Tabs({tabs, activeId, onSelect, onAdd, onReorder}: TabsProps) {
                         transform: tabTransform(index),
                         // The dragged tab tracks the pointer with no easing; the displaced tabs keep the CSS glide.
                         transition: tab.id === drag?.id ? 'none' : undefined,
-                    } as React.CSSProperties}
+                    } as CSSProperties}
                     aria-current={tab.id === activeId ? 'page' : undefined}
                     onPointerDown={(event) => onPointerDown(event, index, tab.id)}
                     onPointerMove={onPointerMove}
@@ -132,7 +133,7 @@ function Tabs({tabs, activeId, onSelect, onAdd, onReorder}: TabsProps) {
             <button
                 type="button"
                 className="tabs__tab tabs__tab--add"
-                style={{zIndex: 0} as React.CSSProperties}
+                style={{zIndex: 0} as CSSProperties}
                 aria-label="Add tab"
                 title="Add tab"
                 onClick={onAdd}

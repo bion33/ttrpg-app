@@ -1,10 +1,15 @@
 import {createFieldFactory, derivedNode} from '../../../../lib/fieldNodes.ts'
 
 /**
- * The single shared factory instance for the character sheet. Every input field
- * on the sheet is built through this `inputNode`, so they all share the
- * 'characterSheet' storage prefix - do NOT create another factory elsewhere, or
- * fields would diverge onto different localStorage key namespaces.
+ * The node builders one character sheet is assembled from, all bound to a single storage-key prefix so every field
+ * shares that localStorage namespace. `derivedNode` needs no prefix but travels with the others for convenience.
  */
-export const {inputNode, computedInputNode} = createFieldFactory('characterSheet')
-export {derivedNode}
+export type SheetFactory = ReturnType<typeof createFieldFactory> & {derivedNode: typeof derivedNode}
+
+/**
+ * Builds the node factory for one character sheet instance. Call once per sheet (per storage prefix); the section
+ * builders in `sheet.ts` all draw their `inputNode`/`computedInputNode`/`derivedNode` from the returned factory.
+ */
+export function createSheetFactory(storagePrefix: string): SheetFactory {
+    return {...createFieldFactory(storagePrefix), derivedNode}
+}
