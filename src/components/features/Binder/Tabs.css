@@ -46,23 +46,6 @@
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
 }
 
-/* The "+" tab is the only colourless tab — neutral grey paper — carrying the plus icon instead of a label. */
-.tabs__tab--add {
-    background: hsl(0 0% 85%);
-    color: hsl(0 0% 30%);
-}
-
-.tabs__tab--add:hover {
-    background: hsl(0 0% 89%);
-}
-
-.tabs__add-icon {
-    display: block;
-    width: 1rem;
-    height: 1rem;
-    margin: 1rem auto;
-}
-
 .tabs__label {
     display: block;
     /* vertical-rl + 180° rotation reads bottom-to-top (text rotated 90° counter-clockwise). */

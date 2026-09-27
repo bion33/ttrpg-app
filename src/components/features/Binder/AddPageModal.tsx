@@ -1,5 +1,4 @@
 import {useEffect, useRef, useState, type SyntheticEvent} from 'react'
-import './AddPageModal.css'
 import Modal from '../../ui/Modal/Modal'
 import {PAGE_TYPES, type PageType} from './pageTypes.ts'
 
@@ -33,8 +32,8 @@ function AddPageModal({onCreate, onCancel}: AddPageModalProps) {
 
     return (
         <Modal title="Add page" onClose={onCancel}>
-            <form className="add-page-modal" onSubmit={submit}>
-                <label className="add-page-modal__field">
+            <form className="modal__body" onSubmit={submit}>
+                <label className="modal__field">
                     <span>Name</span>
                     <input
                         ref={nameRef}
@@ -44,7 +43,7 @@ function AddPageModal({onCreate, onCancel}: AddPageModalProps) {
                     />
                 </label>
 
-                <label className="add-page-modal__field">
+                <label className="modal__field">
                     <span>Type</span>
                     <select value={type} onChange={(event) => setType(event.target.value as PageType)}>
                         {PAGE_TYPES.map((option) => (
@@ -53,9 +52,11 @@ function AddPageModal({onCreate, onCancel}: AddPageModalProps) {
                     </select>
                 </label>
 
-                <div className="add-page-modal__actions">
-                    <button type="button" onClick={onCancel}>Cancel</button>
-                    <button type="submit" disabled={!name.trim()}>Add</button>
+                <div className="modal__actions">
+                    <button type="button" className="modal__btn" onClick={onCancel}>Cancel</button>
+                    <button type="submit" className="modal__btn modal__btn--primary" disabled={!name.trim()}>
+                        Add
+                    </button>
                 </div>
             </form>
         </Modal>

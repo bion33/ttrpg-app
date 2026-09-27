@@ -1,36 +1,13 @@
 import {describe, expect, it} from 'vitest'
-import {slugify, uniqueId} from './pageId.ts'
+import {pageId} from './pageId.ts'
 
-describe('slugify', () => {
-    it('lowercases and dashes separators', () => {
-        expect(slugify('My Fighter')).toBe('my-fighter')
+describe('pageId', () => {
+    it('produces a GUID-shaped string', () => {
+        expect(pageId()).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
     })
 
-    it('collapses runs of non-alphanumerics and trims edge dashes', () => {
-        expect(slugify('  Barbarian!! (v2) ')).toBe('barbarian-v2')
-    })
-
-    it('drops non-latin characters', () => {
-        expect(slugify('Café Ölaf')).toBe('caf-laf')
-    })
-
-    it('returns empty string when nothing survives', () => {
-        expect(slugify('***')).toBe('')
-    })
-})
-
-describe('uniqueId', () => {
-    it('uses the plain slug when free', () => {
-        expect(uniqueId('Wizard', ['fighter'])).toBe('wizard')
-    })
-
-    it('suffixes to avoid a collision', () => {
-        expect(uniqueId('Wizard', ['wizard'])).toBe('wizard-2')
-        expect(uniqueId('Wizard', ['wizard', 'wizard-2'])).toBe('wizard-3')
-    })
-
-    it('falls back to "page" for an empty slug', () => {
-        expect(uniqueId('***', [])).toBe('page')
-        expect(uniqueId('***', ['page'])).toBe('page-2')
+    it('produces a distinct id each call', () => {
+        const ids = new Set(Array.from({length: 100}, () => pageId()))
+        expect(ids.size).toBe(100)
     })
 })

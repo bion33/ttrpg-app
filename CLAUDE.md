@@ -110,12 +110,26 @@ page shown when the binder has no active page (`Binder` renders `<EmptyPage/>`
 untitled in that case). The `empty` type is offered in the add-page menu for now
 but is slated for removal from that list later.
 
-`Tabs` always shows a trailing "+" tab (its required `onAdd`) that opens
-`AddPageModal` (`AddPageModal.tsx`/`.css`) — a proper modal (not `window.prompt`)
-asking for a **name** and a **type**. On submit `Binder.createPage` derives the
-id from the name via `logic/pageId.ts` (`slugify` + `uniqueId`, unit-tested in
-`pageId.test.ts`); that id is also the character sheet's `storagePrefix`, and the
-new page becomes active.
+Adding a page is driven from `TabControls` (below), which opens `AddPageModal`
+(`AddPageModal.tsx`) — a proper modal (not `window.prompt`) asking for a
+**name** and a **type**. On submit `Binder.createPage` mints the id
+via `logic/pageId.ts` (`pageId()`, a `crypto.randomUUID()` GUID, unit-tested in
+`pageId.test.ts`) — an opaque id decoupled from the name so it survives renames;
+that id is also the character sheet's `storagePrefix`, and the new page becomes
+active.
+
+`TabControls` (`TabControls.tsx`/`.css`) is a vertical cluster of round
+`IconButton`s in the gutter right of the tab strip. Its **Add page** button is
+always shown (this is the only way to add a page — there is no "+" tab); the
+rename, recolour and delete buttons act on the **active** tab and appear only
+when one is active (`hasActive`). The three edit dialogues live in
+`TabDialogs.tsx`/`.css` (`RenameTabModal`, `ColorTabModal`, `DeleteTabModal`, all
+built on the shared `Modal`): rename edits the label only (the id/`storagePrefix`
+and stored fields are untouched); recolour sets the tab `hue` via a slider +
+preset swatches with a live preview; delete asks for confirmation. `Binder` owns
+the handlers (`createPage`, and `renamePage`/`recolorPage`/`deletePage`, which
+patch or drop the active page in the persisted list; delete then activates a
+neighbour).
 
 `Tabs` is the binder-style tab strip anchored to the page's right edge:
 labels rotated 90° CCW (`writing-mode: vertical-rl` + 180° rotation), one muted
@@ -139,9 +153,20 @@ one style, so it never drifts): both `EmptyPage` and the `CharacterSheet`
 loading state wrap their content in it.
 
 `Modal` is the shared dialogue shell: a titled box over a dimmed backdrop that
-closes on a backdrop click or Escape, with callers supplying the body. `Binder`'s
-`AddPageModal` is built on it (the modal frame lives in `Modal`; only the
-add-page form and its styling stay in the feature).
+closes on a backdrop click or Escape, with callers supplying the body. It also
+carries the **shared form styling** every dialogue uses so they stay uniform —
+`.modal__body` (the flex column), `.modal__field` (a labelled input/select), and
+`.modal__actions` with `.modal__btn` buttons (`--primary`/`--danger` variants,
+styled purely by class so a variant never loses a specificity battle). `Binder`'s
+`AddPageModal` and `TabDialogs` are built on it, supplying only their own form
+markup (and, for the colour picker, its swatch/preset styling in `TabDialogs.css`).
+
+`IconButton` is the shared round, Material-style button: an icon at rest with a
+floating text-label pill that fades in on hover/focus. Props are `icon`, `label`
+(used as both the pill text and the accessible name), `onClick`, an optional
+`labelSide` (`left`/`right`) and `variant` (`default`/`danger`). Callers control
+stacking via the surrounding container so the pill can sit above neighbours (e.g.
+`Binder`'s `TabControls` gives its cluster a high `z-index`).
 
 ## Conventions
 

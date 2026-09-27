@@ -1,4 +1,3 @@
-import {Plus} from 'lucide-react'
 import type {CSSProperties, PointerEvent} from 'react'
 import {useEffect, useRef, useState} from 'react'
 import './Tabs.css'
@@ -20,8 +19,6 @@ interface TabsProps {
     tabs: TabItem[]
     activeId: string
     onSelect: (id: string) => void
-    // Invoked by the trailing "+" tab to request a new page.
-    onAdd: () => void
     // Commits a drag reorder: the tab at index `from` moves to index `to`.
     onReorder: (from: number, to: number) => void
 }
@@ -41,7 +38,7 @@ interface DragState {
  * Vertical, right-aligned tab strip styled like coloured paper binder tabs, with each label rotated 90° CCW; tabs
  * can be dragged vertically to reorder, with the displaced tabs sliding to their new slots.
  */
-function Tabs({tabs, activeId, onSelect, onAdd, onReorder}: TabsProps) {
+function Tabs({tabs, activeId, onSelect, onReorder}: TabsProps) {
     const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
     const dragRef = useRef<DragState | null>(null)
     // Render-facing drag state: the moving tab, its origin slot, the captured tops, its live offset and target slot.
@@ -144,16 +141,6 @@ function Tabs({tabs, activeId, onSelect, onAdd, onReorder}: TabsProps) {
                     <span className="tabs__label">{tab.label}</span>
                 </button>
             ))}
-            <button
-                type="button"
-                className="tabs__tab tabs__tab--add"
-                style={{zIndex: 0} as CSSProperties}
-                aria-label="Add tab"
-                title="Add tab"
-                onClick={onAdd}
-            >
-                <Plus className="tabs__add-icon" aria-hidden="true"/>
-            </button>
         </nav>
     )
 }

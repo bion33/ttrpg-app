@@ -13,10 +13,9 @@ interface EmptyPageProps {
 function EmptyPage({title}: EmptyPageProps) {
     return (
         <PaperPage>
-            <h1>{title ?? 'No page yet'}</h1>
+            <h1>{title ?? 'No pages yet'}</h1>
             <p>
-                Click the <strong>+</strong> tab on the right edge of the binder to add a page. You'll be asked for
-                a name and a type (such as a character sheet), and the new page opens straight away.
+                This binder is currently empty. To add a page, click the button on the right.
             </p>
         </PaperPage>
     )
