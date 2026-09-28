@@ -14,12 +14,28 @@
     margin: 2.5rem 5%;
 }
 
+/* Wraps the page and tab strip so they scale together (the transform is set in Binder.tsx) while the view controls,
+   which sit outside it, stay a fixed size. Anchors the absolutely-positioned tab strip and, scaling from the top
+   centre, keeps the page centred as it grows or shrinks. The scale is clamped in Binder.tsx so it never exceeds the
+   screen width. */
+.binder-view {
+    position: relative;
+    transform-origin: top center;
+    /* Ease the zoom directly on transform (a concrete scale(), not a var) so it composites instead of jittering. */
+    transition: transform 0.25s ease-in-out;
+    /* Keep the wrapper on its own compositor layer permanently so the heavy character-sheet SVG is rasterised once
+       and GPU-scaled during the zoom, rather than the layer being rebuilt (and repainting) at each step. */
+    will-change: transform;
+}
+
 .page {
     position: relative;
     /* Above the inactive tabs (which they tuck under) but below the active tab (which notches the border). */
     z-index: 10;
-    /* Reserve the full tab-strip width on the right so the tabs sit flush against the page edge, not over it. */
+    /* Reserve the full tab-strip width on the right so the tabs sit flush against the page edge, not over it, and
+       mirror it on the left so the page itself stays centred within the view. */
     margin-right: 2.125rem;
+    margin-left: 2.125rem;
     /* Border matches the active tab's border colour (--active-hue set in Binder.tsx) so the two read as one unit. */
     border: 1px solid hsl(var(--active-hue, 38) 45% 40%);
     box-shadow: 0 6px 22px rgba(0, 0, 0, 0.22);
@@ -40,8 +56,14 @@
         margin: 0;
     }
 
+    /* Print at the true page size regardless of the on-screen zoom (!important beats the inline transform). */
+    .binder-view {
+        transform: none !important;
+    }
+
     .page {
         margin-right: 0;
+        margin-left: 0;
         border: none;
         box-shadow: none;
     }
