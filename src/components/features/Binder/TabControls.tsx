@@ -44,12 +44,10 @@ function TabControls({onAdd, hasActive, onEdit, onDelete, lastTab}: TabControlsP
                     </>
                 )}
             </div>
-            {scrolledPast && (
-                <div className="tab-controls__to-top">
-                    <IconButton icon={<ArrowUp/>} label="Back to top"
-                                onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}/>
-                </div>
-            )}
+            <div className={`tab-controls__to-top${scrolledPast ? ' tab-controls__to-top--visible' : ''}`}>
+                <IconButton icon={<ArrowUp/>} label="Back to top"
+                            onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}/>
+            </div>
         </>
     )
 }
