@@ -4,7 +4,7 @@ import {useAtom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
 import './Binder.css'
 import Tabs, {type TabItem} from './Tabs.tsx'
-import AddPageModal from './AddPageModal.tsx'
+import AddTabModal from './AddTabModal.tsx'
 import TabControls from './TabControls.tsx'
 import {ColorTabModal, DeleteTabModal, RenameTabModal} from './TabDialogs.tsx'
 import type {PageType} from './pageTypes.ts'
@@ -92,7 +92,7 @@ function Binder() {
                   onLastTabChange={setLastTab}/>
             <TabControls onAdd={() => setAdding(true)} hasActive={!!active} onRename={() => setEditing('rename')}
                          onRecolor={() => setEditing('color')} onDelete={() => setEditing('delete')} lastTab={lastTab}/>
-            {adding && <AddPageModal onCreate={createPage} onCancel={() => setAdding(false)}/>}
+            {adding && <AddTabModal onCreate={createPage} onCancel={() => setAdding(false)}/>}
             {active && editing === 'rename' && (
                 <RenameTabModal initial={active.label} onSave={renamePage} onCancel={() => setEditing(null)}/>
             )}

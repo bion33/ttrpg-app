@@ -3,17 +3,17 @@ import Modal from '../../ui/Modal/Modal'
 import {PAGE_TYPES, type PageType} from './pageTypes.ts'
 
 /**
- * Props for the add-page dialogue: it reports the chosen name and type, or a cancellation.
+ * Props for the add-tab dialogue: it reports the chosen name and type, or a cancellation.
  */
-interface AddPageModalProps {
+interface AddTabModalProps {
     onCreate: (name: string, type: PageType) => void
     onCancel: () => void
 }
 
 /**
- * Modal dialogue for adding a page: collects a name and a page type, replacing the old window.prompt flow.
+ * Modal dialogue for adding a tab: collects a name and a page type, replacing the old window.prompt flow.
  */
-function AddPageModal({onCreate, onCancel}: AddPageModalProps) {
+function AddTabModal({onCreate, onCancel}: AddTabModalProps) {
     const [name, setName] = useState('')
     const [type, setType] = useState<PageType>(PAGE_TYPES[0].value)
     const nameRef = useRef<HTMLInputElement>(null)
@@ -63,4 +63,4 @@ function AddPageModal({onCreate, onCancel}: AddPageModalProps) {
     )
 }
 
-export default AddPageModal
+export default AddTabModal
