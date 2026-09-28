@@ -87,24 +87,52 @@ jotai atom holding its value. Position and state are one object.
     `buildSheet(prefix)`, fetches/injects the artwork SVG, and renders the
     resulting `fields`.
 
-### Binder feature (`src/App.tsx`, `src/components/features/Binder/`)
+### Library feature (`src/App.tsx`, `src/components/features/Library/`)
 
-`App` is a thin root that just renders the `Binder` feature. `Binder`
-(`Binder.tsx`) owns the whole page area: it renders the active page in a `.page`
-wrapper (`Binder.css`, which only carries the drop shadow and reserves room for
-the tabs — the page content styles itself) beside its `Tabs` strip
+`App` is a thin root that just renders the `Library` feature. The **library**
+holds many **binders**: a `LibraryBinder` is serialisable metadata (`id`,
+`label`, `hue`), where `id` is a `crypto.randomUUID()` GUID (minted by
+`logic/binderId.ts`'s `binderId()`, unit-tested in `binderId.test.ts`) that
+survives renames and is the **storage-prefix root every one of the binder's
+pages persists under**. The binder list lives in `atomWithStorage('binders', …)`,
+**empty by default**; the open binder's id persists via
+`atomWithStorage('openBinder', …)` so a reload reopens it.
+
+`Library.tsx` shows either a **shelf** — a wooden bookcase (`Library.css`) with
+each binder rendered face-out as a hue-tinted book **cover** (a circular
+placeholder portrait showing the name's first letter above the name, with room
+reserved for a future character portrait), edit/delete `IconButton`s surfacing on
+hover — or, when a binder is open,
+the `Binder` bound to that binder's id (`<Binder storagePrefix={id} onExit=…/>`,
+keyed by id so it remounts per binder). Adding/editing/deleting a binder go
+through the `Modal`-based dialogues in `BinderDialogs.tsx`/`.css` (`AddBinderModal`
+takes a name; `EditBinderModal` renames + recolours the spine via a hue slider,
+presets, and live preview; `DeleteBinderModal` confirms, warning all the binder's
+pages are removed). Default spine hues reuse the binder feature's
+`logic/tabHue.ts`. A fixed **Add binder** `IconButton` sits in the corner.
+
+### Binder feature (`src/components/features/Binder/`)
+
+`Binder` (`Binder.tsx`) is rendered per-open-binder by `Library` and takes a
+`storagePrefix` (the binder's id) and an `onExit` callback (back to the shelf).
+It owns the whole page area: it renders the active page in a `.page` wrapper
+(`Binder.css`, which only carries the drop shadow and reserves room for the tabs
+— the page content styles itself) beside its `Tabs` strip
 (`Tabs.tsx`/`Tabs.css`), both inside a full-width `.app-shell`. `Tabs` is
 feature-specific, so it lives in the feature folder, not in `ui/`;
 `logic/tabHue.ts` holds its pure per-index hue function.
 
 The page list is **dynamic and persisted**: a `Page` is serialisable tab
-metadata (`id`, `label`, `type`, `storagePrefix`), and `renderPage(page)`
-resolves it to an element by `type` — `characterSheet` → `CharacterSheet` bound
-to the page's `storagePrefix`, `empty` → an `EmptyPage` titled by its label.
-Page types live in `pageTypes.ts` (`PageType`, `PAGE_TYPES`). The list lives in
-`atomWithStorage('pages', …)`, **empty by default** — the binder starts with no
-pages (just the "+" tab) until the user adds one; the active page id persists via
-`atomWithStorage('activePage', …)`. `EmptyPage`
+metadata (`id`, `label`, `type`, `storagePrefix`), and
+`renderPage(page, storagePrefix)` resolves it to an element by `type` —
+`characterSheet` → `CharacterSheet` bound to the **binder-prefixed** storage
+prefix `${storagePrefix}:${page.storagePrefix}`, `empty` → an `EmptyPage` titled
+by its label. Page types live in `pageTypes.ts` (`PageType`, `PAGE_TYPES`). The
+page list and active page are **per-binder** atoms built in `makeBinderAtoms` —
+`atomWithStorage('${prefix}:pages', …)` (**empty by default** — the binder starts
+with no pages until the user adds one) and `atomWithStorage('${prefix}:activePage',
+…)` — so each binder keeps an isolated namespace; the view scale
+(`atomWithStorage('pageScale', …)`) is shared across binders. `EmptyPage`
 (`features/EmptyPage/`) is both the stand-in for an `empty`-type page and the
 page shown when the binder has no active page (`Binder` renders `<EmptyPage/>`
 untitled in that case). The `empty` type is offered in the add-page menu for now
@@ -119,10 +147,12 @@ that id is also the character sheet's `storagePrefix`, and the new page becomes
 active.
 
 `TabControls` (`TabControls.tsx`/`.css`) is a vertical cluster of round
-`IconButton`s in the gutter right of the tab strip. Its **Add page** and
-**Print** buttons are always shown (adding is the only way to add a page — there
-is no "+" tab; Print calls `window.print()`); the edit and delete buttons act on
-the **active** tab and appear only when one is active (`hasActive`). A `@media
+`IconButton`s in the gutter right of the tab strip, plus a **Back to library**
+button (calls `onExit`) pinned to the top-left viewport corner. The cluster's
+**Add page** and **Print** buttons are always shown (adding is the only way to
+add a page — there is no "+" tab; Print calls `window.print()`); the edit and
+delete buttons act on the **active** tab and appear only when one is active
+(`hasActive`). A `@media
 print` block in `Binder.css` hides the tab strip and controls and zeroes the
 margins so only the page content prints. The two edit dialogues live in `TabDialogs.tsx`/`.css`
 (`EditTabModal`, `DeleteTabModal`, both built on the shared `Modal`): edit renames

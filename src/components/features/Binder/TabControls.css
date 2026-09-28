@@ -12,6 +12,14 @@
     gap: 0.75rem;
 }
 
+/* The back-to-library button, pinned to the top-left viewport corner, away from the tab strip and its controls. */
+.tab-controls__library {
+    position: fixed;
+    top: 1.5rem;
+    left: 1.5rem;
+    z-index: 300;
+}
+
 /* The back-to-top button, pinned to the viewport corner; it scales/fades in once the last tab scrolls out of view. */
 .tab-controls__to-top {
     position: fixed;
@@ -33,6 +41,7 @@
 /* The controls are on-screen chrome; hide them when printing so only the page content shows. */
 @media print {
     .tab-controls,
+    .tab-controls__library,
     .tab-controls__to-top {
         display: none;
     }

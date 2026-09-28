@@ -1,5 +1,5 @@
 import type {CSSProperties, ReactNode} from 'react'
-import {useEffect, useRef, useState} from 'react'
+import {useEffect, useMemo, useRef, useState} from 'react'
 import {useAtom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
 import './Binder.css'
@@ -16,16 +16,31 @@ import EmptyPage from '../EmptyPage/EmptyPage'
 
 /**
  * A navigable page persisted to storage: tab metadata, its `type` (which component renders it), and the storage
- * prefix a character sheet's fields persist under.
+ * prefix a character sheet's fields persist under (within its binder's namespace).
  */
 type Page = TabItem & {type: PageType; storagePrefix: string}
 
-/** The user's page list, loaded from and persisted to storage. Empty until the user adds a page. */
-const pagesAtom = atomWithStorage<Page[]>('pages', [])
+/**
+ * Props for a binder: the storage prefix (its library id) all its pages persist under, and the callback that returns
+ * to the library shelf.
+ */
+interface BinderProps {
+    storagePrefix: string
+    onExit: () => void
+}
 
-const activePageAtom = atomWithStorage('activePage', '')
+/**
+ * Builds this binder's per-instance page-list and active-page atoms, namespaced under its storage prefix so each
+ * binder keeps an isolated set of pages.
+ */
+function makeBinderAtoms(prefix: string) {
+    return {
+        pagesAtom: atomWithStorage<Page[]>(`${prefix}:pages`, []),
+        activePageAtom: atomWithStorage(`${prefix}:activePage`, ''),
+    }
+}
 
-/** How far the page and tab strip are scaled, shared across pages and persisted to storage. */
+/** How far the page and tab strip are scaled, shared across binders and persisted to storage. */
 const pageScaleAtom = atomWithStorage('pageScale', 1)
 
 // How much each scale step changes the scale, and the smallest scale allowed.
@@ -33,17 +48,22 @@ const SCALE_STEP = 0.25
 const MIN_SCALE = 0.45
 
 /**
- * Resolves a page descriptor to its element: a character sheet bound to its storage prefix, or the labelled empty page.
+ * Resolves a page descriptor to its element: a character sheet bound to its binder-prefixed storage prefix, or the
+ * labelled empty page.
  */
-function renderPage(page: Page): ReactNode {
-    if (page.type === 'characterSheet') return <CharacterSheet storagePrefix={page.storagePrefix}/>
+function renderPage(page: Page, storagePrefix: string): ReactNode {
+    if (page.type === 'characterSheet') {
+        return <CharacterSheet storagePrefix={`${storagePrefix}:${page.storagePrefix}`}/>
+    }
     return <EmptyPage title={page.label}/>
 }
 
 /**
- * The whole page area: the active page beside the binder-tab strip, with a "+" tab that opens the add-page dialog.
+ * The whole page area of one binder: the active page beside the binder-tab strip, with controls to add pages and
+ * return to the library.
  */
-function Binder() {
+function Binder({storagePrefix, onExit}: BinderProps) {
+    const {pagesAtom, activePageAtom} = useMemo(() => makeBinderAtoms(storagePrefix), [storagePrefix])
     const [pages, setPages] = useAtom(pagesAtom)
     const [activeId, setActiveId] = useAtom(activePageAtom)
     const [scale, setScale] = useAtom(pageScaleAtom)
@@ -117,12 +137,13 @@ function Binder() {
     return (
         <div className="app-shell" style={{'--active-hue': active?.hue ?? 0} as CSSProperties}>
             <div className="binder-view" ref={viewRef} style={{transform: `scale(${scale})`}}>
-                <main className="page">{active ? renderPage(active) : <EmptyPage/>}</main>
+                <main className="page">{active ? renderPage(active, storagePrefix) : <EmptyPage/>}</main>
                 <Tabs tabs={pages} activeId={active?.id ?? ''} onSelect={setActiveId} onReorder={reorderPages}
                       onLastTabChange={setLastTab}/>
             </div>
             <TabControls onAdd={() => setAdding(true)} hasActive={!!active} onEdit={() => setEditing('edit')}
-                         onDelete={() => setEditing('delete')} lastTab={lastTab}/>
+                         onDelete={(event) => (event.shiftKey ? deletePage() : setEditing('delete'))} onExit={onExit}
+                         lastTab={lastTab}/>
             <ViewControls onScaleUp={scaleUp} onScaleDown={scaleDown} canScaleUp={scale < maxScale}
                           canScaleDown={scale > MIN_SCALE}/>
             {adding && <AddTabModal onCreate={createPage} onCancel={() => setAdding(false)}/>}

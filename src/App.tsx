@@ -1,10 +1,10 @@
-import Binder from './components/features/Binder/Binder.tsx'
+import Library from './components/features/Library/Library.tsx'
 
 /**
- * Application root; renders the navigable page area.
+ * Application root; renders the library of binders.
  */
 function App() {
-    return <Binder/>
+    return <Library/>
 }
 
 export default App

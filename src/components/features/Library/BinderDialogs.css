@@ -1,0 +1,27 @@
+/* Colour-picker specifics for the binder edit dialogue; the shared form, field, and button styling comes from Modal.css. */
+
+.binder-dialog__prompt {
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Live preview of the binder spine at the chosen hue. */
+.binder-dialog__swatch {
+    height: 3rem;
+    border: 1px solid rgba(0, 0, 0, 0.22);
+    border-radius: 0.5rem;
+}
+
+.binder-dialog__presets {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.binder-dialog__preset {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid rgba(0, 0, 0, 0.22);
+    border-radius: 50%;
+    cursor: pointer;
+}

@@ -1,14 +1,14 @@
-import type {ReactNode} from 'react'
+import type {MouseEvent, ReactNode} from 'react'
 import './IconButton.css'
 
 /**
  * Props for a round icon button: the icon it shows, its accessible name and hover label, which side that label
- * opens toward, an optional colour variant, whether it is disabled, and the click handler.
+ * opens toward, an optional colour variant, whether it is disabled, and the click handler (given the click event).
  */
 interface IconButtonProps {
     icon: ReactNode
     label: string
-    onClick: () => void
+    onClick: (event: MouseEvent<HTMLButtonElement>) => void
     labelSide?: 'left' | 'right'
     variant?: 'default' | 'danger'
     disabled?: boolean
