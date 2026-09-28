@@ -121,15 +121,14 @@ active.
 `TabControls` (`TabControls.tsx`/`.css`) is a vertical cluster of round
 `IconButton`s in the gutter right of the tab strip. Its **Add page** button is
 always shown (this is the only way to add a page — there is no "+" tab); the
-rename, recolour and delete buttons act on the **active** tab and appear only
-when one is active (`hasActive`). The three edit dialogues live in
-`TabDialogs.tsx`/`.css` (`RenameTabModal`, `ColorTabModal`, `DeleteTabModal`, all
-built on the shared `Modal`): rename edits the label only (the id/`storagePrefix`
-and stored fields are untouched); recolour sets the tab `hue` via a slider +
-preset swatches with a live preview; delete asks for confirmation. `Binder` owns
-the handlers (`createPage`, and `renamePage`/`recolorPage`/`deletePage`, which
-patch or drop the active page in the persisted list; delete then activates a
-neighbour).
+edit and delete buttons act on the **active** tab and appear only when one is
+active (`hasActive`). The two edit dialogues live in `TabDialogs.tsx`/`.css`
+(`EditTabModal`, `DeleteTabModal`, both built on the shared `Modal`): edit renames
+the label (the id/`storagePrefix` and stored fields are untouched) and recolours
+the tab `hue` via a slider + preset swatches with a live preview, both in one
+dialogue; delete asks for confirmation. `Binder` owns the handlers (`createPage`,
+and `editPage`/`deletePage`, which patch or drop the active page in the persisted
+list; delete then activates a neighbour).
 
 `Tabs` is the binder-style tab strip anchored to the page's right edge:
 labels rotated 90° CCW (`writing-mode: vertical-rl` + 180° rotation), one muted

@@ -3,58 +3,12 @@ import './TabDialogs.css'
 import Modal from '../../ui/Modal/Modal'
 
 /**
- * Props for the rename dialogue: the current label to seed the field, and the save/cancel callbacks.
+ * Props for the edit dialogue: the current label and hue to seed the fields, and the save/cancel callbacks.
  */
-interface RenameTabModalProps {
-    initial: string
-    onSave: (name: string) => void
-    onCancel: () => void
-}
-
-/**
- * Modal for renaming a tab: edits the label only, leaving the tab's id (and stored fields) untouched.
- */
-export function RenameTabModal({initial, onSave, onCancel}: RenameTabModalProps) {
-    const [name, setName] = useState(initial)
-    const inputRef = useRef<HTMLInputElement>(null)
-
-    useEffect(() => {
-        inputRef.current?.select()
-    }, [])
-
-    // Validates the name, then reports it to the parent.
-    function submit(event: SyntheticEvent) {
-        event.preventDefault()
-        const trimmed = name.trim()
-        if (!trimmed) return
-        onSave(trimmed)
-    }
-
-    return (
-        <Modal title="Rename tab" onClose={onCancel}>
-            <form className="modal__body" onSubmit={submit}>
-                <label className="modal__field">
-                    <span>Name</span>
-                    <input ref={inputRef} type="text" value={name}
-                           onChange={(event) => setName(event.target.value)}/>
-                </label>
-                <div className="modal__actions">
-                    <button type="button" className="modal__btn" onClick={onCancel}>Cancel</button>
-                    <button type="submit" className="modal__btn modal__btn--primary" disabled={!name.trim()}>
-                        Save
-                    </button>
-                </div>
-            </form>
-        </Modal>
-    )
-}
-
-/**
- * Props for the recolour dialogue: the current hue to seed the picker, and the save/cancel callbacks.
- */
-interface ColorTabModalProps {
-    initial: number
-    onSave: (hue: number) => void
+interface EditTabModalProps {
+    initialLabel: string
+    initialHue: number
+    onSave: (name: string, hue: number) => void
     onCancel: () => void
 }
 
@@ -62,15 +16,35 @@ interface ColorTabModalProps {
 const PRESET_HUES = [38, 90, 150, 200, 260, 320]
 
 /**
- * Modal for recolouring a tab: a hue slider with swatch presets and a live preview of the resulting paper tab.
+ * Modal for editing a tab: renames the label (leaving the tab's id and stored fields untouched) and recolours it
+ * via a hue slider with swatch presets and a live preview of the resulting paper tab.
  */
-export function ColorTabModal({initial, onSave, onCancel}: ColorTabModalProps) {
-    const [hue, setHue] = useState(initial)
+export function EditTabModal({initialLabel, initialHue, onSave, onCancel}: EditTabModalProps) {
+    const [name, setName] = useState(initialLabel)
+    const [hue, setHue] = useState(initialHue)
+
+    // Validates the name, then reports the label and hue to the parent.
+    function submit(event: SyntheticEvent) {
+        event.preventDefault()
+        const trimmed = name.trim()
+        if (!trimmed) return
+        onSave(trimmed, hue)
+    }
 
     return (
-        <Modal title="Tab colour" onClose={onCancel}>
-            <div className="modal__body">
-                <div className="tab-dialog__swatch" style={{background: `hsl(${hue} 55% 82%)`}}/>
+        <Modal title="Edit tab" onClose={onCancel}>
+            <form className="modal__body" onSubmit={submit}>
+                <label className="modal__field">
+                    <span>Name</span>
+                    <input type="text" value={name}
+                           onChange={(event) => setName(event.target.value)}/>
+                </label>
+
+                <label className="modal__field">
+                    <span>Color</span>
+                    <input type="range" min={0} max={359} value={hue}
+                           onChange={(event) => setHue(Number(event.target.value))}/>
+                </label>
                 <div className="tab-dialog__presets">
                     {PRESET_HUES.map((preset) => (
                         <button key={preset} type="button" className="tab-dialog__preset"
@@ -78,18 +52,15 @@ export function ColorTabModal({initial, onSave, onCancel}: ColorTabModalProps) {
                                 onClick={() => setHue(preset)}/>
                     ))}
                 </div>
-                <label className="modal__field">
-                    <span>Hue</span>
-                    <input type="range" min={0} max={359} value={hue}
-                           onChange={(event) => setHue(Number(event.target.value))}/>
-                </label>
+                <div className="tab-dialog__swatch" style={{background: `hsl(${hue} 55% 82%)`}}/>
+
                 <div className="modal__actions">
                     <button type="button" className="modal__btn" onClick={onCancel}>Cancel</button>
-                    <button type="button" className="modal__btn modal__btn--primary" onClick={() => onSave(hue)}>
+                    <button type="submit" className="modal__btn modal__btn--primary" disabled={!name.trim()}>
                         Save
                     </button>
                 </div>
-            </div>
+            </form>
         </Modal>
     )
 }

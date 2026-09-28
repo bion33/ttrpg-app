@@ -6,7 +6,7 @@ import './Binder.css'
 import Tabs, {type TabItem} from './Tabs.tsx'
 import AddTabModal from './AddTabModal.tsx'
 import TabControls from './TabControls.tsx'
-import {ColorTabModal, DeleteTabModal, RenameTabModal} from './TabDialogs.tsx'
+import {DeleteTabModal, EditTabModal} from './TabDialogs.tsx'
 import type {PageType} from './pageTypes.ts'
 import {tabHue} from './logic/tabHue.ts'
 import {pageId} from './logic/pageId.ts'
@@ -42,7 +42,7 @@ function Binder() {
     // The last tab's element, watched so the back-to-top button appears once it scrolls out of view.
     const [lastTab, setLastTab] = useState<HTMLElement | null>(null)
     // Which edit dialogue is open for the active tab, if any.
-    const [editing, setEditing] = useState<'rename' | 'color' | 'delete' | null>(null)
+    const [editing, setEditing] = useState<'edit' | 'delete' | null>(null)
     const activeIndex = Math.max(0, pages.findIndex((page) => page.id === activeId))
     const active = pages.length ? pages[activeIndex] : undefined
 
@@ -54,15 +54,9 @@ function Binder() {
         setAdding(false)
     }
 
-    // Renames the active tab (label only; its id and stored fields are unchanged).
-    function renamePage(label: string) {
-        setPages((prev) => prev.map((page) => (page.id === activeId ? {...page, label} : page)))
-        setEditing(null)
-    }
-
-    // Recolours the active tab.
-    function recolorPage(hue: number) {
-        setPages((prev) => prev.map((page) => (page.id === activeId ? {...page, hue} : page)))
+    // Edits the active tab's label and hue (its id and stored fields are unchanged).
+    function editPage(label: string, hue: number) {
+        setPages((prev) => prev.map((page) => (page.id === activeId ? {...page, label, hue} : page)))
         setEditing(null)
     }
 
@@ -90,14 +84,12 @@ function Binder() {
             <main className="page">{active ? renderPage(active) : <EmptyPage/>}</main>
             <Tabs tabs={pages} activeId={active?.id ?? ''} onSelect={setActiveId} onReorder={reorderPages}
                   onLastTabChange={setLastTab}/>
-            <TabControls onAdd={() => setAdding(true)} hasActive={!!active} onRename={() => setEditing('rename')}
-                         onRecolor={() => setEditing('color')} onDelete={() => setEditing('delete')} lastTab={lastTab}/>
+            <TabControls onAdd={() => setAdding(true)} hasActive={!!active} onEdit={() => setEditing('edit')}
+                         onDelete={() => setEditing('delete')} lastTab={lastTab}/>
             {adding && <AddTabModal onCreate={createPage} onCancel={() => setAdding(false)}/>}
-            {active && editing === 'rename' && (
-                <RenameTabModal initial={active.label} onSave={renamePage} onCancel={() => setEditing(null)}/>
-            )}
-            {active && editing === 'color' && (
-                <ColorTabModal initial={active.hue} onSave={recolorPage} onCancel={() => setEditing(null)}/>
+            {active && editing === 'edit' && (
+                <EditTabModal initialLabel={active.label} initialHue={active.hue} onSave={editPage}
+                              onCancel={() => setEditing(null)}/>
             )}
             {active && editing === 'delete' && (
                 <DeleteTabModal label={active.label} onConfirm={deletePage} onCancel={() => setEditing(null)}/>

@@ -1,27 +1,25 @@
 import {useEffect, useState} from 'react'
-import {ArrowUp, Palette, Pencil, Plus, Trash2} from 'lucide-react'
+import {ArrowUp, Pencil, Plus, Trash2} from 'lucide-react'
 import IconButton from '../../ui/IconButton/IconButton'
 import './TabControls.css'
 
 /**
- * Props for the tab-control cluster: adding a page is always available; renaming, recolouring and deleting act on
- * the active tab and are offered only when `hasActive` is true. `lastTab` is the tab whose visibility gates the
- * back-to-top button.
+ * Props for the tab-control cluster: adding a page is always available; editing and deleting act on the active tab
+ * and are offered only when `hasActive` is true. `lastTab` is the tab whose visibility gates the back-to-top button.
  */
 interface TabControlsProps {
     onAdd: () => void
     hasActive: boolean
-    onRename: () => void
-    onRecolor: () => void
+    onEdit: () => void
     onDelete: () => void
     lastTab: HTMLElement | null
 }
 
 /**
  * A fixed cluster of round icon buttons in the bottom corner: add a page (always shown), and — for the active
- * tab — rename, recolour, and delete. A back-to-top button appears once the last tab scrolls out of view.
+ * tab — edit (rename and recolour) and delete. A back-to-top button appears once the last tab scrolls out of view.
  */
-function TabControls({onAdd, hasActive, onRename, onRecolor, onDelete, lastTab}: TabControlsProps) {
+function TabControls({onAdd, hasActive, onEdit, onDelete, lastTab}: TabControlsProps) {
     const [scrolledPast, setScrolledPast] = useState(false)
 
     // Watch whether the last tab is still on screen so the back-to-top button can appear when it is not.
@@ -41,8 +39,7 @@ function TabControls({onAdd, hasActive, onRename, onRecolor, onDelete, lastTab}:
                 <IconButton icon={<Plus/>} label="Add tab" onClick={onAdd}/>
                 {hasActive && (
                     <>
-                        <IconButton icon={<Pencil/>} label="Rename tab" onClick={onRename}/>
-                        <IconButton icon={<Palette/>} label="Change tab colour" onClick={onRecolor}/>
+                        <IconButton icon={<Pencil/>} label="Edit tab" onClick={onEdit}/>
                         <IconButton icon={<Trash2/>} label="Delete tab" variant="danger" onClick={onDelete}/>
                     </>
                 )}
