@@ -34,6 +34,8 @@ interface DragState {
     startY: number
     tops: number[]
     target: number
+    // The view's on-screen scale at drag start, used to convert screen-pixel pointer deltas into unscaled units.
+    scale: number
 }
 
 /**
@@ -66,7 +68,10 @@ function Tabs({tabs, activeId, onSelect, onReorder, onLastTabChange}: TabsProps)
     function onPointerDown(event: PointerEvent<HTMLButtonElement>, index: number, id: string) {
         if (event.button !== 0) return
         const tops = tabRefs.current.slice(0, tabs.length).map((el) => el?.offsetTop ?? 0)
-        dragRef.current = {fromIndex: index, startY: event.clientY, tops, target: index}
+        // Derive the view's scale from the tab's rendered vs. layout height so the drag tracks the pointer when zoomed.
+        const el = event.currentTarget
+        const scale = el.offsetHeight ? el.getBoundingClientRect().height / el.offsetHeight : 1
+        dragRef.current = {fromIndex: index, startY: event.clientY, tops, target: index, scale}
         setDrag({id, fromIndex: index, tops})
         setDragOffset(0)
         setTarget(index)
@@ -77,7 +82,8 @@ function Tabs({tabs, activeId, onSelect, onReorder, onLastTabChange}: TabsProps)
     function onPointerMove(event: PointerEvent<HTMLButtonElement>) {
         const state = dragRef.current
         if (!state) return
-        const dy = event.clientY - state.startY
+        // Convert the screen-pixel pointer delta into the view's unscaled units so the tab stays under the pointer.
+        const dy = (event.clientY - state.startY) / state.scale
         setDragOffset(dy)
         const height = tabRefs.current[state.fromIndex]?.offsetHeight ?? 0
         const draggedCenter = state.tops[state.fromIndex] + dy + height / 2
