@@ -119,10 +119,12 @@ that id is also the character sheet's `storagePrefix`, and the new page becomes
 active.
 
 `TabControls` (`TabControls.tsx`/`.css`) is a vertical cluster of round
-`IconButton`s in the gutter right of the tab strip. Its **Add page** button is
-always shown (this is the only way to add a page — there is no "+" tab); the
-edit and delete buttons act on the **active** tab and appear only when one is
-active (`hasActive`). The two edit dialogues live in `TabDialogs.tsx`/`.css`
+`IconButton`s in the gutter right of the tab strip. Its **Add page** and
+**Print** buttons are always shown (adding is the only way to add a page — there
+is no "+" tab; Print calls `window.print()`); the edit and delete buttons act on
+the **active** tab and appear only when one is active (`hasActive`). A `@media
+print` block in `Binder.css` hides the tab strip and controls and zeroes the
+margins so only the page content prints. The two edit dialogues live in `TabDialogs.tsx`/`.css`
 (`EditTabModal`, `DeleteTabModal`, both built on the shared `Modal`): edit renames
 the label (the id/`storagePrefix` and stored fields are untouched) and recolours
 the tab `hue` via a slider + preset swatches with a live preview, both in one

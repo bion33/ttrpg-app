@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState, type SyntheticEvent} from 'react'
+import {type SyntheticEvent, useState} from 'react'
 import './TabDialogs.css'
 import Modal from '../../ui/Modal/Modal'
 

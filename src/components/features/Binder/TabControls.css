@@ -29,3 +29,11 @@
     transform: scale(1);
     pointer-events: auto;
 }
+
+/* The controls are on-screen chrome; hide them when printing so only the page content shows. */
+@media print {
+    .tab-controls,
+    .tab-controls__to-top {
+        display: none;
+    }
+}

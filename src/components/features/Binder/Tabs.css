@@ -58,3 +58,10 @@
     white-space: nowrap;
     user-select: none;
 }
+
+/* The tab strip is navigation chrome; hide it when printing so only the page content shows. */
+@media print {
+    .tabs {
+        display: none;
+    }
+}

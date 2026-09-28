@@ -1,5 +1,5 @@
 import {useEffect, useState} from 'react'
-import {ArrowUp, Pencil, Plus, Trash2} from 'lucide-react'
+import {ArrowUp, Pencil, Plus, Printer, Trash2} from 'lucide-react'
 import IconButton from '../../ui/IconButton/IconButton'
 import './TabControls.css'
 
@@ -16,8 +16,9 @@ interface TabControlsProps {
 }
 
 /**
- * A fixed cluster of round icon buttons in the bottom corner: add a page (always shown), and — for the active
- * tab — edit (rename and recolour) and delete. A back-to-top button appears once the last tab scrolls out of view.
+ * A fixed cluster of round icon buttons in the bottom corner: add a page and print (always shown), and — for the
+ * active tab — edit (rename and recolour) and delete. A back-to-top button appears once the last tab scrolls out of
+ * view.
  */
 function TabControls({onAdd, hasActive, onEdit, onDelete, lastTab}: TabControlsProps) {
     const [scrolledPast, setScrolledPast] = useState(false)
@@ -40,6 +41,7 @@ function TabControls({onAdd, hasActive, onEdit, onDelete, lastTab}: TabControlsP
                 {hasActive && (
                     <>
                         <IconButton icon={<Pencil/>} label="Edit tab" onClick={onEdit}/>
+                        <IconButton icon={<Printer/>} label="Print" onClick={() => window.print()}/>
                         <IconButton icon={<Trash2/>} label="Delete tab" variant="danger" onClick={onDelete}/>
                     </>
                 )}

@@ -29,3 +29,20 @@
 .page > * {
     margin-top: 0;
 }
+
+/* When printing, show only the page content: drop the margins, tab strip, controls, and the page's own chrome. */
+@media print {
+    @page {
+        margin: 0;
+    }
+
+    .app-shell {
+        margin: 0;
+    }
+
+    .page {
+        margin-right: 0;
+        border: none;
+        box-shadow: none;
+    }
+}
