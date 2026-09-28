@@ -21,6 +21,8 @@ interface TabsProps {
     onSelect: (id: string) => void
     // Commits a drag reorder: the tab at index `from` moves to index `to`.
     onReorder: (from: number, to: number) => void
+    // Reports the last tab's element (or null) so an outside control can watch whether it has scrolled into view.
+    onLastTabChange?: (el: HTMLElement | null) => void
 }
 
 /**
@@ -38,7 +40,7 @@ interface DragState {
  * Vertical, right-aligned tab strip styled like coloured paper binder tabs, with each label rotated 90° CCW; tabs
  * can be dragged vertically to reorder, with the displaced tabs sliding to their new slots.
  */
-function Tabs({tabs, activeId, onSelect, onReorder}: TabsProps) {
+function Tabs({tabs, activeId, onSelect, onReorder, onLastTabChange}: TabsProps) {
     const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
     const dragRef = useRef<DragState | null>(null)
     // Render-facing drag state: the moving tab, its origin slot, the captured tops, its live offset and target slot.
@@ -47,6 +49,11 @@ function Tabs({tabs, activeId, onSelect, onReorder}: TabsProps) {
     const [target, setTarget] = useState(0)
     // True for the single commit frame after a drop, while tabs snap to their reordered slots without gliding.
     const [committing, setCommitting] = useState(false)
+
+    // Reports the last tab's element up whenever the tab list changes, so a control can watch its visibility.
+    useEffect(() => {
+        onLastTabChange?.(tabRefs.current[tabs.length - 1] ?? null)
+    }, [tabs.length, onLastTabChange])
 
     // Re-enables the glide once the reorder has painted, so the snap-to-new-slot frame is not itself animated.
     useEffect(() => {

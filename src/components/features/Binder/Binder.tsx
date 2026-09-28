@@ -39,6 +39,8 @@ function Binder() {
     const [pages, setPages] = useAtom(pagesAtom)
     const [activeId, setActiveId] = useAtom(activePageAtom)
     const [adding, setAdding] = useState(false)
+    // The last tab's element, watched so the back-to-top button appears once it scrolls out of view.
+    const [lastTab, setLastTab] = useState<HTMLElement | null>(null)
     // Which edit dialogue is open for the active tab, if any.
     const [editing, setEditing] = useState<'rename' | 'color' | 'delete' | null>(null)
     const activeIndex = Math.max(0, pages.findIndex((page) => page.id === activeId))
@@ -86,9 +88,10 @@ function Binder() {
     return (
         <div className="app-shell" style={{'--active-hue': active?.hue ?? 0} as CSSProperties}>
             <main className="page">{active ? renderPage(active) : <EmptyPage/>}</main>
-            <Tabs tabs={pages} activeId={active?.id ?? ''} onSelect={setActiveId} onReorder={reorderPages}/>
+            <Tabs tabs={pages} activeId={active?.id ?? ''} onSelect={setActiveId} onReorder={reorderPages}
+                  onLastTabChange={setLastTab}/>
             <TabControls onAdd={() => setAdding(true)} hasActive={!!active} onRename={() => setEditing('rename')}
-                         onRecolor={() => setEditing('color')} onDelete={() => setEditing('delete')}/>
+                         onRecolor={() => setEditing('color')} onDelete={() => setEditing('delete')} lastTab={lastTab}/>
             {adding && <AddPageModal onCreate={createPage} onCancel={() => setAdding(false)}/>}
             {active && editing === 'rename' && (
                 <RenameTabModal initial={active.label} onSave={renamePage} onCancel={() => setEditing(null)}/>

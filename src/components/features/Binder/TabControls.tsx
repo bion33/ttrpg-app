@@ -1,11 +1,12 @@
-import {useEffect, useRef, useState} from 'react'
+import {useEffect, useState} from 'react'
 import {ArrowUp, Palette, Pencil, Plus, Trash2} from 'lucide-react'
 import IconButton from '../../ui/IconButton/IconButton'
 import './TabControls.css'
 
 /**
  * Props for the tab-control cluster: adding a page is always available; renaming, recolouring and deleting act on
- * the active tab and are offered only when `hasActive` is true.
+ * the active tab and are offered only when `hasActive` is true. `lastTab` is the tab whose visibility gates the
+ * back-to-top button.
  */
 interface TabControlsProps {
     onAdd: () => void
@@ -13,34 +14,36 @@ interface TabControlsProps {
     onRename: () => void
     onRecolor: () => void
     onDelete: () => void
+    lastTab: HTMLElement | null
 }
 
 /**
- * A vertical cluster of round icon buttons beside the tab strip: add a page (always shown), and — for the active
- * tab — rename, recolour, and delete. A back-to-top button appears once the cluster scrolls out of view.
+ * A fixed cluster of round icon buttons in the bottom corner: add a page (always shown), and — for the active
+ * tab — rename, recolour, and delete. A back-to-top button appears once the last tab scrolls out of view.
  */
-function TabControls({onAdd, hasActive, onRename, onRecolor, onDelete}: TabControlsProps) {
-    const clusterRef = useRef<HTMLDivElement>(null)
+function TabControls({onAdd, hasActive, onRename, onRecolor, onDelete, lastTab}: TabControlsProps) {
     const [scrolledPast, setScrolledPast] = useState(false)
 
-    // Watch whether the cluster is still on screen so the back-to-top button can appear when it is not.
+    // Watch whether the last tab is still on screen so the back-to-top button can appear when it is not.
     useEffect(() => {
-        const cluster = clusterRef.current
-        if (!cluster) return
+        if (!lastTab) {
+            setScrolledPast(false)
+            return
+        }
         const observer = new IntersectionObserver(([entry]) => setScrolledPast(!entry.isIntersecting))
-        observer.observe(cluster)
+        observer.observe(lastTab)
         return () => observer.disconnect()
-    }, [])
+    }, [lastTab])
 
     return (
         <>
-            <div className="tab-controls" ref={clusterRef}>
-                <IconButton icon={<Plus/>} label="Add page" onClick={onAdd}/>
+            <div className="tab-controls">
+                <IconButton icon={<Plus/>} label="Add tab" onClick={onAdd}/>
                 {hasActive && (
                     <>
-                        <IconButton icon={<Pencil/>} label="Rename" onClick={onRename}/>
-                        <IconButton icon={<Palette/>} label="Colour" onClick={onRecolor}/>
-                        <IconButton icon={<Trash2/>} label="Delete" variant="danger" onClick={onDelete}/>
+                        <IconButton icon={<Pencil/>} label="Rename tab" onClick={onRename}/>
+                        <IconButton icon={<Palette/>} label="Change tab colour" onClick={onRecolor}/>
+                        <IconButton icon={<Trash2/>} label="Delete tab" variant="danger" onClick={onDelete}/>
                     </>
                 )}
             </div>

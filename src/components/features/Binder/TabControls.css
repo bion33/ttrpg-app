@@ -2,10 +2,9 @@
    lifted above the page and tabs so the buttons and their hover labels are never covered. */
 
 .tab-controls {
-    position: absolute;
-    top: 0;
-    /* Clear the tab strip (reserved at the page's right edge) and sit in the gutter beside it. */
-    right: -3.5rem;
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
     /* Above the page (z 10) and every tab (up to z 200) so the buttons and their hover labels are never covered. */
     z-index: 300;
     display: flex;

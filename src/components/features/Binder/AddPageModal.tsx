@@ -31,7 +31,7 @@ function AddPageModal({onCreate, onCancel}: AddPageModalProps) {
     }
 
     return (
-        <Modal title="Add page" onClose={onCancel}>
+        <Modal title="Add tab" onClose={onCancel}>
             <form className="modal__body" onSubmit={submit}>
                 <label className="modal__field">
                     <span>Name</span>
