@@ -9,12 +9,6 @@
     color: #2c1f14;
 }
 
-.library__empty {
-    margin: 4rem 0;
-    font-size: 1.125rem;
-    opacity: 0.7;
-}
-
 /* The binders in a grid whose column gap equals its row gap; columns are as many 9rem covers as fit each row. */
 .library__grid {
     display: grid;
@@ -170,10 +164,30 @@
     pointer-events: auto;
 }
 
-/* The add-binder control, pinned to the viewport corner like the binder's own tab controls. */
-.library__controls {
-    position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    z-index: 300;
+/* The ghost binder in the last grid cell: the real binder look (papers, cover, portrait) faded so it reads as a
+   placeholder, with a plus icon in the portrait; clicking its cover opens the add-binder dialogue. */
+.library__book--ghost {
+    opacity: 0.6;
+    transition: opacity 0.15s ease;
+}
+
+.library__book--ghost:hover,
+.library__book--ghost:focus-within {
+    opacity: 0.7;
+}
+
+/* The ghost cover is a neutral grey (the real cover's hue-tinted gradient does not apply to it). */
+.library__book--ghost .library__cover {
+    background: linear-gradient(160deg, hsl(30 6% 52%), hsl(30 6% 40%));
+}
+
+.library__book--ghost .library__portrait {
+    color: hsl(30 6% 40%);
+}
+
+/* The plus icon fills the portrait circle in place of a name's first letter. */
+.library__book--ghost .library__portrait svg {
+    width: 4.75rem;
+    height: 4.75rem;
+    stroke-width: 2.5;
 }

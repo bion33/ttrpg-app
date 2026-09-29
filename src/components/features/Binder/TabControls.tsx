@@ -1,6 +1,6 @@
 import type {MouseEvent} from 'react'
 import {useEffect, useState} from 'react'
-import {ArrowUp, Library, Pencil, Plus, Printer, Trash2} from 'lucide-react'
+import {ArrowUp, FilePlus2, Library, Pencil, Printer, Trash2} from 'lucide-react'
 import IconButton from '../../ui/IconButton/IconButton'
 import './TabControls.css'
 
@@ -51,7 +51,7 @@ function TabControls({onAdd, hasActive, onEdit, onDelete, onExit, lastTab}: TabC
                         <IconButton icon={<Pencil/>} label="Edit tab" onClick={onEdit}/>
                     </>
                 )}
-                <IconButton icon={<Plus/>} label="Add tab" onClick={onAdd}/>
+                <IconButton icon={<FilePlus2/>} label="Add tab" onClick={onAdd}/>
             </div>
             <div className={`tab-controls__to-top${scrolledPast ? ' tab-controls__to-top--visible' : ''}`}>
                 <IconButton icon={<ArrowUp/>} label="Back to top"

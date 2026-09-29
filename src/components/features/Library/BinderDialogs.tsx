@@ -35,8 +35,11 @@ export function AddBinderModal({onCreate, onCancel}: AddBinderModalProps) {
     return (
         <Modal title="Add binder" onClose={onCancel}>
             <form className="modal__body" onSubmit={submit}>
+                <p className="binder-dialog__prompt">
+                    Add a binder to organise all information on a character in various pages and formats.
+                </p>
                 <label className="modal__field">
-                    <span>Name</span>
+                    <span>Character name</span>
                     <input ref={nameRef} type="text" value={name}
                            onChange={(event) => setName(event.target.value)}/>
                 </label>

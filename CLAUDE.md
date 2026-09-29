@@ -120,7 +120,12 @@ through the `Modal`-based dialogues in `BinderDialogs.tsx`/`.css` (`AddBinderMod
 takes a name; `EditBinderModal` renames + recolours the spine via a hue slider,
 presets, and live preview; `DeleteBinderModal` confirms, warning all the binder's
 pages are removed). Default spine hues reuse the binder feature's
-`logic/tabHue.ts`. A fixed **Add binder** `IconButton` sits in the corner.
+`logic/tabHue.ts`. Adding is driven by a **ghost binder** — the same book markup
+(loose papers + cover + portrait) reused and faded to a low opacity
+(`.library__book--ghost`), with a plus icon in the portrait in place of a letter
+and the name "Add binder". It sits in the grid's last cell after the existing
+covers and opens `AddBinderModal`; there is no separate corner button, and an
+empty library shows just the ghost cover.
 
 ### Binder feature (`src/components/features/Binder/`)
 
@@ -206,7 +211,8 @@ markup (and, for the colour picker, its swatch/preset styling in `TabDialogs.css
 `IconButton` is the shared round, Material-style button: an icon at rest with a
 floating text-label pill that fades in on hover/focus. Props are `icon`, `label`
 (used as both the pill text and the accessible name), `onClick`, an optional
-`labelSide` (`left`/`right`) and `variant` (`default`/`danger`). Callers control
+`labelSide` (`left`/`right`), `variant` (`default`/`danger`) and `size`
+(`default`/`large`). Callers control
 stacking via the surrounding container so the pill can sit above neighbours (e.g.
 `Binder`'s `TabControls` gives its cluster a high `z-index`).
 

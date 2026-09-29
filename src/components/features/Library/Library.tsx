@@ -66,10 +66,7 @@ function Library() {
 
     return (
         <div className="library">
-            {binders.length === 0 ? (
-                <p className="library__empty">No binders yet. Add one with the button in the corner.</p>
-            ) : (
-                <div className="library__grid">
+            <div className="library__grid">
                     {sorted.map((binder) => {
                         const jitter = bookJitter(binder.id)
                         // Decorative tabs mirror the binder's real pages (first four only), in their stored hue/label.
@@ -110,11 +107,22 @@ function Library() {
                         </div>
                         )
                     })}
-                </div>
-            )}
-
-            <div className="library__controls">
-                <IconButton icon={<Plus/>} label="Add binder" onClick={() => setAdding(true)}/>
+                    {/* Ghost binder in the last cell: a faded copy of the real binder look that opens the add dialogue. */}
+                    <div className="library__book library__book--ghost" style={{'--hue': 30} as CSSProperties}>
+                        <div className="library__papers" aria-hidden="true">
+                            {bookJitter('library-add').papers.map((paper, i) => (
+                                <span key={i} className="library__paper"
+                                      style={{'--dx': `${paper.dx}rem`, '--dy': `${paper.dy}rem`,
+                                          '--rot': `${paper.rot}deg`} as CSSProperties}/>
+                            ))}
+                        </div>
+                        <button type="button" className="library__cover" onClick={() => setAdding(true)}>
+                            <span className="library__portrait" aria-hidden="true">
+                                <Plus/>
+                            </span>
+                            <span className="library__cover-name">Add binder</span>
+                        </button>
+                    </div>
             </div>
 
             {adding && <AddBinderModal onCreate={createBinder} onCancel={() => setAdding(false)}/>}
