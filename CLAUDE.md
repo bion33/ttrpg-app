@@ -72,8 +72,7 @@ the jotai atom holding its value. Position and state are one object.
   is an ordinary editable, persisted input (e.g. passive Perception, auto-calc
   toggled by a checkbox).
 - `collectNodes(tree)` flattens a `NodeTree` (nodes nested in arrays / records)
-  into a flat render list. `numberGrid(...)` is a helper for grid-placed number
-  fields.
+  into a flat render list.
 
 ### CharacterSheet feature (`src/components/features/CharacterSheet/`)
 

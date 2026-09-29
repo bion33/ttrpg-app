@@ -1,5 +1,4 @@
 import type {Getter} from 'jotai'
-import {numberGrid} from '../../../../../lib/fieldNodes.ts'
 import {halfSpeed} from '../../logic/formulas.ts'
 import type {SheetFactory} from '../nodes.ts'
 
@@ -98,14 +97,10 @@ export function buildCombat({inputNode, checkNode, computedInputNode}: SheetFact
 
     const hitDice = {
         class1: inputNode({id: 'hitDiceClass1', x: 562, y: 210, width: 14, height: 20, type: 'number', fontSize: 12}),
-        counts: numberGrid(
-            inputNode,
-            [
-                ['hitDiceTotalClass1', 'hitDiceTotalClass2'],
-                ['hitDiceUsedClass1', 'hitDiceUsedClass2'],
-            ],
-            {x0: 578, y0: 202, columnStep: 24, rowStep: 20, width: 26, height: 18, fontSize: 16},
-        ),
+        totalClass1: inputNode({id: 'hitDiceTotalClass1', x: 578, y: 202, width: 26, height: 18, type: 'number', fontSize: 16}),
+        totalClass2: inputNode({id: 'hitDiceTotalClass2', x: 602, y: 202, width: 26, height: 18, type: 'number', fontSize: 16}),
+        usedClass1: inputNode({id: 'hitDiceUsedClass1', x: 578, y: 222, width: 26, height: 18, type: 'number', fontSize: 16}),
+        usedClass2: inputNode({id: 'hitDiceUsedClass2', x: 602, y: 222, width: 26, height: 18, type: 'number', fontSize: 16}),
         class2: inputNode({id: 'hitDiceClass2', x: 635, y: 210, width: 14, height: 20, type: 'number', fontSize: 12}),
     }
 

@@ -4,7 +4,6 @@ import {atomWithStorage} from 'jotai/utils'
 import type {FieldDefinition} from '../types/FieldDefinition.ts'
 import type {DerivedNode, FieldNode, FieldValue, InputNode, NodeTree} from '../types/FieldNode.ts'
 import type {CheckFieldDefinition} from "../types/CheckFieldDefinition.ts";
-import type {NumericFieldDefinition} from "../types/NumericFieldDefinition.ts";
 
 /**
  * A generic system for overlaying form fields on artwork, backed by jotai atoms.
@@ -95,35 +94,6 @@ export function collectNodes(tree: NodeTree): FieldNode[] {
     if (isFieldNode(tree)) return [tree]
     if (Array.isArray(tree)) return tree.flatMap(collectNodes)
     return Object.values(tree).flatMap(collectNodes)
-}
-
-/**
- * Places number fields on a grid; ids[row][column] is each cell's field id.
- */
-export function numberGrid(
-    inputNode: (definition: NumericFieldDefinition) => InputNode<number | null>,
-    ids: string[][],
-    options: {
-        x0: number;
-        y0: number;
-        columnStep: number;
-        rowStep: number;
-        width: number;
-        height: number;
-        fontSize: number
-    },
-): InputNode<number | null>[] {
-    return ids.flatMap((columns, row) =>
-        columns.map((id, column) => inputNode({
-            id,
-            x: options.x0 + column * options.columnStep,
-            y: options.y0 + row * options.rowStep,
-            width: options.width,
-            height: options.height,
-            type: 'number',
-            fontSize: options.fontSize,
-        })),
-    )
 }
 
 // ---- PRIVATE FUNCTIONS ----
