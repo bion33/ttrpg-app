@@ -18,7 +18,7 @@ export function DeleteBinderModal({label, onConfirm, onCancel}: DeleteBinderModa
         <Modal title="Delete binder" onClose={onCancel}>
             <div className="modal__body">
                 <p className="binder-modal__prompt">
-                    Delete “{label}”? Every page in it and everything saved on them are removed. This cannot be undone.
+                    Delete “{label}”? The binder and every page in it will be removed, which cannot be undone.
                 </p>
                 <div className="modal__actions">
                     <button type="button" className="modal__btn" onClick={onCancel}>Cancel</button>

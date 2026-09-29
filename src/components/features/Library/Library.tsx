@@ -69,18 +69,20 @@ function Library() {
     return (
         <div className="library">
             <div className="library__grid">
-                    {sorted.map((binder) => {
-                        const jitter = bookJitter(binder.id)
-                        // Decorative tabs mirror the binder's real pages (first four only), in their stored hue/label.
-                        const tabs = binderTabs(localStorage.getItem(`${binder.id}:pages`)).slice(0, 4)
-                        return (
+                {sorted.map((binder) => {
+                    const jitter = bookJitter(binder.id)
+                    // Decorative tabs mirror the binder's real pages (first four only), in their stored hue/label.
+                    const tabs = binderTabs(localStorage.getItem(`${binder.id}:pages`)).slice(0, 4)
+                    return (
                         <div key={binder.id} className="library__book" style={{'--hue': binder.hue} as CSSProperties}>
                             {/* Loose sheets peeking out behind the cover, each tilted and offset for a messy look. */}
                             <div className="library__papers" aria-hidden="true">
                                 {jitter.papers.map((paper, i) => (
                                     <span key={i} className="library__paper"
-                                          style={{'--dx': `${paper.dx}rem`, '--dy': `${paper.dy}rem`,
-                                              '--rot': `${paper.rot}deg`} as CSSProperties}/>
+                                          style={{
+                                              '--dx': `${paper.dx}rem`, '--dy': `${paper.dy}rem`,
+                                              '--rot': `${paper.rot}deg`
+                                          } as CSSProperties}/>
                                 ))}
                             </div>
                             {/* Decorative, non-functional binder tabs: the real page-tab strip markup, scaled down. */}
@@ -107,24 +109,26 @@ function Library() {
                                                 event.shiftKey ? removeBinder(binder.id) : setDeleting(binder)}/>
                             </div>
                         </div>
-                        )
-                    })}
-                    {/* Ghost binder in the last cell: a faded copy of the real binder look that opens the add dialogue. */}
-                    <div className="library__book library__book--ghost" style={{'--hue': 30} as CSSProperties}>
-                        <div className="library__papers" aria-hidden="true">
-                            {bookJitter('library-add').papers.map((paper, i) => (
-                                <span key={i} className="library__paper"
-                                      style={{'--dx': `${paper.dx}rem`, '--dy': `${paper.dy}rem`,
-                                          '--rot': `${paper.rot}deg`} as CSSProperties}/>
-                            ))}
-                        </div>
-                        <button type="button" className="library__cover" onClick={() => setAdding(true)}>
+                    )
+                })}
+                {/* Ghost binder in the last cell: a faded copy of the real binder look that opens the add dialogue. */}
+                <div className="library__book library__book--ghost" style={{'--hue': 30} as CSSProperties}>
+                    <div className="library__papers" aria-hidden="true">
+                        {bookJitter('library-add').papers.map((paper, i) => (
+                            <span key={i} className="library__paper"
+                                  style={{
+                                      '--dx': `${paper.dx}rem`, '--dy': `${paper.dy}rem`,
+                                      '--rot': `${paper.rot}deg`
+                                  } as CSSProperties}/>
+                        ))}
+                    </div>
+                    <button type="button" className="library__cover" onClick={() => setAdding(true)}>
                             <span className="library__portrait" aria-hidden="true">
                                 <Plus/>
                             </span>
-                            <span className="library__cover-name">Add binder</span>
-                        </button>
-                    </div>
+                        <span className="library__cover-name">Add binder</span>
+                    </button>
+                </div>
             </div>
 
             {adding && <AddBinderModal onCreate={createBinder} onCancel={() => setAdding(false)}/>}

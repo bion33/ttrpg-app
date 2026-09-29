@@ -18,7 +18,7 @@ export function DeleteTabModal({label, onConfirm, onCancel}: DeleteTabModalProps
         <Modal title="Delete tab" onClose={onCancel}>
             <div className="modal__body">
                 <p className="tab-modal__prompt">
-                    Delete “{label}”? Its page and everything saved on it are removed. This cannot be undone.
+                    Delete “{label}”? This page and everything saved on it will be removed, which cannot be undone.
                 </p>
                 <div className="modal__actions">
                     <button type="button" className="modal__btn" onClick={onCancel}>Cancel</button>

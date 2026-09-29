@@ -19,7 +19,15 @@ interface IconButtonProps {
  * A round, Material-style button showing an icon at rest and revealing its text label on hover or focus.
  */
 function IconButton(
-    {icon, label, onClick, labelSide = 'left', variant = 'default', size = 'default', disabled = false}: IconButtonProps,
+    {
+        icon,
+        label,
+        onClick,
+        labelSide = 'left',
+        variant = 'default',
+        size = 'default',
+        disabled = false
+    }: IconButtonProps,
 ) {
     return (
         <button

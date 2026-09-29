@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState, type SyntheticEvent} from 'react'
+import {type SyntheticEvent, useEffect, useRef, useState} from 'react'
 import Modal from '../../../../ui/Modal/Modal'
 import {PAGE_TYPES, type PageType} from '../../pageTypes.ts'
 

@@ -19,7 +19,15 @@ export function buildSpells({inputNode}: SheetFactory) {
     const spellSlots = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => spellSlotColumn(inputNode, n))
 
     const spellcasting = {
-        spellSaveDC: inputNode({id: 'spellSaveDC', x: 296, y: 806, width: 52, height: 30, type: 'number', fontSize: 28}),
+        spellSaveDC: inputNode({
+            id: 'spellSaveDC',
+            x: 296,
+            y: 806,
+            width: 52,
+            height: 30,
+            type: 'number',
+            fontSize: 28
+        }),
         spellAttackBonus: inputNode({
             id: 'spellAttackBonus',
             x: 352,
@@ -40,7 +48,15 @@ export function buildSpells({inputNode}: SheetFactory) {
             fontSize: 12,
             textAlign: 'center'
         }),
-        customStat1: inputNode({id: 'customStat1', x: 411, y: 806, width: 52, height: 30, type: 'number', fontSize: 28}),
+        customStat1: inputNode({
+            id: 'customStat1',
+            x: 411,
+            y: 806,
+            width: 52,
+            height: 30,
+            type: 'number',
+            fontSize: 28
+        }),
         customStat1Label: inputNode({
             id: 'customStat1Label',
             x: 417,
@@ -51,7 +67,15 @@ export function buildSpells({inputNode}: SheetFactory) {
             fontSize: 8,
             textAlign: 'center'
         }),
-        customStat2: inputNode({id: 'customStat2', x: 469, y: 806, width: 52, height: 30, type: 'number', fontSize: 28}),
+        customStat2: inputNode({
+            id: 'customStat2',
+            x: 469,
+            y: 806,
+            width: 52,
+            height: 30,
+            type: 'number',
+            fontSize: 28
+        }),
         customStat2Label: inputNode({
             id: 'customStat2Label',
             x: 475,

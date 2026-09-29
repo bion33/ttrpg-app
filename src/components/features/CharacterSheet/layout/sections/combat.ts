@@ -38,7 +38,15 @@ export function buildCombat({inputNode, computedInputNode}: SheetFactory) {
     const combat = {
         armorClass: inputNode({id: 'armorClass', x: 308, y: 206, width: 42, height: 32, type: 'number', fontSize: 28}),
         shield: inputNode(
-            {id: 'shield', x: 342.5, y: 234.5, width: 14, height: 14, type: 'check', shape: 'diamond'} as CheckFieldDefinition
+            {
+                id: 'shield',
+                x: 342.5,
+                y: 234.5,
+                width: 14,
+                height: 14,
+                type: 'check',
+                shape: 'diamond'
+            } as CheckFieldDefinition
         ),
         darkvision: inputNode({id: 'darkvision', x: 392, y: 172, width: 26, height: 16, type: 'number', fontSize: 14}),
         initiative: inputNode({id: 'initiative', x: 380, y: 206, width: 50, height: 32, type: 'number', fontSize: 28}),
@@ -57,7 +65,15 @@ export function buildCombat({inputNode, computedInputNode}: SheetFactory) {
             ),
             flySpeed: inputNode({id: 'flySpeed', x: 482, y: 222, width: 26, height: 18, type: 'number', fontSize: 16}),
         },
-        maxHitPoints: inputNode({id: 'maxHitPoints', x: 387, y: 252, width: 36, height: 24, type: 'number', fontSize: 22}),
+        maxHitPoints: inputNode({
+            id: 'maxHitPoints',
+            x: 387,
+            y: 252,
+            width: 36,
+            height: 24,
+            type: 'number',
+            fontSize: 22
+        }),
         temporaryHitPoints: inputNode({
             id: 'temporaryHitPoints',
             x: 434,

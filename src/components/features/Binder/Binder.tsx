@@ -19,7 +19,7 @@ import EmptyPage from '../EmptyPage/EmptyPage'
  * A navigable page persisted to storage: tab metadata, its `type` (which component renders it), and the storage
  * prefix a character sheet's fields persist under (within its binder's namespace).
  */
-type Page = TabItem & {type: PageType; storagePrefix: string}
+type Page = TabItem & { type: PageType; storagePrefix: string }
 
 /**
  * Props for a binder: the storage prefix (its library id) all its pages persist under, and the callback that returns

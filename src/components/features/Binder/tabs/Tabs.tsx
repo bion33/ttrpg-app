@@ -46,7 +46,7 @@ function Tabs({tabs, activeId, onSelect, onReorder, onLastTabChange}: TabsProps)
     const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
     const dragRef = useRef<DragState | null>(null)
     // Render-facing drag state: the moving tab, its origin slot, the captured tops, its live offset and target slot.
-    const [drag, setDrag] = useState<{id: string; fromIndex: number; tops: number[]} | null>(null)
+    const [drag, setDrag] = useState<{ id: string; fromIndex: number; tops: number[] } | null>(null)
     const [dragOffset, setDragOffset] = useState(0)
     const [target, setTarget] = useState(0)
     // True for the single commit frame after a drop, while tabs snap to their reordered slots without gliding.

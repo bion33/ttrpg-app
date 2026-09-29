@@ -46,7 +46,15 @@ export function buildTraits({inputNode}: SheetFactory) {
         armor: inputNode({id: 'armor', x: 583, y: 432, width: 187, height: 12, type: 'text', fontSize: 12}),
         tools: inputNode({id: 'tools', x: 579, y: 447, width: 191, height: 12, type: 'text', fontSize: 12}),
         advantages: inputNode({id: 'advantages', x: 548, y: 474, width: 224, height: 12, type: 'text', fontSize: 12}),
-        disadvantages: inputNode({id: 'disadvantages', x: 548, y: 500, width: 224, height: 12, type: 'text', fontSize: 12}),
+        disadvantages: inputNode({
+            id: 'disadvantages',
+            x: 548,
+            y: 500,
+            width: 224,
+            height: 12,
+            type: 'text',
+            fontSize: 12
+        }),
         featuresAndTraits: inputNode({
             id: 'featuresAndTraits',
             x: 548,
