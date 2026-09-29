@@ -1,23 +1,23 @@
-/* Colour-picker specifics for the recolour dialogue; the shared form, field, and button styling comes from Modal.css. */
+/* Colour-picker specifics for the binder edit modal; the shared form, field, and button styling comes from Modal.css. */
 
-.tab-dialog__prompt {
+.binder-modal__prompt {
     margin: 0;
     line-height: 1.4;
 }
 
-/* Live preview of the paper tab at the chosen hue. */
-.tab-dialog__swatch {
+/* Live preview of the binder spine at the chosen hue. */
+.binder-modal__swatch {
     height: 3rem;
     border: 1px solid rgba(0, 0, 0, 0.22);
     border-radius: 0.5rem;
 }
 
-.tab-dialog__presets {
+.binder-modal__presets {
     display: flex;
     gap: 0.5rem;
 }
 
-.tab-dialog__preset {
+.binder-modal__preset {
     width: 2rem;
     height: 2rem;
     padding: 0;

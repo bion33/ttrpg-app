@@ -1,6 +1,6 @@
 import {type SyntheticEvent, useState} from 'react'
-import './TabDialogs.css'
-import Modal from '../../ui/Modal/Modal'
+import './TabModal.css'
+import Modal from '../../../../ui/Modal/Modal'
 
 /**
  * Props for the edit dialogue: the current label and hue to seed the fields, and the save/cancel callbacks.
@@ -45,14 +45,14 @@ export function EditTabModal({initialLabel, initialHue, onSave, onCancel}: EditT
                     <input type="range" min={0} max={359} value={hue}
                            onChange={(event) => setHue(Number(event.target.value))}/>
                 </label>
-                <div className="tab-dialog__presets">
+                <div className="tab-modal__presets">
                     {PRESET_HUES.map((preset) => (
-                        <button key={preset} type="button" className="tab-dialog__preset"
+                        <button key={preset} type="button" className="tab-modal__preset"
                                 style={{background: `hsl(${preset} 55% 82%)`}} aria-label={`Hue ${preset}`}
                                 onClick={() => setHue(preset)}/>
                     ))}
                 </div>
-                <div className="tab-dialog__swatch" style={{background: `hsl(${hue} 55% 82%)`}}/>
+                <div className="tab-modal__swatch" style={{background: `hsl(${hue} 55% 82%)`}}/>
 
                 <div className="modal__actions">
                     <button type="button" className="modal__btn" onClick={onCancel}>Cancel</button>
@@ -61,34 +61,6 @@ export function EditTabModal({initialLabel, initialHue, onSave, onCancel}: EditT
                     </button>
                 </div>
             </form>
-        </Modal>
-    )
-}
-
-/**
- * Props for the delete confirmation: the label of the tab at risk, and the confirm/cancel callbacks.
- */
-interface DeleteTabModalProps {
-    label: string
-    onConfirm: () => void
-    onCancel: () => void
-}
-
-/**
- * Modal confirming a tab's deletion, warning that the page and its saved fields are removed.
- */
-export function DeleteTabModal({label, onConfirm, onCancel}: DeleteTabModalProps) {
-    return (
-        <Modal title="Delete tab" onClose={onCancel}>
-            <div className="modal__body">
-                <p className="tab-dialog__prompt">
-                    Delete “{label}”? Its page and everything saved on it are removed. This cannot be undone.
-                </p>
-                <div className="modal__actions">
-                    <button type="button" className="modal__btn" onClick={onCancel}>Cancel</button>
-                    <button type="button" className="modal__btn modal__btn--danger" onClick={onConfirm}>Delete</button>
-                </div>
-            </div>
         </Modal>
     )
 }

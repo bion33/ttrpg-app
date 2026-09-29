@@ -1,7 +1,7 @@
 import type {MouseEvent} from 'react'
 import {useEffect, useState} from 'react'
 import {ArrowUp, FilePlus2, Library, Pencil, Printer, Trash2} from 'lucide-react'
-import IconButton from '../../ui/IconButton/IconButton'
+import IconButton from '../../../ui/IconButton/IconButton'
 import './TabControls.css'
 
 /**

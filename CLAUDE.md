@@ -106,7 +106,7 @@ future character portrait), edit/delete `IconButton`s surfacing on
 hover. Each cover has a deliberately **messy** look: loose cream **papers** poke
 out from behind it at odd angles (with shadows), and **decorative, non-functional
 binder tabs** tuck along its right edge — **the real page-tab strip markup
-(`Binder/Tabs.css`'s `.tabs` classes) reused as-is and shrunk by a plain CSS
+(`Binder/tabs/Tabs.css`'s `.tabs` classes) reused as-is and shrunk by a plain CSS
 `scale`**, so labels/hues/overlap match the actual tabs exactly, just tiny. It
 draws **one tab per real page in the binder, in that page's stored hue and
 label**, read from the binder's persisted `${id}:pages` by `logic/binderTabs.ts`'s
@@ -116,10 +116,11 @@ unit-tested in `bookJitter.test.ts`), so a book's mess is consistent across
 renders. When a binder is open the grid gives way to
 the `Binder` bound to that binder's id (`<Binder storagePrefix={id} onExit=…/>`,
 keyed by id so it remounts per binder). Adding/editing/deleting a binder go
-through the `Modal`-based dialogues in `BinderDialogs.tsx`/`.css` (`AddBinderModal`
-takes a name; `EditBinderModal` renames + recolours the spine via a hue slider,
-presets, and live preview; `DeleteBinderModal` confirms, warning all the binder's
-pages are removed). Default spine hues reuse the binder feature's
+through the `Modal`-based modals in `modals/`, one component per file
+(`AddBinderModal.tsx` takes a name; `EditBinderModal.tsx` renames + recolours the
+spine via a hue slider, presets, and live preview; `DeleteBinderModal.tsx`
+confirms, warning all the binder's pages are removed), sharing the colour-picker
+styling in `modals/BinderModal.css`. Default spine hues reuse the binder feature's
 `logic/tabHue.ts`. Adding is driven by a **ghost binder** — the same book markup
 (loose papers + cover + portrait) reused and faded to a low opacity
 (`.library__book--ghost`), with a plus icon in the portrait in place of a letter
@@ -134,9 +135,13 @@ empty library shows just the ghost cover.
 It owns the whole page area: it renders the active page in a `.page` wrapper
 (`Binder.css`, which only carries the drop shadow and reserves room for the tabs
 — the page content styles itself) beside its `Tabs` strip
-(`Tabs.tsx`/`Tabs.css`), both inside a full-width `.app-shell`. `Tabs` is
-feature-specific, so it lives in the feature folder, not in `ui/`;
-`logic/tabHue.ts` holds its pure per-index hue function.
+(`tabs/Tabs.tsx`/`tabs/Tabs.css`), both inside a full-width `.app-shell`. The
+tab-strip components live together in a `tabs/` subfolder (`Tabs`,
+`TabControls`), with the tab modals in a nested `tabs/modals/` (`AddTabModal`,
+`EditTabModal`, `DeleteTabModal`, sharing `TabModal.css`); they are
+feature-specific, so they live in the feature folder, not in `ui/`.
+`logic/tabHue.ts` holds `Tabs`' pure
+per-index hue function.
 
 The page list is **dynamic and persisted**: a `Page` is serialisable tab
 metadata (`id`, `label`, `type`, `storagePrefix`), and
@@ -154,15 +159,15 @@ page shown when the binder has no active page (`Binder` renders `<EmptyPage/>`
 untitled in that case). The `empty` type is offered in the add-page menu for now
 but is slated for removal from that list later.
 
-Adding a page is driven from `TabControls` (below), which opens `AddPageModal`
-(`AddPageModal.tsx`) — a proper modal (not `window.prompt`) asking for a
+Adding a page is driven from `TabControls` (below), which opens `AddTabModal`
+(`tabs/modals/AddTabModal.tsx`) — a proper modal (not `window.prompt`) asking for a
 **name** and a **type**. On submit `Binder.createPage` mints the id
 via `logic/pageId.ts` (`pageId()`, a `crypto.randomUUID()` GUID, unit-tested in
 `pageId.test.ts`) — an opaque id decoupled from the name so it survives renames;
 that id is also the character sheet's `storagePrefix`, and the new page becomes
 active.
 
-`TabControls` (`TabControls.tsx`/`.css`) is a vertical cluster of round
+`TabControls` (`tabs/TabControls.tsx`/`.css`) is a vertical cluster of round
 `IconButton`s in the gutter right of the tab strip, plus a **Back to library**
 button (calls `onExit`) pinned to the top-left viewport corner. The cluster's
 **Add page** and **Print** buttons are always shown (adding is the only way to
@@ -170,8 +175,8 @@ add a page — there is no "+" tab; Print calls `window.print()`); the edit and
 delete buttons act on the **active** tab and appear only when one is active
 (`hasActive`). A `@media
 print` block in `Binder.css` hides the tab strip and controls and zeroes the
-margins so only the page content prints. The two edit dialogues live in `TabDialogs.tsx`/`.css`
-(`EditTabModal`, `DeleteTabModal`, both built on the shared `Modal`): edit renames
+margins so only the page content prints. The two edit modals are `EditTabModal.tsx`
+and `DeleteTabModal.tsx` (in `tabs/modals/`, both built on the shared `Modal`): edit renames
 the label (the id/`storagePrefix` and stored fields are untouched) and recolours
 the tab `hue` via a slider + preset swatches with a live preview, both in one
 dialogue; delete asks for confirmation. `Binder` owns the handlers (`createPage`,
@@ -205,8 +210,8 @@ carries the **shared form styling** every dialogue uses so they stay uniform —
 `.modal__body` (the flex column), `.modal__field` (a labelled input/select), and
 `.modal__actions` with `.modal__btn` buttons (`--primary`/`--danger` variants,
 styled purely by class so a variant never loses a specificity battle). `Binder`'s
-`AddPageModal` and `TabDialogs` are built on it, supplying only their own form
-markup (and, for the colour picker, its swatch/preset styling in `TabDialogs.css`).
+`AddTabModal` and the tab edit/delete modals are built on it, supplying only their
+own form markup (and, for the colour picker, its swatch/preset styling in `TabModal.css`).
 
 `IconButton` is the shared round, Material-style button: an icon at rest with a
 floating text-label pill that fades in on hover/focus. Props are `icon`, `label`
@@ -248,6 +253,15 @@ functional style (pure functions — values in, values out; no side effects), an
 unit tested. `logic/formulas.ts` + `formulas.test.ts` is the model: rules math
 lives apart from field definitions, and layout wires the pure functions in via
 `derivedNode`.
+
+### File & directory naming
+
+- **Component files:** singular PascalCase (`EditBinderModal.tsx`).
+- **Component folders** (a folder named after a component it holds): singular
+  PascalCase (`ui/Modal/`, `Binder/`).
+- **Folders not named after a component** (groupings): plural camelCase
+  (`sections/`, `logic/` — treat an established name like `logic` as its own
+  plural).
 
 ### General
 
