@@ -2,6 +2,42 @@
 
 Guidance for working in this repo. Keep it current — see **Keeping this file current** at the end.
 
+## Mandatory post-implementation review
+
+**This section is a hard requirement. It applies to every change and cannot be
+skipped, abbreviated, or deferred — not when the change is "trivial", not when
+you are low on time or context, not when the user did not ask for it.** After
+finishing *any* implementation work (writing or editing code, in the same
+response, before you report the work as done), you **must** critically assess the
+quality of the new code and report your findings to the user. There is no
+exception, and there is no "looks fine" shortcut — you must actually perform each
+check below and state the result, even when the result is "no concerns found".
+
+**Scope of the review.** Assess all unstaged changes, every file they affect
+indirectly through imports, and — for duplication checks specifically — the
+entire codebase (duplication anywhere counts, regardless of which files you
+touched).
+
+**Checks you must perform and report on, each explicitly:**
+
+1. **Single responsibility** — does each function, class, type, React component,
+   and file have exactly one responsibility?
+2. **Maintainability** — are there any maintainability concerns?
+3. **Conventions** — were the conventions in this file (CLAUDE.md) followed?
+4. **Duplicate code** — is there duplicated code anywhere (TypeScript, React,
+   CSS, or otherwise)?
+5. **Duplicated patterns** — are there duplicated patterns?
+6. **Dead code / unused complexity** — is there any dead code or complexity that
+   is not used?
+7. **Other AI-code smells** — are there any other problems of the categories that
+   frequently occur in AI-written code?
+
+Report every concern you find — both broad architectural concerns and local code
+concerns — clearly and honestly. If a check surfaces nothing, say so for that
+check rather than omitting it. Do not treat completing the implementation as
+finishing the task: **the task is not done until this review has been performed
+and reported.**
+
 ## What this is
 
 A TTRPG character web app. The UI is a scanned/traced character-sheet
