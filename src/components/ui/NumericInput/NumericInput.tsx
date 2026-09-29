@@ -1,9 +1,10 @@
-import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
+import type {NumericFieldDefinition} from '../../../types/NumericFieldDefinition.ts'
+import {formatModifier} from '../../features/CharacterSheet/logic/formulas.ts'
 import FieldForeignObject from '../FieldForeignObject/FieldForeignObject'
 import './NumericInput.css'
 
 /**
- * Numeric field control, optionally read-only for derived values.
+ * Numeric field control, optionally read-only for derived values. Empty is `null`.
  */
 function NumericInput({
                           field,
@@ -11,22 +12,31 @@ function NumericInput({
                           onChange,
                           readOnly = false,
                       }: {
-    field: FieldDefinition
-    value: string
-    onChange: (value: string) => void
+    field: NumericFieldDefinition
+    value: number | null
+    onChange: (value: number | null) => void
     readOnly?: boolean
 }) {
+    const style = {fontSize: field.fontSize, textAlign: field.textAlign ?? 'center'} as const
+
+    // Read-only fields display the value formatted (with a leading sign when signed); blank when null.
+    if (readOnly) {
+        const display = value === null ? '' : field.signed ? formatModifier(value) : value
+        return (
+            <FieldForeignObject field={field}>
+                <input className="sheet-field" type="text" readOnly style={style} value={display}/>
+            </FieldForeignObject>
+        )
+    }
+
     return (
         <FieldForeignObject field={field}>
             <input
                 className="sheet-field"
-                type="text"
-                inputMode="numeric"
-                pattern="[+-]?[0-9]*"
-                readOnly={readOnly}
-                style={{fontSize: field.fontSize, textAlign: field.textAlign ?? 'center'}}
-                value={value}
-                onChange={(event) => onChange(event.target.value)}
+                type="number"
+                style={style}
+                value={value ?? ''}
+                onChange={(event) => onChange(event.target.value === '' ? null : event.target.valueAsNumber)}
             />
         </FieldForeignObject>
     )

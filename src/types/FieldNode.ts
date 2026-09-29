@@ -1,37 +1,32 @@
 import type {Atom, WritableAtom} from 'jotai'
-import type {atomWithStorage} from 'jotai/utils'
 import type {FieldDefinition} from './FieldDefinition.ts'
 
 /**
- * The concrete atom type produced by atomWithStorage for a string field.
+ * The value a field's atom holds: a string (text), a number or null (number), or a boolean (check).
  */
-export type StoredAtom = ReturnType<typeof atomWithStorage<string>>
-
-/**
- * Any string-valued atom the UI can two-way bind: a stored atom or a computed writable atom.
- */
-export type WritableStringAtom = WritableAtom<string, [string], void>
+export type FieldValue = string | number | boolean | null
 
 /**
  * An editable field: its atom is writable (persisted, or computed-with-fallback). `readOnlyAtom`, when
  * present, toggles editability at runtime (e.g. a computed field locked while its auto-calc is enabled).
  */
-export type InputNode = {
+export type InputNode<T extends FieldValue = FieldValue> = {
     readOnly?: false
     definition: FieldDefinition
-    atom: WritableStringAtom
+    atom: WritableAtom<T, [T], void>
     readOnlyAtom?: Atom<boolean>
 }
 
 /**
  * A computed field: read-only, derived from other atoms, never persisted.
  */
-export type DerivedNode = { readOnly: true; definition: FieldDefinition; atom: Atom<string> }
+export type DerivedNode<T extends FieldValue = FieldValue> = { readOnly: true; definition: FieldDefinition; atom: Atom<T> }
 
 /**
- * Any overlay field: writable or computed.
+ * Any overlay field: writable or computed. The writable case is a union of the concrete value types (a
+ * writable atom's value is invariant, so a single `InputNode<FieldValue>` would not accept them).
  */
-export type FieldNode = InputNode | DerivedNode
+export type FieldNode = InputNode<string> | InputNode<number | null> | InputNode<boolean> | DerivedNode
 
 /**
  * A field tree is nodes nested in arrays (positional groups) and records

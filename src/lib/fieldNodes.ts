@@ -2,14 +2,26 @@ import type {Atom, Getter} from 'jotai'
 import {atom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
 import type {FieldDefinition} from '../types/FieldDefinition.ts'
-import type {DerivedNode, FieldNode, InputNode, NodeTree} from '../types/FieldNode.ts'
+import type {DerivedNode, FieldNode, FieldValue, InputNode, NodeTree} from '../types/FieldNode.ts'
 import type {CheckFieldDefinition} from "../types/CheckFieldDefinition.ts";
+import type {NumericFieldDefinition} from "../types/NumericFieldDefinition.ts";
 
 /**
  * A generic system for overlaying form fields on artwork, backed by jotai atoms.
  * Each field is a *node* carrying both its layout (`definition`) and the atom that
- * holds its value, so a field's position and its state are one thing.
+ * holds its value, so a field's position and its state are one thing. An atom holds
+ * the field's *natural* type - a string (text), a number or null (number), or a
+ * boolean (check) - so cross-field logic reads it directly; parsing and formatting
+ * live only in the UI controls.
  */
+
+// ---- INTERNAL TYPES ----
+
+/**
+ * The value type a field's atom holds, from its `type`: boolean (check), number-or-null (number), else string.
+ */
+type ValueForType<Type extends FieldDefinition['type']> =
+    Type extends 'check' ? boolean : Type extends 'number' ? number | null : string
 
 // ---- EXPORTED FUNCTIONS ----
 
@@ -26,37 +38,35 @@ export function createFieldFactory(storagePrefix: string) {
     }
 
     /**
-     * Builds a writable, persisted field node from its definition.
+     * Builds a writable, persisted field node from its definition; the value type follows the field's `type`.
      */
-    function inputNode(definition: FieldDefinition | CheckFieldDefinition): InputNode {
-        // Field values are stored as strings; normalize any default (number/boolean) to match.
-        const initial = definition.defaultValue === undefined ? '' : String(definition.defaultValue)
+    function inputNode<Definition extends FieldDefinition>(definition: Definition): InputNode<ValueForType<Definition['type']>> {
+        type Value = ValueForType<Definition['type']>
         return {
             definition,
-            atom: atomWithStorage(storageKey(definition.id), initial, undefined, {getOnInit: true}),
+            atom: atomWithStorage<Value>(storageKey(definition.id), initialValue(definition) as Value, undefined, {getOnInit: true}),
         }
     }
 
     /**
      * Builds a writable, persisted checkbox field node from its check definition.
      */
-    function checkNode(definition: CheckFieldDefinition): InputNode {
+    function checkNode(definition: CheckFieldDefinition): InputNode<boolean> {
         return inputNode(definition)
     }
 
     /**
      * Builds a field that shows a computed value while `enabled` holds, and is an editable and persisted input otherwise.
      */
-    function computedInputNode(
+    function computedInputNode<T extends FieldValue>(
         definition: FieldDefinition,
         enabled: Atom<boolean>,
-        compute: (get: Getter) => string,
-    ): InputNode {
-        const initial = definition.defaultValue === undefined ? '' : String(definition.defaultValue)
-        const stored = atomWithStorage(storageKey(definition.id), initial, undefined, {getOnInit: true})
+        compute: (get: Getter) => T,
+    ): InputNode<T> {
+        const stored = atomWithStorage<T>(storageKey(definition.id), initialValue(definition) as T, undefined, {getOnInit: true})
         const value = atom(
             (get) => (get(enabled) ? compute(get) : get(stored)),
-            (get, set, next: string) => {
+            (get, set, next: T) => {
                 // Writes are dropped while the computed value is in effect.
                 if (!get(enabled)) set(stored, next)
             },
@@ -70,7 +80,7 @@ export function createFieldFactory(storagePrefix: string) {
 /**
  * Builds a read-only field node whose value is computed from other atoms.
  */
-export function derivedNode(definition: FieldDefinition, read: (get: Getter) => string): DerivedNode {
+export function derivedNode<T extends FieldValue>(definition: FieldDefinition, read: (get: Getter) => T): DerivedNode<T> {
     return {
         definition,
         readOnly: true,
@@ -91,7 +101,7 @@ export function collectNodes(tree: NodeTree): FieldNode[] {
  * Places number fields on a grid; ids[row][column] is each cell's field id.
  */
 export function numberGrid(
-    inputNode: (definition: FieldDefinition) => InputNode,
+    inputNode: (definition: NumericFieldDefinition) => InputNode<number | null>,
     ids: string[][],
     options: {
         x0: number;
@@ -102,7 +112,7 @@ export function numberGrid(
         height: number;
         fontSize: number
     },
-): InputNode[] {
+): InputNode<number | null>[] {
     return ids.flatMap((columns, row) =>
         columns.map((id, column) => inputNode({
             id,
@@ -117,6 +127,21 @@ export function numberGrid(
 }
 
 // ---- PRIVATE FUNCTIONS ----
+
+/**
+ * The initial atom value for a field: its declared default, or the empty value for its type.
+ */
+function initialValue(definition: FieldDefinition): FieldValue {
+    if (definition.defaultValue !== undefined) return definition.defaultValue
+    switch (definition.type) {
+        case 'number':
+            return null
+        case 'check':
+            return false
+        default:
+            return ''
+    }
+}
 
 /**
  * Whether a tree is a single field node rather than a group.

@@ -1,6 +1,8 @@
+import type {WritableAtom} from 'jotai'
 import {atom, useAtom, useAtomValue} from 'jotai'
 import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
-import type {FieldNode} from '../../../types/FieldNode.ts'
+import type {FieldNode, FieldValue} from '../../../types/FieldNode.ts'
+import type {NumericFieldDefinition} from '../../../types/NumericFieldDefinition.ts'
 import AutoFitInput from '../AutoFitInput/AutoFitInput'
 import CheckInput from '../CheckInput/CheckInput'
 import NumericInput from '../NumericInput/NumericInput'
@@ -38,7 +40,8 @@ export default FieldInput
  * Editable field: two-way bound to its writable atom.
  */
 function WritableField({node}: { node: Extract<FieldNode, { readOnly?: false }> }) {
-    const [value, setValue] = useAtom(node.atom)
+    // The atom is a union of concrete writable atoms; widen it to the common value type for the shared control.
+    const [value, setValue] = useAtom(node.atom as unknown as WritableAtom<FieldValue, [FieldValue], void>)
     const readOnly = useAtomValue(node.readOnlyAtom ?? alwaysWritable)
     return control(node.definition, value, setValue, readOnly)
 }
@@ -57,19 +60,19 @@ function DerivedField({node}: { node: Extract<FieldNode, { readOnly: true }> }) 
  */
 function control(
     field: FieldDefinition,
-    value: string,
-    onChange: (value: string) => void,
+    value: FieldValue,
+    onChange: (value: FieldValue) => void,
     readOnly: boolean,
 ) {
     switch (field.type) {
         case 'number':
-            return <NumericInput field={field} value={value} onChange={onChange} readOnly={readOnly}/>
+            return <NumericInput field={field as NumericFieldDefinition} value={value as number | null} onChange={onChange} readOnly={readOnly}/>
         case 'text':
-            return <AutoFitInput field={field} value={value} onChange={onChange}/>
+            return <AutoFitInput field={field} value={value as string} onChange={onChange}/>
         case 'textarea':
-            return <AutoFitTextarea field={field} value={value} onChange={onChange}/>
+            return <AutoFitTextarea field={field} value={value as string} onChange={onChange}/>
         case 'check':
-            return <CheckInput field={field as CheckFieldDefinition} value={value} onChange={onChange}/>
+            return <CheckInput field={field as CheckFieldDefinition} value={value as boolean} onChange={onChange}/>
     }
 }
 

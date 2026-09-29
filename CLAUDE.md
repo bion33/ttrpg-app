@@ -38,11 +38,24 @@ the jotai atom holding its value. Position and state are one object.
 
 - `FieldDefinition` — layout for one field: `id`, `x/y/width/height` (viewBox
   units, **not pixels**), `type` (`text | textarea | number | check`), and
-  optional `shape`, `color`, `fontSize`, `textAlign`, `defaultValue`.
+  optional `fontSize`, `textAlign`, `defaultValue`. Per-type extras live in
+  subtypes (like `CheckFieldDefinition`), never as flags on the base type:
+  `CheckFieldDefinition` adds `shape`/`color`; `NumericFieldDefinition` adds
+  `signed` (display the value with an explicit leading sign, e.g. a `+3` modifier).
+- **Typed values.** An atom holds the field's *natural* type — `string`
+  (text/textarea), `number | null` (number, `null` = empty), or `boolean` (check).
+  `InputNode<T>`/`DerivedNode<T>` are generic over that value type, so cross-field
+  logic reads atoms **directly** (`get(score.atom)` is `number | null`,
+  `get(proficiency.atom)` is `boolean`) with no parsing. Parsing and formatting
+  (including `signed`) live only in the UI controls — the single boundary. (No
+  storage migration: values persist in the typed form, so pre-typed localStorage
+  data is not read back.)
 - `FieldNode` — an `InputNode` (writable atom; either persisted via
   `atomWithStorage` or computed-with-fallback) or a `DerivedNode` (read-only
   atom computed from other atoms, not persisted). An `InputNode` may carry an
-  optional `readOnlyAtom` that locks editing at runtime.
+  optional `readOnlyAtom` that locks editing at runtime. (The `FieldNode` union
+  lists the concrete `InputNode<…>` value types explicitly, since a writable
+  atom's value type is invariant.)
 - `createFieldFactory(prefix)` returns `inputNode`, `checkNode`, and
   `computedInputNode` builders bound to a storage-key prefix. **One factory
   instance per sheet instance** — `layout/nodes.ts`'s `createSheetFactory(prefix)`

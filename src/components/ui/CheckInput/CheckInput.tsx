@@ -28,10 +28,10 @@ function CheckInput({
                         onChange,
                     }: {
     field: CheckFieldDefinition
-    value: string
-    onChange: (value: string) => void
+    value: boolean
+    onChange: (value: boolean) => void
 }) {
-    const checked = value === 'true'
+    const checked = value
 
     const centerX = field.x + field.width / 2
     const centerY = field.y + field.height / 2
@@ -62,7 +62,7 @@ function CheckInput({
                     className="sheet-checkbox"
                     type="checkbox"
                     checked={checked}
-                    onChange={(event) => onChange(event.target.checked ? 'true' : 'false')}
+                    onChange={(event) => onChange(event.target.checked)}
                 />
             </FieldForeignObject>
         </>

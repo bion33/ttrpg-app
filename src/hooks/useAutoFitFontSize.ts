@@ -26,12 +26,16 @@ export function useAutoFitFontSize(
         const element = elementReference.current
         if (!element) return
 
+        // Shrink-to-fit is a DOM measurement: transiently write the element's font size, measure, then store the
+        // fitted size for rendering. Both steps are the documented layout-measurement exception to these rules.
         let size = maxFontSize
+        // eslint-disable-next-line react-hooks/immutability -- transient measurement write to the DOM element
         element.style.fontSize = `${size}px`
         while (size > MIN_FONT_SIZE && overflows(element, axis)) {
             size -= 1
             element.style.fontSize = `${size}px`
         }
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- storing a measured layout value
         setFontSize(size)
     }, [elementReference, value, maxFontSize, axis])
 

@@ -1,8 +1,9 @@
 # Refactor notes
 
 **Status (2026-09-29):** the items marked ✅ below are done (type-check, build, and
-all tests green). Four are deferred: the `empty` page type removal, the string-typed
-value model, the `=== 'true'` helper, and the `numberGrid` consolidation.
+all tests green). Two remain deferred: the `empty` page type removal and the
+`numberGrid` consolidation. The string-typed value model is now fixed (atoms hold
+typed values), which also eliminated the `=== 'true'` duplication outright.
 
 A critical code-quality review of the project. The codebase is well above average
 — genuine logic/layout separation, pure tested helpers, a clean per-instance
@@ -57,12 +58,19 @@ are the concerns worth addressing, most valuable first.
 
 ## Duplication (TypeScript)
 
-⏳ - **`=== 'true'` string-boolean read appears 6×** (`abilities.ts` ×3, `combat.ts`,
+✅ - **`=== 'true'` string-boolean read appears 6×** (`abilities.ts` ×3, `combat.ts`,
   `FieldInput.tsx`…). Because every atom is string-typed, each checkbox read
-  re-implements the string→bool convention inline. A `checkedAtom(node)` /
-  `isChecked(get, node)` helper centralizes it — and flags the deeper smell that *all*
-  values are stored as strings and re-parsed at every read site.
-⏳ - All values are stored as strings and re-parsed at every read site: TBD
+  re-implements the string→bool convention inline. **Resolved by typing** rather than
+  by a `checkedAtom`/`isChecked` helper: check atoms are now `boolean`, so every
+  `=== 'true'` is gone (see below).
+✅ - **All values stored as strings and re-parsed at every read site.** Field atoms now
+  hold their natural type — `string` / `number | null` / `boolean` — via generic
+  `InputNode<T>`/`DerivedNode<T>` (`src/types/FieldNode.ts`), with a `ValueForType`
+  builder in `src/lib/fieldNodes.ts`. Cross-field logic reads typed atoms directly
+  (no `parseNumericField`, no `=== 'true'`); parse/format lives only in the UI
+  controls (`NumericInput` ↔ `number | null`, `CheckInput` ↔ `boolean`). `signed`
+  display moved to `NumericInput` via the new `NumericFieldDefinition`. Clean break on
+  storage (no migration of pre-typed localStorage).
 
 ## Duplication (CSS)
 

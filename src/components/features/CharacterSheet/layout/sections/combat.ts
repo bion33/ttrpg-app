@@ -1,7 +1,5 @@
 import type {Getter} from 'jotai'
-import {atom} from 'jotai'
 import {numberGrid} from '../../../../../lib/fieldNodes.ts'
-import {parseNumericField} from '../../../../../lib/parseNumericField.ts'
 import {halfSpeed} from '../../logic/formulas.ts'
 import type {SheetFactory} from '../nodes.ts'
 
@@ -21,16 +19,13 @@ export function buildCombat({inputNode, checkNode, computedInputNode}: SheetFact
         defaultValue: true
     })
 
-    // True while climb/swim speeds should be auto-calculated rather than typed in.
-    const speedCalculationEnabled = atom((get) => get(enableSpeedCalculation.atom) === 'true')
-
     // The walking speed both climb and swim are derived from when auto-calc is on.
     const runSpeed = inputNode({id: 'runSpeed', x: 458, y: 202, width: 26, height: 18, type: 'number', fontSize: 16})
 
     // Climb/swim = half the walking speed while auto-calc is on, an editable input otherwise.
-    function halfRunSpeed(get: Getter): string {
-        const value = parseNumericField(get(runSpeed.atom))
-        return value === null ? '' : String(halfSpeed(value))
+    function halfRunSpeed(get: Getter): number | null {
+        const value = get(runSpeed.atom)
+        return value === null ? null : halfSpeed(value)
     }
 
     const combat = {
@@ -53,12 +48,12 @@ export function buildCombat({inputNode, checkNode, computedInputNode}: SheetFact
             runSpeed,
             climbSpeed: computedInputNode(
                 {id: 'climbSpeed', x: 482, y: 202, width: 26, height: 18, type: 'number', fontSize: 16},
-                speedCalculationEnabled,
+                enableSpeedCalculation.atom,
                 halfRunSpeed,
             ),
             swimSpeed: computedInputNode(
                 {id: 'swimSpeed', x: 458, y: 222, width: 26, height: 18, type: 'number', fontSize: 16},
-                speedCalculationEnabled,
+                enableSpeedCalculation.atom,
                 halfRunSpeed,
             ),
             flySpeed: inputNode({id: 'flySpeed', x: 482, y: 222, width: 26, height: 18, type: 'number', fontSize: 16}),
