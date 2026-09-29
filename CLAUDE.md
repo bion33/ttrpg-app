@@ -313,6 +313,19 @@ providers land in later phases behind the same seams.
   disabled as "coming soon"); `modals/ConflictModal` (shared `Modal`) offers keep
   this device / take the other on a divergent load.
 
+### Storage api service (`server/`)
+
+A standalone Node/Hono api project (its own Yarn 4 install and `yarn.lock`,
+**not** part of the app's install — different runtime and deps: Hono + tsx),
+exposing the same-origin `/api/*` backend later storage phases extend with
+relay/OAuth routes. Phase 2 ships only a CORS lock and `GET /api/health`
+(returns `ok`). Run the three-container dev stack with `docker compose up`: the
+`proxy` (nginx, `nginx.dev.conf`) serves the app at `http://localhost:8080`,
+forwarding `/` to the Vite dev server (`web`) and `/api/*` to this service
+(`api`). `vite.config.ts` gates `hmr.clientPort` on `DOCKER=true` so HMR works
+through the proxy in-container without breaking a direct host `yarn dev`. Docker
+is additive — host `yarn` workflows are unchanged.
+
 ### UI controls (`src/components/ui/`)
 
 `FieldInput` picks the control for a field's `type`: `NumericInput`,

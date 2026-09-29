@@ -730,7 +730,9 @@ choices, HMR, source mounts — is dev-only and replaced by their own infra):
    (revision lives in the file), so it is testable before any cloud/auth work. No
    API functions, no auth.
 2. **Dev Docker/nginx scaffold + api container** (health route only), so later
-   phases have somewhere to add functions.
+   phases have somewhere to add functions. **Shipped** — `docker compose up`
+   serves the app at `http://localhost:8080` with same-origin `/api/health`; see
+   [STORAGE_PLAN_PHASE2.md](./STORAGE_PLAN_PHASE2.md).
 3. **Nextcloud** (relay function + WebDAV adapter).
 4. **OneDrive** (auth-code/PKCE + exchange/refresh functions + Graph adapter + File Picker).
 5. **Google Drive** (GIS + exchange/refresh functions + Drive adapter + Picker).

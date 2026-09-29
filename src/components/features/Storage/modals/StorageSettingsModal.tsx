@@ -6,7 +6,7 @@ import './StorageSettingsModal.css'
 /** The providers offered in settings, in display order; availability is read from the registry. */
 const PROVIDER_OPTIONS: {id: ProviderId; label: string; description: string}[] = [
     {id: 'file', label: 'File (import / export)', description: 'Save and load a JSON file you choose each time.'},
-    {id: 'nextcloud', label: 'Nextcloud', description: 'Sync to your own Nextcloud server.'},
+    {id: 'nextcloud', label: 'Nextcloud', description: 'Sync to a Nextcloud server.'},
     {id: 'onedrive', label: 'OneDrive', description: 'Sync to your Microsoft OneDrive.'},
     {id: 'googleDrive', label: 'Google Drive', description: 'Sync to your Google Drive.'},
 ]

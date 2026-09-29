@@ -1,0 +1,35 @@
+services:
+  proxy:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - web
+      - api
+
+  web:
+    image: node:24-alpine
+    working_dir: /app
+    command: sh -c "corepack enable && yarn install && yarn dev --host 0.0.0.0"
+    environment:
+      NODE_ENV: development
+      DOCKER: "true"        # switches on hmr.clientPort in vite.config.ts
+    volumes:
+      - ./:/app
+      - /app/node_modules   # keep host node_modules out of the container's
+
+  api:
+    image: node:24-alpine
+    working_dir: /app
+    command: sh -c "corepack enable && yarn install && yarn dev"
+    environment:
+      NODE_ENV: development
+      PORT: "3000"
+    env_file:
+      - path: ./server/.env
+        required: false     # come up without a copied .env; APP_ORIGIN/PORT have defaults
+    volumes:
+      - ./server:/app
+      - /app/node_modules
