@@ -8,9 +8,9 @@ export interface BookJitter {
 
 /** Rightward offset and vertical offset (rem) plus rotation (deg) of one loose sheet peeking out of a binder. */
 export interface PaperJitter {
-    dx: number
-    dy: number
-    rot: number
+    offsetX: number
+    offsetY: number
+    rotation: number
 }
 
 // Number of loose sheets drawn behind each cover.
@@ -52,9 +52,9 @@ function spread(unit: number, magnitude: number): number {
 export function bookJitter(seed: string): BookJitter {
     const next = generator(hashSeed(seed))
     const papers: PaperJitter[] = []
-    // dx is rightward-only so sheets never poke past the cover's left edge; the small rotation keeps that true too.
+    // offsetX is rightward-only so sheets never poke past the cover's left edge; the small rotation keeps that true too.
     for (let i = 0; i < PAPER_COUNT; i++) {
-        papers.push({dx: next() * 0.6, dy: spread(next(), 0.7), rot: spread(next(), 4)})
+        papers.push({offsetX: next() * 0.6, offsetY: spread(next(), 0.7), rotation: spread(next(), 4)})
     }
     return {papers}
 }

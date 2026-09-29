@@ -1,9 +1,7 @@
-import {useLayoutEffect, useRef, useState} from 'react'
+import {useRef} from 'react'
 import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
+import {DEFAULT_FONT_SIZE, useAutoFitFontSize} from '../../../hooks/useAutoFitFontSize.ts'
 import FieldForeignObject from '../FieldForeignObject/FieldForeignObject'
-
-const DEFAULT_FONT_SIZE = 9
-const MIN_FONT_SIZE = 6
 
 /**
  * Text input whose font size auto-fits its value to the field width.
@@ -17,32 +15,19 @@ function AutoFitInput({
     value: string
     onChange: (value: string) => void
 }) {
-    const inputRef = useRef<HTMLInputElement>(null)
+    const inputReference = useRef<HTMLInputElement>(null)
     const maxFontSize = field.fontSize ?? DEFAULT_FONT_SIZE
-    const [fontSize, setFontSize] = useState(maxFontSize)
-
-    useLayoutEffect(() => {
-        const el = inputRef.current
-        if (!el) return
-
-        let size = maxFontSize
-        el.style.fontSize = `${size}px`
-        while (size > MIN_FONT_SIZE && el.scrollWidth > el.clientWidth) {
-            size -= 1
-            el.style.fontSize = `${size}px`
-        }
-        setFontSize(size)
-    }, [value, maxFontSize])
+    const fontSize = useAutoFitFontSize(inputReference, value, maxFontSize, 'width')
 
     return (
         <FieldForeignObject field={field}>
             <input
-                ref={inputRef}
+                ref={inputReference}
                 className="sheet-field"
                 type={field.type}
                 style={{fontSize, textAlign: field.textAlign}}
                 value={value}
-                onChange={(e) => onChange(e.target.value)}
+                onChange={(event) => onChange(event.target.value)}
             />
         </FieldForeignObject>
     )

@@ -1,5 +1,4 @@
 import {type SyntheticEvent, useEffect, useRef, useState} from 'react'
-import './BinderModal.css'
 import Modal from '../../../ui/Modal/Modal'
 
 /**
@@ -13,12 +12,12 @@ interface AddBinderModalProps {
 /**
  * Modal for adding a binder to the library: collects a name for the new binder.
  */
-export function AddBinderModal({onCreate, onCancel}: AddBinderModalProps) {
+function AddBinderModal({onCreate, onCancel}: AddBinderModalProps) {
     const [name, setName] = useState('')
-    const nameRef = useRef<HTMLInputElement>(null)
+    const nameReference = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
-        nameRef.current?.focus()
+        nameReference.current?.focus()
     }, [])
 
     // Validates the name, then reports the new binder to the parent.
@@ -32,12 +31,12 @@ export function AddBinderModal({onCreate, onCancel}: AddBinderModalProps) {
     return (
         <Modal title="Add binder" onClose={onCancel}>
             <form className="modal__body" onSubmit={submit}>
-                <p className="binder-modal__prompt">
+                <p className="modal__prompt">
                     Add a binder to organise all information on a character in various pages and formats.
                 </p>
                 <label className="modal__field">
                     <span>Character name</span>
-                    <input ref={nameRef} type="text" value={name}
+                    <input ref={nameReference} type="text" value={name}
                            onChange={(event) => setName(event.target.value)}/>
                 </label>
 
@@ -51,3 +50,5 @@ export function AddBinderModal({onCreate, onCancel}: AddBinderModalProps) {
         </Modal>
     )
 }
+
+export default AddBinderModal

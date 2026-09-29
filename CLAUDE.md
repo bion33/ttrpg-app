@@ -31,8 +31,8 @@ The whole sheet is one `<svg viewBox="0 0 816 1055.867">`. Inside it:
    viewBox coordinate space** as the artwork, so the browser scales artwork and
    inputs together — there is no pixel/resize tracking.
 
-Key idea: **every field is a node** carrying both its layout (`def`) and the
-jotai atom holding its value. Position and state are one object.
+Key idea: **every field is a node** carrying both its layout (`definition`) and
+the jotai atom holding its value. Position and state are one object.
 
 ### Field node model (`src/types/`, `src/lib/fieldNodes.ts`)
 
@@ -43,15 +43,18 @@ jotai atom holding its value. Position and state are one object.
   `atomWithStorage` or computed-with-fallback) or a `DerivedNode` (read-only
   atom computed from other atoms, not persisted). An `InputNode` may carry an
   optional `readOnlyAtom` that locks editing at runtime.
-- `createFieldFactory(prefix)` returns `inputNode` and `computedInputNode`
-  builders bound to a storage-key prefix. **One factory instance per sheet
-  instance** — `layout/nodes.ts`'s `createSheetFactory(prefix)` bundles those
-  two with `derivedNode` into a `SheetFactory`, and each sheet page passes its
-  own prefix so its fields get an isolated localStorage namespace. Within one
-  sheet, all fields must come from that single factory, or they would split
-  across namespaces.
-- `derivedNode(def, read)` builds a computed field.
-- `computedInputNode(def, enabled, compute)` builds a hybrid field: while the
+- `createFieldFactory(prefix)` returns `inputNode`, `checkNode`, and
+  `computedInputNode` builders bound to a storage-key prefix. **One factory
+  instance per sheet instance** — `layout/nodes.ts`'s `createSheetFactory(prefix)`
+  bundles those three with `derivedNode` into a `SheetFactory`, and each sheet
+  page passes its own prefix so its fields get an isolated localStorage
+  namespace. Within one sheet, all fields must come from that single factory, or
+  they would split across namespaces.
+- `checkNode(definition)` builds a persisted checkbox field from a `CheckFieldDefinition`
+  (an `inputNode` typed to check defs); use it for any check field carrying a
+  `shape`/`color` so no `as CheckFieldDefinition` cast is needed.
+- `derivedNode(definition, read)` builds a computed field.
+- `computedInputNode(definition, enabled, compute)` builds a hybrid field: while the
   `enabled` atom is true it shows `compute(get)` and is read-only; otherwise it
   is an ordinary editable, persisted input (e.g. passive Perception, auto-calc
   toggled by a checkbox).
@@ -90,7 +93,7 @@ jotai atom holding its value. Position and state are one object.
 ### Library feature (`src/App.tsx`, `src/components/features/Library/`)
 
 `App` is a thin root that just renders the `Library` feature. The **library**
-holds many **binders**: a `LibraryBinder` is serialisable metadata (`id`,
+holds many **binders**: a `LibraryBinderItem` is serialisable metadata (`id`,
 `label`, `hue`), where `id` is a `crypto.randomUUID()` GUID (minted by
 `logic/binderId.ts`'s `binderId()`, unit-tested in `binderId.test.ts`) that
 survives renames and is the **storage-prefix root every one of the binder's
@@ -100,10 +103,13 @@ pages persists under**. The binder list lives in `atomWithStorage('binders', …
 
 `Library.tsx` shows either the **grid** — an even grid (`Library.css`, columns
 and rows equally spaced, on the same `#e9e4d8` backdrop as the page area) of
-binder **covers**, each a hue-tinted rectangle with a circular placeholder
+binder **covers**. Each cover is a `LibraryBinder` (`Library/LibraryBinder.tsx`) — a hue-tinted
+rectangle with a circular placeholder
 portrait showing the name's first letter above the name (room reserved for a
 future character portrait), edit/delete `IconButton`s surfacing on
-hover. Each cover has a deliberately **messy** look: loose cream **papers** poke
+hover; `Library` maps binders → `<LibraryBinder>` (plus one ghost `<LibraryBinder>`) and stays
+responsible for the binder collection and modal orchestration. Each cover has a
+deliberately **messy** look: loose cream **papers** poke
 out from behind it at odd angles (with shadows), and **decorative, non-functional
 binder tabs** tuck along its right edge — **the real page-tab strip markup
 (`Binder/tabs/Tabs.css`'s `.tabs` classes) reused as-is and shrunk by a plain CSS
@@ -118,15 +124,14 @@ the `Binder` bound to that binder's id (`<Binder storagePrefix={id} onExit=…/>
 keyed by id so it remounts per binder). Adding/editing/deleting a binder go
 through the `Modal`-based modals in `modals/`, one component per file
 (`AddBinderModal.tsx` takes a name; `EditBinderModal.tsx` renames + recolours the
-spine via a hue slider, presets, and live preview; `DeleteBinderModal.tsx`
-confirms, warning all the binder's pages are removed), sharing the colour-picker
-styling in `modals/BinderModal.css`. Default spine hues reuse the binder feature's
-`logic/tabHue.ts`. Adding is driven by a **ghost binder** — the same book markup
-(loose papers + cover + portrait) reused and faded to a low opacity
-(`.library__book--ghost`), with a plus icon in the portrait in place of a letter
-and the name "Add binder". It sits in the grid's last cell after the existing
-covers and opens `AddBinderModal`; there is no separate corner button, and an
-empty library shows just the ghost cover.
+spine via the shared `ui/ColorPicker`); deleting reuses the shared
+`ui/ConfirmModal`, warning all the binder's pages are removed. Default spine hues
+reuse the shared `src/lib/tabHue.ts`. Adding is driven by a **ghost binder** —
+the same `LibraryBinder` markup faded to a low opacity (`.library__binder--ghost`, the
+`ghost` variant), with a plus icon in the portrait in place of a letter and the
+name "Add binder". It sits in the grid's last cell after the existing covers and
+opens `AddBinderModal`; there is no separate corner button, and an empty library
+shows just the ghost cover.
 
 ### Binder feature (`src/components/features/Binder/`)
 
@@ -138,10 +143,11 @@ It owns the whole page area: it renders the active page in a `.page` wrapper
 (`tabs/Tabs.tsx`/`tabs/Tabs.css`), both inside a full-width `.app-shell`. The
 tab-strip components live together in a `tabs/` subfolder (`Tabs`,
 `TabControls`), with the tab modals in a nested `tabs/modals/` (`AddTabModal`,
-`EditTabModal`, `DeleteTabModal`, sharing `TabModal.css`); they are
-feature-specific, so they live in the feature folder, not in `ui/`.
-`logic/tabHue.ts` holds `Tabs`' pure
-per-index hue function.
+`EditTabModal`); they are feature-specific, so they live in the feature folder,
+not in `ui/` (tab deletion reuses the shared `ui/ConfirmModal`). The pure
+per-index tab-hue function lives in `src/lib/tabHue.ts` (shared by `Binder` and
+`Library`, unit-tested in `tabHue.test.ts`). Page-view zoom is owned by the
+`usePageScale` hook (`src/hooks/`), not `Binder` itself.
 
 The page list is **dynamic and persisted**: a `Page` is serialisable tab
 metadata (`id`, `label`, `type`, `storagePrefix`), and
@@ -153,7 +159,8 @@ page list and active page are **per-binder** atoms built in `makeBinderAtoms` �
 `atomWithStorage('${prefix}:pages', …)` (**empty by default** — the binder starts
 with no pages until the user adds one) and `atomWithStorage('${prefix}:activePage',
 …)` — so each binder keeps an isolated namespace; the view scale
-(`atomWithStorage('pageScale', …)`) is shared across binders. `EmptyPage`
+(`usePageScale`'s `atomWithStorage('pageScale', …)`) is shared across binders.
+`EmptyPage`
 (`features/EmptyPage/`) is both the stand-in for an `empty`-type page and the
 page shown when the binder has no active page (`Binder` renders `<EmptyPage/>`
 untitled in that case). The `empty` type is offered in the add-page menu for now
@@ -169,18 +176,19 @@ active.
 
 `TabControls` (`tabs/TabControls.tsx`/`.css`) is a vertical cluster of round
 `IconButton`s in the gutter right of the tab strip, plus a **Back to library**
-button (calls `onExit`) pinned to the top-left viewport corner. The cluster's
-**Add page** and **Print** buttons are always shown (adding is the only way to
-add a page — there is no "+" tab; Print calls `window.print()`); the edit and
-delete buttons act on the **active** tab and appear only when one is active
-(`hasActive`). A `@media
-print` block in `Binder.css` hides the tab strip and controls and zeroes the
-margins so only the page content prints. The two edit modals are `EditTabModal.tsx`
-and `DeleteTabModal.tsx` (in `tabs/modals/`, both built on the shared `Modal`): edit renames
-the label (the id/`storagePrefix` and stored fields are untouched) and recolours
-the tab `hue` via a slider + preset swatches with a live preview, both in one
-dialogue; delete asks for confirmation. `Binder` owns the handlers (`createPage`,
-and `editPage`/`deletePage`, which patch or drop the active page in the persisted
+button (calls `onExit`) pinned to the top-left viewport corner. The **Add page**
+button is always shown (adding is the only way to add a page — there is no "+"
+tab); the edit, delete, and **Print** buttons act on the **active** tab and
+appear only when one is active (`hasActive`; Print calls `window.print()`).
+Separately, `ViewControls` (a bottom-left cluster) zooms the page and tab strip
+in/out, its buttons `disabled` at the min scale and the viewport-fit max. A
+`@media print` block in `Binder.css` hides the tab strip and controls and zeroes
+the margins so only the page content prints. Editing opens `EditTabModal.tsx` (in
+`tabs/modals/`, built on the shared `Modal`): it renames the label (the
+id/`storagePrefix` and stored fields are untouched) and recolours the tab `hue`
+via the shared `ui/ColorPicker`, both in one dialogue; deletion opens the shared
+`ui/ConfirmModal`. `Binder` owns the handlers (`createPage`, and
+`editPage`/`deletePage`, which patch or drop the active page in the persisted
 list; delete then activates a neighbour).
 
 `Tabs` is the binder-style tab strip anchored to the page's right edge:
@@ -209,17 +217,39 @@ closes on a backdrop click or Escape, with callers supplying the body. It also
 carries the **shared form styling** every dialogue uses so they stay uniform —
 `.modal__body` (the flex column), `.modal__field` (a labelled input/select), and
 `.modal__actions` with `.modal__btn` buttons (`--primary`/`--danger` variants,
-styled purely by class so a variant never loses a specificity battle). `Binder`'s
-`AddTabModal` and the tab edit/delete modals are built on it, supplying only their
-own form markup (and, for the colour picker, its swatch/preset styling in `TabModal.css`).
+styled purely by class so a variant never loses a specificity battle), plus
+`.modal__prompt` for a confirmation/prompt paragraph. Every add/edit/confirm
+dialogue is built on it, supplying only its own form markup.
+
+`ColorPicker` is the shared hue picker used by the binder and tab edit modals: a
+hue slider, preset swatches, and a live-preview swatch. Props are `hue`,
+`onChange`, `presets` (the preset hues), and `preview` (a hue → CSS-colour
+function, so the binder's `45% 45%` and the tab's `55% 82%` lightness/saturation
+stay distinct). Its picker styling lives in `ColorPicker.css`.
+
+`ConfirmModal` is the shared `Modal`-based confirmation dialog (used for deleting
+binders and tabs). Props are `title`, `message`, `confirmLabel`, an optional
+`variant` (`primary`/`danger`), `onConfirm`, and `onCancel`.
 
 `IconButton` is the shared round, Material-style button: an icon at rest with a
 floating text-label pill that fades in on hover/focus. Props are `icon`, `label`
 (used as both the pill text and the accessible name), `onClick`, an optional
-`labelSide` (`left`/`right`), `variant` (`default`/`danger`) and `size`
-(`default`/`large`). Callers control
+`labelSide` (`left`/`right`), `variant` (`default`/`danger`), `size`
+(`default`/`large`), and `disabled`. Callers control
 stacking via the surrounding container so the pill can sit above neighbours (e.g.
 `Binder`'s `TabControls` gives its cluster a high `z-index`).
+
+### Shared helpers (`src/lib`, `src/hooks`)
+
+Framework-agnostic pure helpers live in `src/lib` (colocated `*.test.ts`):
+`fieldNodes.ts` (the field-node factory), `parseNumericField.ts`
+(`parseNumericField(raw)` → `number | null`, the one place raw field strings are
+parsed to numbers), and `tabHue.ts` (the per-index tab/binder hue). Shared React
+hooks live in `src/hooks`: `useAutoFitFontSize(ref, value, maxFontSize, axis)`
+(the shrink-to-fit loop behind `AutoFitInput`/`AutoFitTextarea`, owning
+`DEFAULT_FONT_SIZE`/`MIN_FONT_SIZE`) and `usePageScale()` (the persisted
+page-view zoom — scale, step controls, and the viewport-fit `ResizeObserver` —
+consumed by `Binder`).
 
 ## Conventions
 
@@ -262,6 +292,30 @@ lives apart from field definitions, and layout wires the pure functions in via
 - **Folders not named after a component** (groupings): plural camelCase
   (`sections/`, `logic/` — treat an established name like `logic` as its own
   plural).
+
+### Naming: no unapproved abbreviations
+
+Every name you introduce must be spelled out in full — function parameters,
+lambda/callback parameters, local variables (`let`/`const`), type/interface
+properties, and the names of components, types, classes, interfaces, functions,
+files, and directories alike. **Abbreviating or using a shorthand always requires
+the user's approval first**, and they will usually prefer the full word (`factory`
+over `f`, `element` over `el`, `options` over `opts`, `definition` over `def`,
+`index` over `i`, `centerX` over `cx`, `inputReference` over `inputRef`,
+`proficiencyBonusValue` over `profBonus`). Do not introduce a new abbreviation on
+your own; propose the full name, and only shorten it if the user asks. The sole
+exception is any abbreviation already listed under **Common abbreviations** below
+— those are pre-approved and may be used freely.
+
+When the user does accept a particular abbreviation, add it to that list in the
+same change so it stays approved going forward.
+
+#### Common abbreviations
+
+- `DC` — Difficulty Class (D&D 5e).
+- `AC` — Armor Class (D&D 5e).
+- `i` — loop counter, in `for`/`while` loop bodies only (use `index` for iterator-callback parameters).
+- `config` / `Config` — configuration (e.g. `AbilityConfig`).
 
 ### General
 

@@ -5,7 +5,7 @@ import type {CheckFieldDefinition} from "../../../../../types/CheckFieldDefiniti
 // ---- INTERNAL CONSTANTS ----
 
 const DAMAGE_ROW_STEP = 12.67    // vertical gap between damage-type rows
-const DAMAGE_COL_STEP = 6.67     // horizontal gap: immunity -> resistance -> vulnerability
+const DAMAGE_COLUMN_STEP = 6.67  // horizontal gap: immunity -> resistance -> vulnerability
 const DAMAGE_BLOCK_Y = 271.73
 
 /**
@@ -35,10 +35,10 @@ type DamageBlock = { x: number; types: string[] }
 /**
  * Builds the trait fields: free-text notes, the damage immunity/resistance/vulnerability grid, and proficiencies.
  */
-export function buildTraits({inputNode}: SheetFactory) {
+export function buildTraits({inputNode, checkNode}: SheetFactory) {
     const notes = inputNode({id: 'notes', x: 44, y: 878, width: 476, height: 154, type: 'textarea', fontSize: 12})
 
-    const damage = DAMAGE_BLOCKS.map((block) => damageBlock(inputNode, block))
+    const damage = DAMAGE_BLOCKS.map((block) => damageBlock(checkNode, block))
 
     const proficiencies = {
         languages: inputNode({id: 'languages', x: 548, y: 364, width: 224, height: 50, type: 'textarea', fontSize: 12}),
@@ -74,23 +74,23 @@ export function buildTraits({inputNode}: SheetFactory) {
 /**
  * Immunity/resistance/vulnerability checkboxes for one damage type.
  */
-function damageTypeRow(inputNode: SheetFactory['inputNode'], type: string, blockX: number, y: number): FieldNode[] {
-    return DAMAGE_LEVELS.map((lvl, col) => inputNode({
-        id: `${type}${lvl.suffix}`,
-        x: blockX + col * DAMAGE_COL_STEP,
+function damageTypeRow(checkNode: SheetFactory['checkNode'], type: string, blockX: number, y: number): FieldNode[] {
+    return DAMAGE_LEVELS.map((level, column) => checkNode({
+        id: `${type}${level.suffix}`,
+        x: blockX + column * DAMAGE_COLUMN_STEP,
         y,
         width: 6,
         height: 6,
         type: 'check',
-        color: lvl.color,
-    } as CheckFieldDefinition))
+        color: level.color,
+    }))
 }
 
 /**
  * All damage-type rows for one column group.
  */
-function damageBlock(inputNode: SheetFactory['inputNode'], block: DamageBlock): FieldNode[] {
+function damageBlock(checkNode: SheetFactory['checkNode'], block: DamageBlock): FieldNode[] {
     return block.types.flatMap((type, row) =>
-        damageTypeRow(inputNode, type, block.x, DAMAGE_BLOCK_Y + row * DAMAGE_ROW_STEP),
+        damageTypeRow(checkNode, type, block.x, DAMAGE_BLOCK_Y + row * DAMAGE_ROW_STEP),
     )
 }

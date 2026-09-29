@@ -1,6 +1,5 @@
 import type {FieldNode} from '../../../../../types/FieldNode.ts'
 import type {SheetFactory} from '../nodes.ts'
-import type {CheckFieldDefinition} from "../../../../../types/CheckFieldDefinition.ts";
 
 // ---- INTERNAL CONSTANTS ----
 
@@ -13,10 +12,10 @@ const SPELL_SLOT_X_STEP = 24.93  // horizontal gap between spell-slot columns
 /**
  * Builds the spellcasting fields: weapon rows, cantrip rows, spell-slot columns, and the save/attack/custom stats.
  */
-export function buildSpells({inputNode}: SheetFactory) {
-    const weapons = [1, 2, 3, 4].map((n) => weaponRow(inputNode, n))
-    const cantrips = [1, 2, 3, 4, 5, 6].map((n) => cantripRow(inputNode, n))
-    const spellSlots = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => spellSlotColumn(inputNode, n))
+export function buildSpells({inputNode, checkNode}: SheetFactory) {
+    const weapons = [1, 2, 3, 4].map((row) => weaponRow(inputNode, row))
+    const cantrips = [1, 2, 3, 4, 5, 6].map((row) => cantripRow(inputNode, checkNode, row))
+    const spellSlots = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((column) => spellSlotColumn(inputNode, column))
 
     const spellcasting = {
         spellSaveDC: inputNode({
@@ -94,82 +93,134 @@ export function buildSpells({inputNode}: SheetFactory) {
 // ---- PRIVATE FUNCTIONS ----
 
 /**
- * Fields for the n-th weapon row.
+ * Fields for the weapon row at the given position (1-based).
  */
-function weaponRow(inputNode: SheetFactory['inputNode'], n: number): FieldNode[] {
-    const dy = (n - 1) * WEAPON_ROW_STEP
+function weaponRow(inputNode: SheetFactory['inputNode'], row: number): FieldNode[] {
+    const offsetY = (row - 1) * WEAPON_ROW_STEP
     return [
-        inputNode({id: `weaponName${n}`, x: 301, y: 456 + dy, width: 99, height: 16, type: 'text', fontSize: 12}),
         inputNode({
-            id: `weaponAttack${n}`,
+            id: `weaponName${row}`,
+            x: 301,
+            y: 456 + offsetY,
+            width: 99,
+            height: 16,
+            type: 'text',
+            fontSize: 12
+        }),
+        inputNode({
+            id: `weaponAttack${row}`,
             x: 406.2,
-            y: 454.88 + dy,
+            y: 454.88 + offsetY,
             width: 24,
             height: 18,
             type: 'number',
             fontSize: 12
         }),
-        inputNode({id: `weaponDamage${n}`, x: 435, y: 456 + dy, width: 73, height: 16, type: 'text', fontSize: 12}),
-        inputNode({id: `weaponSlashing${n}`, x: 511.2, y: 455.73 + dy, width: 4.67, height: 4.67, type: 'check'}),
-        inputNode({id: `weaponPiercing${n}`, x: 511.2, y: 461.73 + dy, width: 4.67, height: 4.67, type: 'check'}),
-        inputNode({id: `weaponBludgeoning${n}`, x: 511.2, y: 467.6 + dy, width: 4.67, height: 4.67, type: 'check'}),
+        inputNode({
+            id: `weaponDamage${row}`,
+            x: 435,
+            y: 456 + offsetY,
+            width: 73,
+            height: 16,
+            type: 'text',
+            fontSize: 12
+        }),
+        inputNode({
+            id: `weaponSlashing${row}`,
+            x: 511.2,
+            y: 455.73 + offsetY,
+            width: 4.67,
+            height: 4.67,
+            type: 'check'
+        }),
+        inputNode({
+            id: `weaponPiercing${row}`,
+            x: 511.2,
+            y: 461.73 + offsetY,
+            width: 4.67,
+            height: 4.67,
+            type: 'check'
+        }),
+        inputNode({
+            id: `weaponBludgeoning${row}`,
+            x: 511.2,
+            y: 467.6 + offsetY,
+            width: 4.67,
+            height: 4.67,
+            type: 'check'
+        }),
     ]
 }
 
 /**
- * Fields for the n-th cantrip row.
+ * Fields for the cantrip row at the given position (1-based).
  */
-function cantripRow(inputNode: SheetFactory['inputNode'], n: number): FieldNode[] {
-    const dy = (n - 1) * CANTRIP_ROW_STEP
+function cantripRow(inputNode: SheetFactory['inputNode'], checkNode: SheetFactory['checkNode'], row: number): FieldNode[] {
+    const offsetY = (row - 1) * CANTRIP_ROW_STEP
     return [
-        inputNode({id: `cantripPrepared${n}`, x: 290.4, y: 577.07 + dy, width: 4.67, height: 4.67, type: 'check'}),
-        inputNode({id: `cantripName${n}`, x: 302, y: 569.07 + dy, width: 92, height: 16, type: 'text', fontSize: 12}),
         inputNode({
-            id: `cantripEffect${n}`,
+            id: `cantripPrepared${row}`,
+            x: 290.4,
+            y: 577.07 + offsetY,
+            width: 4.67,
+            height: 4.67,
+            type: 'check'
+        }),
+        inputNode({
+            id: `cantripName${row}`,
+            x: 302,
+            y: 569.07 + offsetY,
+            width: 92,
+            height: 16,
+            type: 'text',
+            fontSize: 12
+        }),
+        inputNode({
+            id: `cantripEffect${row}`,
             x: 408,
-            y: 569.07 + dy,
+            y: 569.07 + offsetY,
             width: 100,
             height: 16,
             type: 'text',
             fontSize: 12
-        } as CheckFieldDefinition),
-        inputNode({
-            id: `cantripSomatic${n}`,
+        }),
+        checkNode({
+            id: `cantripSomatic${row}`,
             x: 510.3,
-            y: 568.4 + dy,
+            y: 568.4 + offsetY,
             width: 4.67,
             height: 4.67,
             type: 'check',
             shape: 'diamond'
-        } as CheckFieldDefinition),
-        inputNode({
-            id: `cantripVerbal${n}`,
+        }),
+        checkNode({
+            id: `cantripVerbal${row}`,
             x: 510.3,
-            y: 574.3 + dy,
+            y: 574.3 + offsetY,
             width: 4.67,
             height: 4.67,
             type: 'check',
             shape: 'diamond'
-        } as CheckFieldDefinition),
-        inputNode({
-            id: `cantripMaterial${n}`,
+        }),
+        checkNode({
+            id: `cantripMaterial${row}`,
             x: 510.3,
-            y: 580.1 + dy,
+            y: 580.1 + offsetY,
             width: 4.67,
             height: 4.67,
             type: 'check',
             shape: 'diamond'
-        } as CheckFieldDefinition),
+        }),
     ]
 }
 
 /**
- * Total/used fields for the n-th spell level's slot column.
+ * Total/used fields for the slot column of the given spell level (1-based).
  */
-function spellSlotColumn(inputNode: SheetFactory['inputNode'], n: number): FieldNode[] {
-    const x = 302.7 + (n - 1) * SPELL_SLOT_X_STEP
+function spellSlotColumn(inputNode: SheetFactory['inputNode'], column: number): FieldNode[] {
+    const x = 302.7 + (column - 1) * SPELL_SLOT_X_STEP
     return [
-        inputNode({id: `totalSpellSlots${n}`, x, y: 733, width: 12, height: 16, type: 'number', fontSize: 14}),
-        inputNode({id: `usedSpellSlots${n}`, x, y: 757, width: 12, height: 18, type: 'number', fontSize: 14}),
+        inputNode({id: `totalSpellSlots${column}`, x, y: 733, width: 12, height: 16, type: 'number', fontSize: 14}),
+        inputNode({id: `usedSpellSlots${column}`, x, y: 757, width: 12, height: 18, type: 'number', fontSize: 14}),
     ]
 }

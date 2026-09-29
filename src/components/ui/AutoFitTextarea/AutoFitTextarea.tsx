@@ -1,10 +1,8 @@
-import {useLayoutEffect, useRef, useState} from 'react'
+import {useRef} from 'react'
 import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
+import {DEFAULT_FONT_SIZE, useAutoFitFontSize} from '../../../hooks/useAutoFitFontSize.ts'
 import FieldForeignObject from '../FieldForeignObject/FieldForeignObject'
 import './AutoFitTextarea.css'
-
-const DEFAULT_FONT_SIZE = 9
-const MIN_FONT_SIZE = 6
 
 /**
  * Multi-line variant of AutoFitInput: font size auto-fits the value to the field height.
@@ -18,31 +16,18 @@ function AutoFitTextarea({
     value: string
     onChange: (value: string) => void
 }) {
-    const textareaRef = useRef<HTMLTextAreaElement>(null)
+    const textareaReference = useRef<HTMLTextAreaElement>(null)
     const maxFontSize = field.fontSize ?? DEFAULT_FONT_SIZE
-    const [fontSize, setFontSize] = useState(maxFontSize)
-
-    useLayoutEffect(() => {
-        const el = textareaRef.current
-        if (!el) return
-
-        let size = maxFontSize
-        el.style.fontSize = `${size}px`
-        while (size > MIN_FONT_SIZE && el.scrollHeight > el.clientHeight) {
-            size -= 1
-            el.style.fontSize = `${size}px`
-        }
-        setFontSize(size)
-    }, [value, maxFontSize])
+    const fontSize = useAutoFitFontSize(textareaReference, value, maxFontSize, 'height')
 
     return (
         <FieldForeignObject field={field}>
       <textarea
-          ref={textareaRef}
+          ref={textareaReference}
           className="sheet-field sheet-field--multiline"
           style={{fontSize, textAlign: field.textAlign}}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(event) => onChange(event.target.value)}
       />
         </FieldForeignObject>
     )

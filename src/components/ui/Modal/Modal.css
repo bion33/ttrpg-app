@@ -37,6 +37,11 @@
     gap: 1rem;
 }
 
+.modal__prompt {
+    margin: 0;
+    line-height: 1.4;
+}
+
 .modal__field {
     display: flex;
     flex-direction: column;

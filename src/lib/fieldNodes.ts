@@ -7,7 +7,7 @@ import type {CheckFieldDefinition} from "../types/CheckFieldDefinition.ts";
 
 /**
  * A generic system for overlaying form fields on artwork, backed by jotai atoms.
- * Each field is a *node* carrying both its layout (`def`) and the atom that
+ * Each field is a *node* carrying both its layout (`definition`) and the atom that
  * holds its value, so a field's position and its state are one thing.
  */
 
@@ -28,25 +28,32 @@ export function createFieldFactory(storagePrefix: string) {
     /**
      * Builds a writable, persisted field node from its definition.
      */
-    function inputNode(def: FieldDefinition | CheckFieldDefinition): InputNode {
+    function inputNode(definition: FieldDefinition | CheckFieldDefinition): InputNode {
         // Field values are stored as strings; normalize any default (number/boolean) to match.
-        const initial = def.defaultValue === undefined ? '' : String(def.defaultValue)
+        const initial = definition.defaultValue === undefined ? '' : String(definition.defaultValue)
         return {
-            def,
-            atom: atomWithStorage(storageKey(def.id), initial, undefined, {getOnInit: true}),
+            definition,
+            atom: atomWithStorage(storageKey(definition.id), initial, undefined, {getOnInit: true}),
         }
+    }
+
+    /**
+     * Builds a writable, persisted checkbox field node from its check definition.
+     */
+    function checkNode(definition: CheckFieldDefinition): InputNode {
+        return inputNode(definition)
     }
 
     /**
      * Builds a field that shows a computed value while `enabled` holds, and is an editable and persisted input otherwise.
      */
     function computedInputNode(
-        def: FieldDefinition | CheckFieldDefinition,
+        definition: FieldDefinition | CheckFieldDefinition,
         enabled: Atom<boolean>,
         compute: (get: Getter) => string,
     ): InputNode {
-        const initial = def.defaultValue === undefined ? '' : String(def.defaultValue)
-        const stored = atomWithStorage(storageKey(def.id), initial, undefined, {getOnInit: true})
+        const initial = definition.defaultValue === undefined ? '' : String(definition.defaultValue)
+        const stored = atomWithStorage(storageKey(definition.id), initial, undefined, {getOnInit: true})
         const value = atom(
             (get) => (get(enabled) ? compute(get) : get(stored)),
             (get, set, next: string) => {
@@ -54,18 +61,18 @@ export function createFieldFactory(storagePrefix: string) {
                 if (!get(enabled)) set(stored, next)
             },
         )
-        return {def, atom: value, readOnlyAtom: enabled}
+        return {definition, atom: value, readOnlyAtom: enabled}
     }
 
-    return {inputNode, computedInputNode}
+    return {inputNode, checkNode, computedInputNode}
 }
 
 /**
  * Builds a read-only field node whose value is computed from other atoms.
  */
-export function derivedNode(def: FieldDefinition | CheckFieldDefinition, read: (get: Getter) => string): DerivedNode {
+export function derivedNode(definition: FieldDefinition | CheckFieldDefinition, read: (get: Getter) => string): DerivedNode {
     return {
-        def,
+        definition,
         readOnly: true,
         atom: atom(read),
     }
@@ -81,22 +88,30 @@ export function collectNodes(tree: NodeTree): FieldNode[] {
 }
 
 /**
- * Places number fields on a grid; ids[row][col] is each cell's field id.
+ * Places number fields on a grid; ids[row][column] is each cell's field id.
  */
 export function numberGrid(
-    inputNode: (def: FieldDefinition) => InputNode,
+    inputNode: (definition: FieldDefinition) => InputNode,
     ids: string[][],
-    opts: { x0: number; y0: number; colStep: number; rowStep: number; width: number; height: number; fontSize: number },
+    options: {
+        x0: number;
+        y0: number;
+        columnStep: number;
+        rowStep: number;
+        width: number;
+        height: number;
+        fontSize: number
+    },
 ): InputNode[] {
-    return ids.flatMap((cols, row) =>
-        cols.map((id, col) => inputNode({
+    return ids.flatMap((columns, row) =>
+        columns.map((id, column) => inputNode({
             id,
-            x: opts.x0 + col * opts.colStep,
-            y: opts.y0 + row * opts.rowStep,
-            width: opts.width,
-            height: opts.height,
+            x: options.x0 + column * options.columnStep,
+            y: options.y0 + row * options.rowStep,
+            width: options.width,
+            height: options.height,
             type: 'number',
-            fontSize: opts.fontSize,
+            fontSize: options.fontSize,
         })),
     )
 }
@@ -107,5 +122,5 @@ export function numberGrid(
  * Whether a tree is a single field node rather than a group.
  */
 function isFieldNode(tree: NodeTree): tree is FieldNode {
-    return 'def' in tree
+    return 'definition' in tree
 }

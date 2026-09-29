@@ -40,7 +40,7 @@ export default FieldInput
 function WritableField({node}: { node: Extract<FieldNode, { readOnly?: false }> }) {
     const [value, setValue] = useAtom(node.atom)
     const readOnly = useAtomValue(node.readOnlyAtom ?? alwaysWritable)
-    return control(node.def, value, setValue, readOnly)
+    return control(node.definition, value, setValue, readOnly)
 }
 
 /**
@@ -48,7 +48,7 @@ function WritableField({node}: { node: Extract<FieldNode, { readOnly?: false }> 
  */
 function DerivedField({node}: { node: Extract<FieldNode, { readOnly: true }> }) {
     const value = useAtomValue(node.atom)
-    return control(node.def, value, noop, true)
+    return control(node.definition, value, noop, true)
 }
 
 /**

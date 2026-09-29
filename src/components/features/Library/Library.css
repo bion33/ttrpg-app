@@ -19,7 +19,7 @@
 
 /* One binder in the grid: loose papers and decorative tabs behind a clickable cover, plus the edit/delete controls
    that surface on hover. */
-.library__book {
+.library__binder {
     position: relative;
     width: 11.5rem;
     height: 15.25rem;
@@ -89,27 +89,27 @@
     transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.library__book:hover .library__cover,
+.library__binder:hover .library__cover,
 .library__cover:focus-visible {
     transform: translateY(-0.6rem);
 }
 
 /* The papers and decorative tabs lift with the cover on hover, by the same amount so the whole book rises together. */
-.library__book:hover .library__papers,
-.library__book:focus-within .library__papers,
-.library__book:hover .library__tabs,
-.library__book:focus-within .library__tabs {
+.library__binder:hover .library__papers,
+.library__binder:focus-within .library__papers,
+.library__binder:hover .library__tabs,
+.library__binder:focus-within .library__tabs {
     transform: translateY(-0.6rem);
 }
 
 /* On hover the papers and tabs cast a deeper shadow, so the lifted book reads as floating above the shelf. */
-.library__book:hover .library__paper,
-.library__book:focus-within .library__paper {
+.library__binder:hover .library__paper,
+.library__binder:focus-within .library__paper {
     box-shadow: 0 0.9rem 1.1rem rgba(0, 0, 0, 0.16);
 }
 
-.library__book:hover .library__tabs,
-.library__book:focus-within .library__tabs {
+.library__binder:hover .library__tabs,
+.library__binder:focus-within .library__tabs {
     filter: drop-shadow(0 0.7rem 0.85rem rgba(0, 0, 0, 0.14));
 }
 
@@ -144,7 +144,7 @@
 }
 
 /* Edit/delete controls, stacked at the cover's top-right corner and revealed on hover or keyboard focus. */
-.library__book-actions {
+.library__binder-actions {
     position: absolute;
     top: -0.75rem;
     right: -0.75rem;
@@ -158,35 +158,35 @@
     transition: opacity 0.15s ease;
 }
 
-.library__book:hover .library__book-actions,
-.library__book:focus-within .library__book-actions {
+.library__binder:hover .library__binder-actions,
+.library__binder:focus-within .library__binder-actions {
     opacity: 1;
     pointer-events: auto;
 }
 
 /* The ghost binder in the last grid cell: the real binder look (papers, cover, portrait) faded so it reads as a
    placeholder, with a plus icon in the portrait; clicking its cover opens the add-binder dialogue. */
-.library__book--ghost {
+.library__binder--ghost {
     opacity: 0.6;
     transition: opacity 0.15s ease;
 }
 
-.library__book--ghost:hover,
-.library__book--ghost:focus-within {
+.library__binder--ghost:hover,
+.library__binder--ghost:focus-within {
     opacity: 0.7;
 }
 
 /* The ghost cover is a neutral grey (the real cover's hue-tinted gradient does not apply to it). */
-.library__book--ghost .library__cover {
+.library__binder--ghost .library__cover {
     background: linear-gradient(160deg, hsl(30 6% 52%), hsl(30 6% 40%));
 }
 
-.library__book--ghost .library__portrait {
+.library__binder--ghost .library__portrait {
     color: hsl(30 6% 40%);
 }
 
 /* The plus icon fills the portrait circle in place of a name's first letter. */
-.library__book--ghost .library__portrait svg {
+.library__binder--ghost .library__portrait svg {
     width: 4.75rem;
     height: 4.75rem;
     stroke-width: 2.5;

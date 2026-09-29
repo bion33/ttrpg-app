@@ -11,11 +11,11 @@ import type {CheckFieldDefinition} from "../../../types/CheckFieldDefinition.ts"
 /**
  * Points for a regular n-pointed star, first point at the top (12 o'clock).
  */
-function starPoints(cx: number, cy: number, outer: number, innerRatio = 0.4, n = 5) {
-    return Array.from({length: n * 2}, (_, i) => {
-        const radius = i % 2 === 0 ? outer : outer * innerRatio
-        const angle = -Math.PI / 2 + (i * Math.PI) / n
-        return `${cx + radius * Math.cos(angle)},${cy + radius * Math.sin(angle)}`
+function starPoints(centerX: number, centerY: number, outer: number, innerRatio = 0.4, points = 5) {
+    return Array.from({length: points * 2}, (_, index) => {
+        const radius = index % 2 === 0 ? outer : outer * innerRatio
+        const angle = -Math.PI / 2 + (index * Math.PI) / points
+        return `${centerX + radius * Math.cos(angle)},${centerY + radius * Math.sin(angle)}`
     }).join(' ')
 }
 
@@ -33,9 +33,9 @@ function CheckInput({
 }) {
     const checked = value === 'true'
 
-    const cx = field.x + field.width / 2
-    const cy = field.y + field.height / 2
-    const r = Math.min(field.width, field.height) * 0.32
+    const centerX = field.x + field.width / 2
+    const centerY = field.y + field.height / 2
+    const radius = Math.min(field.width, field.height) * 0.32
     // Non-default colors override the CSS fill.
     const fillStyle = field.color && field.color !== 'black' ? {fill: field.color} : undefined
 
@@ -46,23 +46,23 @@ function CheckInput({
                     <polygon
                         className="sheet-checkbox-fill"
                         style={fillStyle}
-                        points={`${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`}
+                        points={`${centerX},${centerY - radius} ${centerX + radius},${centerY} ${centerX},${centerY + radius} ${centerX - radius},${centerY}`}
                     />
                 ) : field.shape === 'star' ? (
                     <polygon
                         className="sheet-checkbox-fill"
                         style={fillStyle}
-                        points={starPoints(cx, cy, r * 1.55)}
+                        points={starPoints(centerX, centerY, radius * 1.55)}
                     />
                 ) : (
-                    <circle className="sheet-checkbox-fill" style={fillStyle} cx={cx} cy={cy} r={r}/>
+                    <circle className="sheet-checkbox-fill" style={fillStyle} cx={centerX} cy={centerY} r={radius}/>
                 ))}
             <FieldForeignObject field={field}>
                 <input
                     className="sheet-checkbox"
                     type="checkbox"
                     checked={checked}
-                    onChange={(e) => onChange(e.target.checked ? 'true' : 'false')}
+                    onChange={(event) => onChange(event.target.checked ? 'true' : 'false')}
                 />
             </FieldForeignObject>
         </>

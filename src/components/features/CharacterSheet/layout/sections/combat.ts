@@ -1,17 +1,17 @@
 import type {Getter} from 'jotai'
 import {atom} from 'jotai'
 import {numberGrid} from '../../../../../lib/fieldNodes.ts'
+import {parseNumericField} from '../../../../../lib/parseNumericField.ts'
 import {halfSpeed} from '../../logic/formulas.ts'
 import type {SheetFactory} from '../nodes.ts'
-import type {CheckFieldDefinition} from "../../../../../types/CheckFieldDefinition.ts";
 
 /**
  * Builds the combat fields (armor class, speeds, hit points, conditions), the hit-dice block, and the death saves.
  */
-export function buildCombat({inputNode, computedInputNode}: SheetFactory) {
+export function buildCombat({inputNode, checkNode, computedInputNode}: SheetFactory) {
     // Toggle for the climb/swim speed auto-calculation; when checked, both are derived from run speed.
-    const enableSpeedCalc = inputNode({
-        id: 'enableSpeedCalc',
+    const enableSpeedCalculation = checkNode({
+        id: 'enableSpeedCalculation',
         x: 480.01,
         y: 180.05,
         width: 7.25,
@@ -19,25 +19,23 @@ export function buildCombat({inputNode, computedInputNode}: SheetFactory) {
         type: 'check',
         shape: 'star',
         defaultValue: true
-    } as CheckFieldDefinition)
+    })
 
     // True while climb/swim speeds should be auto-calculated rather than typed in.
-    const speedCalcEnabled = atom((get) => get(enableSpeedCalc.atom) === 'true')
+    const speedCalculationEnabled = atom((get) => get(enableSpeedCalculation.atom) === 'true')
 
     // The walking speed both climb and swim are derived from when auto-calc is on.
     const runSpeed = inputNode({id: 'runSpeed', x: 458, y: 202, width: 26, height: 18, type: 'number', fontSize: 16})
 
     // Climb/swim = half the walking speed while auto-calc is on, an editable input otherwise.
     function halfRunSpeed(get: Getter): string {
-        const raw = get(runSpeed.atom).trim()
-        if (raw === '') return ''
-        const value = Number(raw)
-        return Number.isNaN(value) ? '' : String(halfSpeed(value))
+        const value = parseNumericField(get(runSpeed.atom))
+        return value === null ? '' : String(halfSpeed(value))
     }
 
     const combat = {
         armorClass: inputNode({id: 'armorClass', x: 308, y: 206, width: 42, height: 32, type: 'number', fontSize: 28}),
-        shield: inputNode(
+        shield: checkNode(
             {
                 id: 'shield',
                 x: 342.5,
@@ -46,21 +44,21 @@ export function buildCombat({inputNode, computedInputNode}: SheetFactory) {
                 height: 14,
                 type: 'check',
                 shape: 'diamond'
-            } as CheckFieldDefinition
+            }
         ),
         darkvision: inputNode({id: 'darkvision', x: 392, y: 172, width: 26, height: 16, type: 'number', fontSize: 14}),
         initiative: inputNode({id: 'initiative', x: 380, y: 206, width: 50, height: 32, type: 'number', fontSize: 28}),
-        enableSpeedCalc,
+        enableSpeedCalculation,
         speed: {
             runSpeed,
             climbSpeed: computedInputNode(
                 {id: 'climbSpeed', x: 482, y: 202, width: 26, height: 18, type: 'number', fontSize: 16},
-                speedCalcEnabled,
+                speedCalculationEnabled,
                 halfRunSpeed,
             ),
             swimSpeed: computedInputNode(
                 {id: 'swimSpeed', x: 458, y: 222, width: 26, height: 18, type: 'number', fontSize: 16},
-                speedCalcEnabled,
+                speedCalculationEnabled,
                 halfRunSpeed,
             ),
             flySpeed: inputNode({id: 'flySpeed', x: 482, y: 222, width: 26, height: 18, type: 'number', fontSize: 16}),
@@ -111,7 +109,7 @@ export function buildCombat({inputNode, computedInputNode}: SheetFactory) {
                 ['hitDiceTotalClass1', 'hitDiceTotalClass2'],
                 ['hitDiceUsedClass1', 'hitDiceUsedClass2'],
             ],
-            {x0: 578, y0: 202, colStep: 24, rowStep: 20, width: 26, height: 18, fontSize: 16},
+            {x0: 578, y0: 202, columnStep: 24, rowStep: 20, width: 26, height: 18, fontSize: 16},
         ),
         class2: inputNode({id: 'hitDiceClass2', x: 635, y: 210, width: 14, height: 20, type: 'number', fontSize: 12}),
     }

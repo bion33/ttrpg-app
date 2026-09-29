@@ -26,7 +26,7 @@ function NumericInput({
                 readOnly={readOnly}
                 style={{fontSize: field.fontSize, textAlign: field.textAlign ?? 'center'}}
                 value={value}
-                onChange={(e) => onChange(e.target.value)}
+                onChange={(event) => onChange(event.target.value)}
             />
         </FieldForeignObject>
     )

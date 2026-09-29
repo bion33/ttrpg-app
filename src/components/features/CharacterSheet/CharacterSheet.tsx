@@ -19,12 +19,12 @@ interface CharacterSheetProps {
  */
 function CharacterSheet({storagePrefix}: CharacterSheetProps) {
     const [artworkMarkup, setArtworkMarkup] = useState<string | null>(null)
-    const svgRef = useRef<SVGSVGElement>(null)
+    const svgReference = useRef<SVGSVGElement>(null)
     const {fields} = useMemo(() => buildSheet(storagePrefix), [storagePrefix])
 
     useEffect(() => {
         fetch(SVG_URL)
-            .then((res) => res.text())
+            .then((response) => response.text())
             .then((text) => {
                 const match = text.match(/<svg[^>]*>([\s\S]*)<\/svg>/)
                 setArtworkMarkup(match ? match[1] : text)
@@ -39,14 +39,14 @@ function CharacterSheet({storagePrefix}: CharacterSheetProps) {
 
     return (
         <svg
-            ref={svgRef}
+            ref={svgReference}
             className="character-sheet"
             viewBox={VIEW_BOX}
             xmlns="http://www.w3.org/2000/svg"
         >
             <g dangerouslySetInnerHTML={{__html: artworkMarkup}}/>
             {fields.map((node) => (
-                <FieldInput key={node.def.id} node={node}/>
+                <FieldInput key={node.definition.id} node={node}/>
             ))}
         </svg>
     )

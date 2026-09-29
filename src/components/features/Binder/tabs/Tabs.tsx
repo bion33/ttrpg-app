@@ -22,7 +22,7 @@ interface TabsProps {
     // Commits a drag reorder: the tab at index `from` moves to index `to`.
     onReorder: (from: number, to: number) => void
     // Reports the last tab's element (or null) so an outside control can watch whether it has scrolled into view.
-    onLastTabChange?: (el: HTMLElement | null) => void
+    onLastTabChange?: (element: HTMLElement | null) => void
 }
 
 /**
@@ -43,8 +43,8 @@ interface DragState {
  * can be dragged vertically to reorder, with the displaced tabs sliding to their new slots.
  */
 function Tabs({tabs, activeId, onSelect, onReorder, onLastTabChange}: TabsProps) {
-    const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
-    const dragRef = useRef<DragState | null>(null)
+    const tabReferences = useRef<(HTMLButtonElement | null)[]>([])
+    const dragReference = useRef<DragState | null>(null)
     // Render-facing drag state: the moving tab, its origin slot, the captured tops, its live offset and target slot.
     const [drag, setDrag] = useState<{ id: string; fromIndex: number; tops: number[] } | null>(null)
     const [dragOffset, setDragOffset] = useState(0)
@@ -54,7 +54,7 @@ function Tabs({tabs, activeId, onSelect, onReorder, onLastTabChange}: TabsProps)
 
     // Reports the last tab's element up whenever the tab list changes, so a control can watch its visibility.
     useEffect(() => {
-        onLastTabChange?.(tabRefs.current[tabs.length - 1] ?? null)
+        onLastTabChange?.(tabReferences.current[tabs.length - 1] ?? null)
     }, [tabs.length, onLastTabChange])
 
     // Re-enables the glide once the reorder has painted, so the snap-to-new-slot frame is not itself animated.
@@ -67,11 +67,11 @@ function Tabs({tabs, activeId, onSelect, onReorder, onLastTabChange}: TabsProps)
     // Begins dragging a tab, capturing the pointer and each tab's current top.
     function onPointerDown(event: PointerEvent<HTMLButtonElement>, index: number, id: string) {
         if (event.button !== 0) return
-        const tops = tabRefs.current.slice(0, tabs.length).map((el) => el?.offsetTop ?? 0)
+        const tops = tabReferences.current.slice(0, tabs.length).map((element) => element?.offsetTop ?? 0)
         // Derive the view's scale from the tab's rendered vs. layout height so the drag tracks the pointer when zoomed.
-        const el = event.currentTarget
-        const scale = el.offsetHeight ? el.getBoundingClientRect().height / el.offsetHeight : 1
-        dragRef.current = {fromIndex: index, startY: event.clientY, tops, target: index, scale}
+        const element = event.currentTarget
+        const scale = element.offsetHeight ? element.getBoundingClientRect().height / element.offsetHeight : 1
+        dragReference.current = {fromIndex: index, startY: event.clientY, tops, target: index, scale}
         setDrag({id, fromIndex: index, tops})
         setDragOffset(0)
         setTarget(index)
@@ -80,29 +80,29 @@ function Tabs({tabs, activeId, onSelect, onReorder, onLastTabChange}: TabsProps)
 
     // Tracks the pointer: moves the dragged tab and recomputes which slot it would drop into.
     function onPointerMove(event: PointerEvent<HTMLButtonElement>) {
-        const state = dragRef.current
+        const state = dragReference.current
         if (!state) return
         // Convert the screen-pixel pointer delta into the view's unscaled units so the tab stays under the pointer.
-        const dy = (event.clientY - state.startY) / state.scale
-        setDragOffset(dy)
-        const height = tabRefs.current[state.fromIndex]?.offsetHeight ?? 0
-        const draggedCenter = state.tops[state.fromIndex] + dy + height / 2
+        const deltaY = (event.clientY - state.startY) / state.scale
+        setDragOffset(deltaY)
+        const height = tabReferences.current[state.fromIndex]?.offsetHeight ?? 0
+        const draggedCenter = state.tops[state.fromIndex] + deltaY + height / 2
         // The new index is the count of other tabs whose centre sits above the dragged tab's centre.
-        let ti = 0
-        for (let k = 0; k < tabs.length; k++) {
-            if (k === state.fromIndex) continue
-            const center = state.tops[k] + (tabRefs.current[k]?.offsetHeight ?? 0) / 2
-            if (draggedCenter > center) ti++
+        let targetIndex = 0
+        for (let i = 0; i < tabs.length; i++) {
+            if (i === state.fromIndex) continue
+            const center = state.tops[i] + (tabReferences.current[i]?.offsetHeight ?? 0) / 2
+            if (draggedCenter > center) targetIndex++
         }
-        state.target = ti
-        setTarget(ti)
+        state.target = targetIndex
+        setTarget(targetIndex)
     }
 
     // Ends the drag, committing the reorder when the tab settled in a new slot.
     function onPointerUp() {
-        const state = dragRef.current
+        const state = dragReference.current
         if (!state) return
-        dragRef.current = null
+        dragReference.current = null
         if (state.target !== state.fromIndex) {
             onReorder(state.fromIndex, state.target)
             setCommitting(true)
@@ -130,8 +130,8 @@ function Tabs({tabs, activeId, onSelect, onReorder, onLastTabChange}: TabsProps)
             {tabs.map((tab, index) => (
                 <button
                     key={tab.id}
-                    ref={(el) => {
-                        tabRefs.current[index] = el
+                    ref={(element) => {
+                        tabReferences.current[index] = element
                     }}
                     type="button"
                     className={`tabs__tab${tab.id === activeId ? ' tabs__tab--active' : ''}`}

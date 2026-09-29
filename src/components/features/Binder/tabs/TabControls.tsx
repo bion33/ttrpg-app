@@ -25,13 +25,12 @@ interface TabControlsProps {
  */
 function TabControls({onAdd, hasActive, onEdit, onDelete, onExit, lastTab}: TabControlsProps) {
     const [scrolledPast, setScrolledPast] = useState(false)
+    // The back-to-top button shows only while there is a last tab and it has scrolled out of view.
+    const showToTop = !!lastTab && scrolledPast
 
     // Watch whether the last tab is still on screen so the back-to-top button can appear when it is not.
     useEffect(() => {
-        if (!lastTab) {
-            setScrolledPast(false)
-            return
-        }
+        if (!lastTab) return
         const observer = new IntersectionObserver(([entry]) => setScrolledPast(!entry.isIntersecting))
         observer.observe(lastTab)
         return () => observer.disconnect()
@@ -53,7 +52,7 @@ function TabControls({onAdd, hasActive, onEdit, onDelete, onExit, lastTab}: TabC
                 )}
                 <IconButton icon={<FilePlus2/>} label="Add tab" onClick={onAdd}/>
             </div>
-            <div className={`tab-controls__to-top${scrolledPast ? ' tab-controls__to-top--visible' : ''}`}>
+            <div className={`tab-controls__to-top${showToTop ? ' tab-controls__to-top--visible' : ''}`}>
                 <IconButton icon={<ArrowUp/>} label="Back to top"
                             onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}/>
             </div>

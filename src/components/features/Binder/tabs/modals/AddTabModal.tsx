@@ -16,10 +16,10 @@ interface AddTabModalProps {
 function AddTabModal({onCreate, onCancel}: AddTabModalProps) {
     const [name, setName] = useState('')
     const [type, setType] = useState<PageType>(PAGE_TYPES[0].value)
-    const nameRef = useRef<HTMLInputElement>(null)
+    const nameReference = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
-        nameRef.current?.focus()
+        nameReference.current?.focus()
     }, [])
 
     // Validates the name, then reports the new page to the parent.
@@ -36,7 +36,7 @@ function AddTabModal({onCreate, onCancel}: AddTabModalProps) {
                 <label className="modal__field">
                     <span>Name</span>
                     <input
-                        ref={nameRef}
+                        ref={nameReference}
                         type="text"
                         maxLength={14}
                         value={name}

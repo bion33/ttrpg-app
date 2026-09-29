@@ -18,7 +18,7 @@ export type WritableStringAtom = WritableAtom<string, [string], void>
  */
 export type InputNode = {
     readOnly?: false
-    def: FieldDefinition
+    definition: FieldDefinition
     atom: WritableStringAtom
     readOnlyAtom?: Atom<boolean>
 }
@@ -26,7 +26,7 @@ export type InputNode = {
 /**
  * A computed field: read-only, derived from other atoms, never persisted.
  */
-export type DerivedNode = { readOnly: true; def: FieldDefinition; atom: Atom<string> }
+export type DerivedNode = { readOnly: true; definition: FieldDefinition; atom: Atom<string> }
 
 /**
  * Any overlay field: writable or computed.

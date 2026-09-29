@@ -1,9 +1,14 @@
 import {type SyntheticEvent, useState} from 'react'
-import './BinderModal.css'
 import Modal from '../../../ui/Modal/Modal'
+import ColorPicker from '../../../ui/ColorPicker/ColorPicker'
 
 // Preset hues offered as quick swatches for a binder spine, spaced around the wheel.
 const PRESET_HUES = [8, 38, 90, 150, 200, 260, 320]
+
+// The binder spine colour at a given hue.
+function spineColor(hue: number): string {
+    return `hsl(${hue} 45% 45%)`
+}
 
 /**
  * Props for the edit-binder dialogue: the current label and hue to seed the fields, and the save/cancel callbacks.
@@ -19,7 +24,7 @@ interface EditBinderModalProps {
  * Modal for editing a binder: renames the label (leaving the binder's id and stored pages untouched) and recolours
  * its spine via a hue slider with swatch presets and a live preview.
  */
-export function EditBinderModal({initialLabel, initialHue, onSave, onCancel}: EditBinderModalProps) {
+function EditBinderModal({initialLabel, initialHue, onSave, onCancel}: EditBinderModalProps) {
     const [name, setName] = useState(initialLabel)
     const [hue, setHue] = useState(initialHue)
 
@@ -39,19 +44,7 @@ export function EditBinderModal({initialLabel, initialHue, onSave, onCancel}: Ed
                     <input type="text" value={name} onChange={(event) => setName(event.target.value)}/>
                 </label>
 
-                <label className="modal__field">
-                    <span>Color</span>
-                    <input type="range" min={0} max={359} value={hue}
-                           onChange={(event) => setHue(Number(event.target.value))}/>
-                </label>
-                <div className="binder-modal__presets">
-                    {PRESET_HUES.map((preset) => (
-                        <button key={preset} type="button" className="binder-modal__preset"
-                                style={{background: `hsl(${preset} 45% 45%)`}} aria-label={`Hue ${preset}`}
-                                onClick={() => setHue(preset)}/>
-                    ))}
-                </div>
-                <div className="binder-modal__swatch" style={{background: `hsl(${hue} 45% 45%)`}}/>
+                <ColorPicker hue={hue} onChange={setHue} presets={PRESET_HUES} preview={spineColor}/>
 
                 <div className="modal__actions">
                     <button type="button" className="modal__btn" onClick={onCancel}>Cancel</button>
@@ -63,3 +56,5 @@ export function EditBinderModal({initialLabel, initialHue, onSave, onCancel}: Ed
         </Modal>
     )
 }
+
+export default EditBinderModal

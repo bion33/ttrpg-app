@@ -25,11 +25,11 @@ describe('bookJitter', () => {
             const {papers} = bookJitter(id)
             expect(papers).toHaveLength(3)
             for (const paper of papers) {
-                // dx never negative so no sheet crosses the cover's left edge.
-                expect(paper.dx).toBeGreaterThanOrEqual(0)
-                expect(paper.dx).toBeLessThanOrEqual(0.6)
-                expect(Math.abs(paper.dy)).toBeLessThanOrEqual(0.7)
-                expect(Math.abs(paper.rot)).toBeLessThanOrEqual(4)
+                // offsetX never negative so no sheet crosses the cover's left edge.
+                expect(paper.offsetX).toBeGreaterThanOrEqual(0)
+                expect(paper.offsetX).toBeLessThanOrEqual(0.6)
+                expect(Math.abs(paper.offsetY)).toBeLessThanOrEqual(0.7)
+                expect(Math.abs(paper.rotation)).toBeLessThanOrEqual(4)
             }
         }
     })
