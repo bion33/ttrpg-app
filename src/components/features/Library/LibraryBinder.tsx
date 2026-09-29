@@ -4,6 +4,7 @@ import './Library.css'
 import '../Binder/tabs/Tabs.css'
 import IconButton from '../../ui/IconButton/IconButton'
 import {bookJitter} from './logic/bookJitter.ts'
+import {binderSpineDark, binderSpineLight, tabColor} from '../../../lib/hueColors.ts'
 
 /**
  * Props for one library binder cover: its spine hue and label, the seed for its stable paper mess, the decorative page
@@ -28,7 +29,7 @@ function LibraryBinder({hue, label, jitterSeed, tabs, onOpen, onEdit, onDelete, 
     const jitter = bookJitter(jitterSeed)
     return (
         <div className={`library__binder${ghost ? ' library__binder--ghost' : ''}`}
-             style={{'--hue': hue} as CSSProperties}>
+             style={{'--spine-light': binderSpineLight(hue), '--spine-dark': binderSpineDark(hue)} as CSSProperties}>
             {/* Loose sheets peeking out behind the cover, each tilted and offset for a messy look. */}
             <div className="library__papers" aria-hidden="true">
                 {jitter.papers.map((paper, index) => (
@@ -44,7 +45,8 @@ function LibraryBinder({hue, label, jitterSeed, tabs, onOpen, onEdit, onDelete, 
                 <div className="library__tabs" aria-hidden="true">
                     <div className="tabs">
                         {tabs.map((tab, index) => (
-                            <div key={index} className="tabs__tab" style={{'--hue': tab.hue} as CSSProperties}>
+                            <div key={index} className="tabs__tab"
+                                 style={{'--hue': tab.hue, '--tab-color': tabColor(tab.hue)} as CSSProperties}>
                                 <span className="tabs__label">{tab.label}</span>
                             </div>
                         ))}

@@ -1,6 +1,7 @@
 import type {CSSProperties, PointerEvent} from 'react'
 import {useEffect, useRef, useState} from 'react'
 import './Tabs.css'
+import {tabColor} from '../../../../lib/hueColors.ts'
 
 /**
  * One selectable tab: its stable key and the label shown on the rotated paper tab.
@@ -126,7 +127,7 @@ function Tabs({tabs, activeId, onSelect, onReorder, onLastTabChange}: TabsProps)
     }
 
     return (
-        <nav className="tabs" aria-label="Pages">
+        <nav className="tabs no-print" aria-label="Pages">
             {tabs.map((tab, index) => (
                 <button
                     key={tab.id}
@@ -137,6 +138,7 @@ function Tabs({tabs, activeId, onSelect, onReorder, onLastTabChange}: TabsProps)
                     className={`tabs__tab${tab.id === activeId ? ' tabs__tab--active' : ''}`}
                     style={{
                         '--hue': tab.hue,
+                        '--tab-color': tabColor(tab.hue),
                         // The dragged tab rides above everything; otherwise the active tab (over the page at z 10)
                         // notches the border, and among inactive tabs earlier ones stack over later ones.
                         zIndex: tab.id === drag?.id ? 200 : tab.id === activeId ? 100 : tabs.length - index,

@@ -38,10 +38,10 @@ function TabControls({onAdd, hasActive, onEdit, onDelete, onExit, lastTab}: TabC
 
     return (
         <>
-            <div className="tab-controls__library">
+            <div className="tab-controls__library corner-cluster no-print">
                 <IconButton icon={<Library/>} label="Back to library" labelSide="right" onClick={onExit}/>
             </div>
-            <div className="tab-controls">
+            <div className="tab-controls corner-cluster no-print">
                 {hasActive && (
                     <>
                         <IconButton icon={<Trash2/>} label="Delete tab" variant="danger"
@@ -52,7 +52,7 @@ function TabControls({onAdd, hasActive, onEdit, onDelete, onExit, lastTab}: TabC
                 )}
                 <IconButton icon={<FilePlus2/>} label="Add tab" onClick={onAdd}/>
             </div>
-            <div className={`tab-controls__to-top${showToTop ? ' tab-controls__to-top--visible' : ''}`}>
+            <div className={`tab-controls__to-top corner-cluster no-print${showToTop ? ' tab-controls__to-top--visible' : ''}`}>
                 <IconButton icon={<ArrowUp/>} label="Back to top"
                             onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}/>
             </div>

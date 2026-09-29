@@ -6,10 +6,10 @@
     /* Word-document margins: generous, with text flowing from the top-left rather than centred. */
     padding: 4rem 4.5rem;
     background: #fff;
-    font-family: 'Times-Roman', serif;
+    font-family: var(--font-serif);
     font-size: 1rem;
     line-height: 1.6;
-    color: #333;
+    color: var(--color-text);
     text-align: left;
 }
 

@@ -1,14 +1,11 @@
-import {type SyntheticEvent, useState} from 'react'
+import {useState} from 'react'
 import Modal from '../../../ui/Modal/Modal'
 import ColorPicker from '../../../ui/ColorPicker/ColorPicker'
+import {useNameForm} from '../../../../hooks/useNameForm.ts'
+import {binderSpineColor} from '../../../../lib/hueColors.ts'
 
 // Preset hues offered as quick swatches for a binder spine, spaced around the wheel.
 const PRESET_HUES = [8, 38, 90, 150, 200, 260, 320]
-
-// The binder spine colour at a given hue.
-function spineColor(hue: number): string {
-    return `hsl(${hue} 45% 45%)`
-}
 
 /**
  * Props for the edit-binder dialogue: the current label and hue to seed the fields, and the save/cancel callbacks.
@@ -25,26 +22,19 @@ interface EditBinderModalProps {
  * its spine via a hue slider with swatch presets and a live preview.
  */
 function EditBinderModal({initialLabel, initialHue, onSave, onCancel}: EditBinderModalProps) {
-    const [name, setName] = useState(initialLabel)
     const [hue, setHue] = useState(initialHue)
-
-    // Validates the name, then reports the label and hue to the parent.
-    function submit(event: SyntheticEvent) {
-        event.preventDefault()
-        const trimmed = name.trim()
-        if (!trimmed) return
-        onSave(trimmed, hue)
-    }
+    const {name, setName, nameReference, submit} = useNameForm(initialLabel, (trimmed) => onSave(trimmed, hue))
 
     return (
         <Modal title="Edit binder" onClose={onCancel}>
             <form className="modal__body" onSubmit={submit}>
                 <label className="modal__field">
                     <span>Name</span>
-                    <input type="text" maxLength={24} value={name} onChange={(event) => setName(event.target.value)}/>
+                    <input ref={nameReference} type="text" maxLength={24} value={name}
+                           onChange={(event) => setName(event.target.value)}/>
                 </label>
 
-                <ColorPicker hue={hue} onChange={setHue} presets={PRESET_HUES} preview={spineColor}/>
+                <ColorPicker hue={hue} onChange={setHue} presets={PRESET_HUES} preview={binderSpineColor}/>
 
                 <div className="modal__actions">
                     <button type="button" className="modal__btn" onClick={onCancel}>Cancel</button>

@@ -19,17 +19,36 @@ interface CharacterSheetProps {
  */
 function CharacterSheet({storagePrefix}: CharacterSheetProps) {
     const [artworkMarkup, setArtworkMarkup] = useState<string | null>(null)
+    const [loadFailed, setLoadFailed] = useState(false)
     const svgReference = useRef<SVGSVGElement>(null)
     const {fields} = useMemo(() => buildSheet(storagePrefix), [storagePrefix])
 
     useEffect(() => {
+        let cancelled = false
         fetch(SVG_URL)
-            .then((response) => response.text())
+            .then((response) => {
+                if (!response.ok) throw new Error(`Character sheet artwork request failed (${response.status})`)
+                return response.text()
+            })
             .then((text) => {
+                if (cancelled) return
                 const match = text.match(/<svg[^>]*>([\s\S]*)<\/svg>/)
                 setArtworkMarkup(match ? match[1] : text)
             })
+            .catch(() => {
+                if (!cancelled) setLoadFailed(true)
+            })
+        return () => {
+            cancelled = true
+        }
     }, [])
+
+    if (loadFailed) return (
+        <PaperPage>
+            <h1>Couldn’t load the character sheet.</h1>
+            <p>The character-sheet artwork failed to load. Check your connection and reload the page.</p>
+        </PaperPage>
+    );
 
     if (!artworkMarkup) return (
         <PaperPage>

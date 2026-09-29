@@ -8,19 +8,18 @@ import {buildSpells} from './sections/spells.ts'
 import {buildTraits} from './sections/traits.ts'
 
 /**
- * One assembled character sheet: the structured field tree (for logic, read by reference) and the flat render list.
+ * One assembled character sheet: the flat render list of its field nodes.
  */
 export interface Sheet {
-    tree: object
     fields: FieldNode[]
 }
 
 /**
  * Builds one character sheet's fields under the given storage-key prefix.
  *
- * All coordinates are in the artwork's viewBox units (see FieldDefinition). Every field is created exactly once (in
- * its section builder); both structured access (e.g. `tree.abilities.strength.score.atom`) and the flat `fields`
- * render list derive from the single tree. Call once per sheet instance (memoized per prefix in the component).
+ * All coordinates are in the artwork's viewBox units (see FieldDefinition). Every field is created exactly once (in its
+ * section builder) and gathered into a structured tree, which `collectNodes` flattens into the flat `fields` render
+ * list. Call once per sheet instance (memoized per prefix in the component).
  */
 export function buildSheet(storagePrefix: string): Sheet {
     const factory = createSheetFactory(storagePrefix)
@@ -46,5 +45,5 @@ export function buildSheet(storagePrefix: string): Sheet {
         proficiencies,
     }
 
-    return {tree, fields: collectNodes(tree)}
+    return {fields: collectNodes(tree)}
 }

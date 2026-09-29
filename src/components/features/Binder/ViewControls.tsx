@@ -19,7 +19,7 @@ interface ViewControlsProps {
  */
 function ViewControls({onScaleUp, onScaleDown, canScaleUp, canScaleDown}: ViewControlsProps) {
     return (
-        <div className="view-controls">
+        <div className="view-controls corner-cluster no-print">
             <IconButton icon={<Plus/>} label="Zoom in" labelSide="right" onClick={onScaleUp} disabled={!canScaleUp}/>
             <IconButton icon={<Minus/>} label="Zoom out" labelSide="right" onClick={onScaleDown}
                         disabled={!canScaleDown}/>

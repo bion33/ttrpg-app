@@ -48,7 +48,7 @@ export function createFieldFactory(storagePrefix: string) {
      * Builds a field that shows a computed value while `enabled` holds, and is an editable and persisted input otherwise.
      */
     function computedInputNode(
-        definition: FieldDefinition | CheckFieldDefinition,
+        definition: FieldDefinition,
         enabled: Atom<boolean>,
         compute: (get: Getter) => string,
     ): InputNode {
@@ -70,7 +70,7 @@ export function createFieldFactory(storagePrefix: string) {
 /**
  * Builds a read-only field node whose value is computed from other atoms.
  */
-export function derivedNode(definition: FieldDefinition | CheckFieldDefinition, read: (get: Getter) => string): DerivedNode {
+export function derivedNode(definition: FieldDefinition, read: (get: Getter) => string): DerivedNode {
     return {
         definition,
         readOnly: true,

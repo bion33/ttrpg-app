@@ -1,17 +1,18 @@
+import type {MouseEvent} from 'react'
 import {useState} from 'react'
-import {useAtom} from 'jotai'
+import {useAtom, useAtomValue} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
 import './Library.css'
 import Binder from '../Binder/Binder.tsx'
-import {activePage} from '../Binder/logic/activePage.ts'
+import {activePageAtom, pagesAtom} from '../Binder/binderAtoms.ts'
 import {libraryLocation} from '../../../lib/navigation.ts'
 import {useLocation, useNavigate} from '../../../hooks/useNavigation.ts'
 import {tabHue} from '../../../lib/tabHue.ts'
+import {newId} from '../../../lib/newId.ts'
 import ConfirmModal from '../../ui/ConfirmModal/ConfirmModal'
 import AddBinderModal from './modals/AddBinderModal.tsx'
 import EditBinderModal from './modals/EditBinderModal.tsx'
 import LibraryBinder from './LibraryBinder.tsx'
-import {binderId} from './logic/binderId.ts'
 import {binderTabs} from './logic/binderTabs.ts'
 
 /**
@@ -26,6 +27,32 @@ interface LibraryBinderItem {
 
 /** The user's binders, loaded from and persisted to storage. Empty until the user adds one. */
 const bindersAtom = atomWithStorage<LibraryBinderItem[]>('binders', [])
+
+/**
+ * One binder cover on the shelf, subscribed to that binder's persisted pages and last-active page so its decorative
+ * tabs stay in sync and opening it returns to the remembered page.
+ */
+function LibraryShelfBinder({binder, onOpen, onEdit, onDelete}: {
+    binder: LibraryBinderItem
+    onOpen: (activePageId: string) => void
+    onEdit: () => void
+    onDelete: (event: MouseEvent) => void
+}) {
+    const pages = useAtomValue(pagesAtom(binder.id))
+    const rememberedPage = useAtomValue(activePageAtom(binder.id))
+    return (
+        <LibraryBinder
+            hue={binder.hue}
+            label={binder.label}
+            jitterSeed={binder.id}
+            // Decorative tabs mirror the binder's real pages (first four only), in their stored hue/label.
+            tabs={binderTabs(pages).slice(0, 4)}
+            onOpen={() => onOpen(rememberedPage)}
+            onEdit={onEdit}
+            onDelete={onDelete}
+        />
+    )
+}
 
 /**
  * The library: a grid of binder covers to open, add, rename, recolour, and delete. Opening one hands off to the
@@ -46,7 +73,7 @@ function Library() {
 
     // Adds a binder with a fresh id and a spread-out default spine hue; the shelf stays open so the new binder appears.
     function createBinder(name: string) {
-        setBinders([...binders, {id: binderId(), label: name, hue: tabHue(binders.length)}])
+        setBinders([...binders, {id: newId(), label: name, hue: tabHue(binders.length)}])
         setAdding(false)
     }
 
@@ -72,18 +99,11 @@ function Library() {
         <div className="library">
             <div className="library__grid">
                 {sorted.map((binder) => (
-                    <LibraryBinder
+                    <LibraryShelfBinder
                         key={binder.id}
-                        hue={binder.hue}
-                        label={binder.label}
-                        jitterSeed={binder.id}
-                        // Decorative tabs mirror the binder's real pages (first four only), in their stored hue/label.
-                        tabs={binderTabs(localStorage.getItem(`${binder.id}:pages`)).slice(0, 4)}
+                        binder={binder}
                         // Reopen the binder at its remembered active page.
-                        onOpen={() => navigate({
-                            binderId: binder.id,
-                            pageId: activePage(localStorage.getItem(`${binder.id}:activePage`)),
-                        })}
+                        onOpen={(activePageId) => navigate({binderId: binder.id, pageId: activePageId})}
                         onEdit={() => setEditing(binder)}
                         onDelete={(event) => (event.shiftKey ? removeBinder(binder.id) : setDeleting(binder))}
                     />

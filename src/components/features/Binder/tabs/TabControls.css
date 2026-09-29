@@ -1,31 +1,21 @@
-/* Layout for the tab-control cluster: a vertical stack of IconButtons in the gutter just right of the tab strip,
-   lifted above the page and tabs so the buttons and their hover labels are never covered. */
+/* Corner placement for the tab-control clusters; the fixed-stack base comes from the shared `.corner-cluster`
+   utility (index.css) and printing hides them via `.no-print`. */
 
 .tab-controls {
-    position: fixed;
     bottom: 1.5rem;
     right: 1.5rem;
-    /* Above the page (z 10) and every tab (up to z 200) so the buttons and their hover labels are never covered. */
-    z-index: 300;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
 }
 
 /* The back-to-library button, pinned to the top-left viewport corner, away from the tab strip and its controls. */
 .tab-controls__library {
-    position: fixed;
     top: 1.5rem;
     left: 1.5rem;
-    z-index: 300;
 }
 
 /* The back-to-top button, pinned to the viewport corner; it scales/fades in once the last tab scrolls out of view. */
 .tab-controls__to-top {
-    position: fixed;
     top: 1.5rem;
     right: 1.5rem;
-    z-index: 300;
     opacity: 0;
     transform: scale(0);
     pointer-events: none;
@@ -36,13 +26,4 @@
     opacity: 1;
     transform: scale(1);
     pointer-events: auto;
-}
-
-/* The controls are on-screen chrome; hide them when printing so only the page content shows. */
-@media print {
-    .tab-controls,
-    .tab-controls__library,
-    .tab-controls__to-top {
-        display: none;
-    }
 }

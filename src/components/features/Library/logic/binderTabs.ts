@@ -5,19 +5,10 @@ export interface BinderTab {
 }
 
 /**
- * The decorative tabs of a binder's stored pages — one per page with its label and hue — parsed from the raw JSON
- * persisted under its `${id}:pages` key, so a cover's tabs mirror the real pages inside it. Returns an empty list for
- * missing or malformed data.
+ * The decorative tabs of a binder's stored pages — one per page with its label and hue — so a cover's tabs mirror the
+ * real pages inside it. Takes the binder's persisted page list (already parsed from storage) and projects each page to
+ * its label and hue.
  */
-export function binderTabs(raw: string | null): BinderTab[] {
-    if (!raw) return []
-    try {
-        const pages = JSON.parse(raw)
-        if (!Array.isArray(pages)) return []
-        return pages
-            .filter((page) => page && typeof page.hue === 'number')
-            .map((page) => ({label: typeof page.label === 'string' ? page.label : '', hue: page.hue}))
-    } catch {
-        return []
-    }
+export function binderTabs(pages: readonly {label: string; hue: number}[]): BinderTab[] {
+    return pages.map((page) => ({label: page.label, hue: page.hue}))
 }

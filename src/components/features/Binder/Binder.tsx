@@ -1,27 +1,22 @@
 import type {CSSProperties, ReactNode} from 'react'
-import {useEffect, useMemo, useState} from 'react'
+import {useEffect, useState} from 'react'
 import {useAtom, useSetAtom} from 'jotai'
-import {atomWithStorage} from 'jotai/utils'
 import './Binder.css'
 import {useLocation, useNavigate} from '../../../hooks/useNavigation.ts'
-import Tabs, {type TabItem} from './tabs/Tabs.tsx'
+import Tabs from './tabs/Tabs.tsx'
 import AddTabModal from './tabs/modals/AddTabModal.tsx'
 import TabControls from './tabs/TabControls.tsx'
 import ViewControls from './ViewControls.tsx'
 import EditTabModal from './tabs/modals/EditTabModal.tsx'
 import ConfirmModal from '../../ui/ConfirmModal/ConfirmModal'
 import type {PageType} from './pageTypes.ts'
-import {pageId} from './logic/pageId.ts'
+import type {Page} from './binderAtoms.ts'
+import {activePageAtom, pagesAtom} from './binderAtoms.ts'
+import {newId} from '../../../lib/newId.ts'
 import {tabHue} from '../../../lib/tabHue.ts'
 import {usePageScale} from '../../../hooks/usePageScale.ts'
 import CharacterSheet from '../CharacterSheet/CharacterSheet'
 import EmptyPage from '../EmptyPage/EmptyPage'
-
-/**
- * A navigable page persisted to storage: tab metadata, its `type` (which component renders it), and the storage
- * prefix a character sheet's fields persist under (within its binder's namespace).
- */
-type Page = TabItem & { type: PageType; storagePrefix: string }
 
 /**
  * Props for a binder: the storage prefix (its library id) all its pages persist under, and the callback that returns
@@ -30,18 +25,6 @@ type Page = TabItem & { type: PageType; storagePrefix: string }
 interface BinderProps {
     storagePrefix: string
     onExit: () => void
-}
-
-/**
- * Builds this binder's per-instance page-list and active-page atoms, namespaced under its storage prefix so each
- * binder keeps an isolated set of pages.
- */
-function makeBinderAtoms(prefix: string) {
-    return {
-        pagesAtom: atomWithStorage<Page[]>(`${prefix}:pages`, []),
-        // Remembers this binder's last active page so reopening it from the library returns to that page.
-        activePageAtom: atomWithStorage(`${prefix}:activePage`, ''),
-    }
 }
 
 /**
@@ -60,11 +43,10 @@ function renderPage(page: Page, storagePrefix: string): ReactNode {
  * return to the library.
  */
 function Binder({storagePrefix, onExit}: BinderProps) {
-    const {pagesAtom, activePageAtom} = useMemo(() => makeBinderAtoms(storagePrefix), [storagePrefix])
-    const [pages, setPages] = useAtom(pagesAtom)
+    const [pages, setPages] = useAtom(pagesAtom(storagePrefix))
     const location = useLocation()
     const navigate = useNavigate()
-    const rememberActivePage = useSetAtom(activePageAtom)
+    const rememberActivePage = useSetAtom(activePageAtom(storagePrefix))
     const activeId = location.pageId
     const {scale, scaleUp, scaleDown, canScaleUp, canScaleDown, viewReference} = usePageScale()
     const [adding, setAdding] = useState(false)
@@ -80,7 +62,7 @@ function Binder({storagePrefix, onExit}: BinderProps) {
 
     // Appends a new page of the chosen type; its GUID id doubles as the character-sheet storage prefix.
     function createPage(name: string, type: PageType) {
-        const id = pageId()
+        const id = newId()
         setPages([...pages, {id, label: name, type, storagePrefix: id, hue: tabHue(pages.length)}])
         navigate({binderId: storagePrefix, pageId: id})
         setAdding(false)

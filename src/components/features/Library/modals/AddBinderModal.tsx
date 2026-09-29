@@ -1,5 +1,5 @@
-import {type SyntheticEvent, useEffect, useRef, useState} from 'react'
 import Modal from '../../../ui/Modal/Modal'
+import {useNameForm} from '../../../../hooks/useNameForm.ts'
 
 /**
  * Props for the add-binder dialogue: it reports the chosen name, or a cancellation.
@@ -13,20 +13,7 @@ interface AddBinderModalProps {
  * Modal for adding a binder to the library: collects a name for the new binder.
  */
 function AddBinderModal({onCreate, onCancel}: AddBinderModalProps) {
-    const [name, setName] = useState('')
-    const nameReference = useRef<HTMLInputElement>(null)
-
-    useEffect(() => {
-        nameReference.current?.focus()
-    }, [])
-
-    // Validates the name, then reports the new binder to the parent.
-    function submit(event: SyntheticEvent) {
-        event.preventDefault()
-        const trimmed = name.trim()
-        if (!trimmed) return
-        onCreate(trimmed)
-    }
+    const {name, setName, nameReference, submit} = useNameForm('', onCreate)
 
     return (
         <Modal title="Add binder" onClose={onCancel}>

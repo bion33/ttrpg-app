@@ -25,7 +25,8 @@
     border: 1px solid rgba(0, 0, 0, 0.22);
     border-left: none;
     border-radius: 0 0.5rem 0.5rem 0;
-    background: hsl(var(--hue) 55% 82%);
+    /* --tab-color (the base paper-tab colour) is set per tab from tabColor(hue); the fallback keeps it defined. */
+    background: var(--tab-color, hsl(var(--hue) 55% 82%));
     color: hsl(var(--hue) 45% 22%);
     cursor: pointer;
     /* Claim vertical drag gestures so touch pointers reorder tabs instead of scrolling the page. */
@@ -57,11 +58,4 @@
     text-transform: uppercase;
     white-space: nowrap;
     user-select: none;
-}
-
-/* The tab strip is navigation chrome; hide it when printing so only the page content shows. */
-@media print {
-    .tabs {
-        display: none;
-    }
 }

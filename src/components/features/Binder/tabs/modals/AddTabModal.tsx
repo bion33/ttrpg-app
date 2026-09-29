@@ -1,6 +1,7 @@
-import {type SyntheticEvent, useEffect, useRef, useState} from 'react'
+import {useState} from 'react'
 import Modal from '../../../../ui/Modal/Modal'
 import {PAGE_TYPES, type PageType} from '../../pageTypes.ts'
+import {useNameForm} from '../../../../../hooks/useNameForm.ts'
 
 /**
  * Props for the add-tab dialogue: it reports the chosen name and type, or a cancellation.
@@ -14,21 +15,8 @@ interface AddTabModalProps {
  * Modal dialogue for adding a tab: collects a name and a page type, replacing the old window.prompt flow.
  */
 function AddTabModal({onCreate, onCancel}: AddTabModalProps) {
-    const [name, setName] = useState('')
     const [type, setType] = useState<PageType>(PAGE_TYPES[0].value)
-    const nameReference = useRef<HTMLInputElement>(null)
-
-    useEffect(() => {
-        nameReference.current?.focus()
-    }, [])
-
-    // Validates the name, then reports the new page to the parent.
-    function submit(event: SyntheticEvent) {
-        event.preventDefault()
-        const trimmed = name.trim()
-        if (!trimmed) return
-        onCreate(trimmed, type)
-    }
+    const {name, setName, nameReference, submit} = useNameForm('', (trimmed) => onCreate(trimmed, type))
 
     return (
         <Modal title="Add tab" onClose={onCancel}>

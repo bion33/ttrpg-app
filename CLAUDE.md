@@ -68,9 +68,10 @@ the jotai atom holding its value. Position and state are one object.
   is built **per instance** from a storage prefix (so multiple sheet pages get
   isolated namespaces), not as module-level singletons.
   - `sheet.ts` — exports `buildSheet(storagePrefix)`, which creates the sheet's
-    factory, calls each section builder with it, and returns `{tree, fields}`
-    (the structured tree for logic access + the flat `collectNodes(tree)` render
-    list). Each field is created exactly once, in its section builder.
+    factory, calls each section builder with it, gathers their nodes into a
+    structured tree, and returns `{fields}` (the flat `collectNodes(tree)` render
+    list; the tree itself is internal and not exposed). Each field is created
+    exactly once, in its section builder.
   - `layout/nodes.ts` — `createSheetFactory(prefix)`, the per-instance factory
     (`inputNode`/`computedInputNode`/`derivedNode`) every section builder draws
     from.
@@ -95,9 +96,9 @@ the jotai atom holding its value. Position and state are one object.
 `App` is a thin root that just renders the `Library` feature. The **library**
 holds many **binders**: a `LibraryBinderItem` is serialisable metadata (`id`,
 `label`, `hue`), where `id` is a `crypto.randomUUID()` GUID (minted by
-`logic/binderId.ts`'s `binderId()`, unit-tested in `binderId.test.ts`) that
-survives renames and is the **storage-prefix root every one of the binder's
-pages persists under**. The binder list lives in `atomWithStorage('binders', …)`,
+`src/lib/newId.ts`'s `newId()`, unit-tested in `newId.test.ts`, shared with the
+binder's page ids) that survives renames and is the **storage-prefix root every
+one of the binder's pages persists under**. The binder list lives in `atomWithStorage('binders', …)`,
 **empty by default**. Which binder is open — and which page within it — is the
 app's single **location** (see the navigation hook below), persisted so a reload
 reopens the same binder and page; the library shows the grid when the location's
@@ -117,8 +118,11 @@ binder tabs** tuck along its right edge — **the real page-tab strip markup
 (`Binder/tabs/Tabs.css`'s `.tabs` classes) reused as-is and shrunk by a plain CSS
 `scale`**, so labels/hues/overlap match the actual tabs exactly, just tiny. It
 draws **one tab per real page in the binder, in that page's stored hue and
-label**, read from the binder's persisted `${id}:pages` by `logic/binderTabs.ts`'s
-`binderTabs` (pure, unit-tested in `binderTabs.test.ts`). The stable per-sheet paper
+label**. Each cover subscribes to that binder's shared `pagesAtom`/`activePageAtom`
+(`Binder/binderAtoms.ts`, below), so the shelf stays reactive to page changes and
+reads no `localStorage` itself, and `logic/binderTabs.ts`'s `binderTabs` (pure,
+unit-tested in `binderTabs.test.ts`) projects the persisted page list to each tab's
+label and hue. The stable per-sheet paper
 offset/rotation comes from `logic/bookJitter.ts` (pure, seeded off the binder id,
 unit-tested in `bookJitter.test.ts`), so a book's mess is consistent across
 renders. When a binder is open the grid gives way to
@@ -152,20 +156,22 @@ per-index tab-hue function lives in `src/lib/tabHue.ts` (shared by `Binder` and
 `usePageScale` hook (`src/hooks/`), not `Binder` itself.
 
 The page list is **dynamic and persisted**: a `Page` is serialisable tab
-metadata (`id`, `label`, `type`, `storagePrefix`), and
-`renderPage(page, storagePrefix)` resolves it to an element by `type` —
-`characterSheet` → `CharacterSheet` bound to the **binder-prefixed** storage
-prefix `${storagePrefix}:${page.storagePrefix}`, `empty` → an `EmptyPage` titled
-by its label. Page types live in `pageTypes.ts` (`PageType`, `PAGE_TYPES`). The
-page list is a **per-binder** atom built in `makeBinderAtoms` —
-`atomWithStorage('${prefix}:pages', …)` (**empty by default** — the binder starts
-with no pages until the user adds one) — so each binder keeps an isolated
-namespace. The **active page is the app-wide location** (see the navigation hook
-below), not a per-binder atom; `makeBinderAtoms` still owns
-`atomWithStorage('${prefix}:activePage', …)`, but only as **last-viewed-page
+metadata (`id`, `label`, `type`, `storagePrefix`), declared with the per-binder
+atoms in `binderAtoms.ts`, and `renderPage(page, storagePrefix)` (in `Binder.tsx`)
+resolves it to an element by `type` — `characterSheet` → `CharacterSheet` bound to
+the **binder-prefixed** storage prefix `${storagePrefix}:${page.storagePrefix}`,
+`empty` → an `EmptyPage` titled by its label. Page types live in `pageTypes.ts`
+(`PageType`, `PAGE_TYPES`). The page list is a **per-binder** atom from
+`binderAtoms.ts`'s `pagesAtom(prefix)` — `atomWithStorage('${prefix}:pages', …)`,
+one **shared, cached instance per prefix** so the binder and the library shelf read
+the same list (**empty by default** — the binder starts with no pages until the
+user adds one) — so each binder keeps an isolated namespace. The **active page is
+the app-wide location** (see the navigation hook below), not a per-binder atom;
+`binderAtoms.ts` also owns `activePageAtom(prefix)`
+(`atomWithStorage('${prefix}:activePage', …)`), but only as **last-viewed-page
 memory** — `Binder` writes the shown page to it so the library can reopen the
-binder at that page (parsed by `logic/activePage.ts`'s `activePage`, unit-tested in
-`activePage.test.ts`). Page navigation (opening a binder, selecting a tab, adding
+binder at that page (the library reads the id straight from that shared atom). Page
+navigation (opening a binder, selecting a tab, adding
 or deleting a page) goes through `useNavigate`, so each move is a browser-history
 entry. The view scale
 (`usePageScale`'s `atomWithStorage('pageScale', …)`) is shared across binders.
@@ -177,9 +183,9 @@ but is slated for removal from that list later.
 
 Adding a page is driven from `TabControls` (below), which opens `AddTabModal`
 (`tabs/modals/AddTabModal.tsx`) — a proper modal (not `window.prompt`) asking for a
-**name** and a **type**. On submit `Binder.createPage` mints the id
-via `logic/pageId.ts` (`pageId()`, a `crypto.randomUUID()` GUID, unit-tested in
-`pageId.test.ts`) — an opaque id decoupled from the name so it survives renames;
+**name** and a **type**. On submit `Binder.createPage` mints the id via
+`src/lib/newId.ts`'s `newId()` (the shared GUID helper, unit-tested in
+`newId.test.ts`) — an opaque id decoupled from the name so it survives renames;
 that id is also the character sheet's `storagePrefix`, and the new page becomes
 active.
 
@@ -228,13 +234,16 @@ carries the **shared form styling** every dialogue uses so they stay uniform —
 `.modal__actions` with `.modal__btn` buttons (`--primary`/`--danger` variants,
 styled purely by class so a variant never loses a specificity battle), plus
 `.modal__prompt` for a confirmation/prompt paragraph. Every add/edit/confirm
-dialogue is built on it, supplying only its own form markup.
+dialogue is built on it, supplying only its own form markup, and each shares the
+name-field state and trim/guard submit via the `useNameForm` hook (`src/hooks/`).
 
 `ColorPicker` is the shared hue picker used by the binder and tab edit modals: a
 hue slider, preset swatches, and a live-preview swatch. Props are `hue`,
 `onChange`, `presets` (the preset hues), and `preview` (a hue → CSS-colour
-function, so the binder's `45% 45%` and the tab's `55% 82%` lightness/saturation
-stay distinct). Its picker styling lives in `ColorPicker.css`.
+function). The preview functions come from `src/lib/hueColors.ts` (the same
+functions the components use), so the binder spine's and paper tab's tones stay
+distinct **and** the preview never drifts from what the component renders. Its
+picker styling lives in `ColorPicker.css`.
 
 `ConfirmModal` is the shared `Modal`-based confirmation dialog (used for deleting
 binders and tabs). Props are `title`, `message`, `confirmLabel`, an optional
@@ -253,14 +262,22 @@ stacking via the surrounding container so the pill can sit above neighbours (e.g
 Framework-agnostic pure helpers live in `src/lib` (colocated `*.test.ts`):
 `fieldNodes.ts` (the field-node factory), `parseNumericField.ts`
 (`parseNumericField(raw)` → `number | null`, the one place raw field strings are
-parsed to numbers), `tabHue.ts` (the per-index tab/binder hue), and
-`navigation.ts` (the pure `Location` type — which binder is open and which page is
-active — with `libraryLocation`/`isLibrary`/`sameLocation`). Shared React
-hooks live in `src/hooks`: `useAutoFitFontSize(ref, value, maxFontSize, axis)`
-(the shrink-to-fit loop behind `AutoFitInput`/`AutoFitTextarea`, owning
+parsed to numbers), `tabHue.ts` (the per-index tab/binder hue), `newId.ts`
+(`newId()`, the one `crypto.randomUUID()` GUID helper for both binder and page
+ids), `hueColors.ts` (the hue → CSS-colour functions for the binder spine and
+paper tabs — `binderSpineLight`/`binderSpineDark`/`binderSpineColor` and
+`tabColor` — the **single source of truth** shared between the modal previews and
+the components, which consume them as inline CSS custom properties so the colours
+never drift from the CSS), and `navigation.ts` (the pure `Location` type — which
+binder is open and which page is active — with
+`libraryLocation`/`isLibrary`/`sameLocation`). Shared React hooks live in
+`src/hooks`: `useAutoFitFontSize(ref, value, maxFontSize, axis)` (the
+shrink-to-fit loop behind `AutoFitInput`/`AutoFitTextarea`, owning
 `DEFAULT_FONT_SIZE`/`MIN_FONT_SIZE`), `usePageScale()` (the persisted
 page-view zoom — scale, step controls, and the viewport-fit `ResizeObserver` —
-consumed by `Binder`), and `useNavigation.ts` (the app's location, backed by the
+consumed by `Binder`), `useNameForm(initialName, onSubmit)` (the name-field state,
+mount-focus, and trim/guard submit shared by every add/edit dialogue), and
+`useNavigation.ts` (the app's location, backed by the
 browser History API so Back/Forward step between visited binders and pages):
 `useLocation()` reads the persisted `location` atom, `useNavigate()` moves to a
 location and pushes a history entry, and `useNavigationHistory()` — called once in
@@ -299,6 +316,18 @@ unit tested. `logic/formulas.ts` + `formulas.test.ts` is the model: rules math
 lives apart from field definitions, and layout wires the pure functions in via
 `derivedNode`.
 
+### Styling
+
+Global tokens and utilities live in `src/index.css` on `:root`: the type/parchment
+palette (`--font-serif`, `--color-parchment`/`-paper`/`-ink`/`-text`/`-border`) and
+the stacking scale (`--z-page`/`-controls`/`-modal`). Component CSS references these
+rather than re-hardcoding the shared font, colours, or z-index numbers. Two shared
+utility classes also live there: `.corner-cluster` (a fixed vertical control stack;
+callers add only the corner insets) and `.no-print` (chrome hidden under
+`@media print`) — prefer them over per-file copies. Hue-derived colours are **not**
+CSS literals: the components set them as inline custom properties computed by
+`src/lib/hueColors.ts`, the same source the modal previews use (see above).
+
 ### File & directory naming
 
 - **Component files:** singular PascalCase (`EditBinderModal.tsx`).
@@ -335,8 +364,9 @@ same change so it stays approved going forward.
 ### General
 
 - Add or change a field only in its `layout/sections/*` module; never duplicate a
-  field id. Logic reads fields by reference through the `sheet` tree
-  (e.g. `sheet.abilities.strength.score.atom`), not by id lookup.
+  field id. Within a section builder, cross-field logic reads fields by reference
+  off the typed tree (e.g. `abilities.wisdom.skills.perception.bonus.atom`), not by
+  id lookup.
 - Keep rules math in `logic/formulas.ts` pure and tested; wire it via
   `derivedNode`.
 - TS is strict-ish: `noUnusedLocals`/`noUnusedParameters`, `verbatimModuleSyntax`

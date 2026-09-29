@@ -31,7 +31,7 @@
 .page {
     position: relative;
     /* Above the inactive tabs (which they tuck under) but below the active tab (which notches the border). */
-    z-index: 10;
+    z-index: var(--z-page);
     /* Reserve the full tab-strip width on the right so the tabs sit flush against the page edge, not over it, and
        mirror it on the left so the page itself stays centred within the view. */
     margin-right: 2.125rem;

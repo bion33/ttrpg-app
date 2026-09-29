@@ -4,9 +4,9 @@
     min-height: 100vh;
     box-sizing: border-box;
     padding: 5%;
-    background: #e9e4d8;
-    font-family: 'Times-Roman', serif;
-    color: #2c1f14;
+    background: var(--color-parchment);
+    font-family: var(--font-serif);
+    color: var(--color-ink);
 }
 
 /* The binders in a grid whose column gap equals its row gap; columns are as many 9rem covers as fit each row. */
@@ -42,7 +42,7 @@
     width: 10.75rem;
     height: 14.5rem;
     border-radius: 0.125rem;
-    background: #f6efe0;
+    background: var(--color-paper);
     box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25);
     transform: translate(var(--dx, 0), var(--dy, 0)) rotate(var(--rot, 0deg));
     transition: box-shadow 0.15s ease;
@@ -80,7 +80,8 @@
     padding: 1.25rem 1rem;
     border: none;
     border-radius: 0.25rem 0.125rem 0.125rem 0.25rem;
-    background: linear-gradient(160deg, hsl(var(--hue) 45% 46%), hsl(var(--hue) 45% 34%));
+    /* Spine gradient stops set per binder from binderSpineLight/Dark(hue) in LibraryBinder.tsx. */
+    background: linear-gradient(160deg, var(--spine-light), var(--spine-dark));
     color: #f7efe1;
     cursor: pointer;
     /* A darker inset stripe down the left edge hints at the book's spine. */
@@ -124,7 +125,7 @@
     height: 8.25rem;
     border-radius: 50%;
     background: #f3e7d3;
-    color: hsl(var(--hue) 45% 34%);
+    color: var(--spine-dark);
     font-size: 4.25rem;
     font-weight: 700;
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);

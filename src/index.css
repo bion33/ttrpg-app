@@ -1,4 +1,35 @@
+:root {
+    /* Type and the parchment palette shared across the app. */
+    --font-serif: 'Times-Roman', serif;
+    --color-parchment: #e9e4d8;
+    --color-paper: #f6efe0;
+    --color-ink: #2c1f14;
+    --color-text: #333;
+    --color-border: #b7a97f;
+
+    /* Stacking scale for the layered page, controls, and modals. */
+    --z-page: 10;
+    --z-controls: 300;
+    --z-modal: 1000;
+}
+
 body {
     margin: 0;
-    background: #e9e4d8;
+    background: var(--color-parchment);
+}
+
+/* A fixed cluster of controls: a vertical stack lifted above the page and tabs. Callers add the corner insets. */
+.corner-cluster {
+    position: fixed;
+    z-index: var(--z-controls);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* On-screen chrome hidden when printing, so only the page content prints. */
+@media print {
+    .no-print {
+        display: none;
+    }
 }
