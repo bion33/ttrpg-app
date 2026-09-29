@@ -3,6 +3,9 @@ import {useAtom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
 import './Library.css'
 import Binder from '../Binder/Binder.tsx'
+import {activePage} from '../Binder/logic/activePage.ts'
+import {libraryLocation} from '../../../lib/navigation.ts'
+import {useLocation, useNavigate} from '../../../hooks/useNavigation.ts'
 import {tabHue} from '../../../lib/tabHue.ts'
 import ConfirmModal from '../../ui/ConfirmModal/ConfirmModal'
 import AddBinderModal from './modals/AddBinderModal.tsx'
@@ -24,16 +27,15 @@ interface LibraryBinderItem {
 /** The user's binders, loaded from and persisted to storage. Empty until the user adds one. */
 const bindersAtom = atomWithStorage<LibraryBinderItem[]>('binders', [])
 
-/** The id of the binder currently open (empty string for the shelf view), persisted so a reload reopens it. */
-const openBinderAtom = atomWithStorage('openBinder', '')
-
 /**
  * The library: a grid of binder covers to open, add, rename, recolour, and delete. Opening one hands off to the
  * `Binder` bound to that binder's id as its storage prefix; a control there returns to the grid.
  */
 function Library() {
     const [binders, setBinders] = useAtom(bindersAtom)
-    const [openId, setOpenId] = useAtom(openBinderAtom)
+    const location = useLocation()
+    const navigate = useNavigate()
+    const openId = location.binderId
     const [adding, setAdding] = useState(false)
     // The binder targeted by the open edit or delete dialogue, if any.
     const [editing, setEditing] = useState<LibraryBinderItem | null>(null)
@@ -64,7 +66,7 @@ function Library() {
         setDeleting(null)
     }
 
-    if (open) return <Binder key={open.id} storagePrefix={open.id} onExit={() => setOpenId('')}/>
+    if (open) return <Binder key={open.id} storagePrefix={open.id} onExit={() => navigate(libraryLocation())}/>
 
     return (
         <div className="library">
@@ -77,7 +79,11 @@ function Library() {
                         jitterSeed={binder.id}
                         // Decorative tabs mirror the binder's real pages (first four only), in their stored hue/label.
                         tabs={binderTabs(localStorage.getItem(`${binder.id}:pages`)).slice(0, 4)}
-                        onOpen={() => setOpenId(binder.id)}
+                        // Reopen the binder at its remembered active page.
+                        onOpen={() => navigate({
+                            binderId: binder.id,
+                            pageId: activePage(localStorage.getItem(`${binder.id}:activePage`)),
+                        })}
                         onEdit={() => setEditing(binder)}
                         onDelete={(event) => (event.shiftKey ? removeBinder(binder.id) : setDeleting(binder))}
                     />

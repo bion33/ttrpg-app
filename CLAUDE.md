@@ -98,8 +98,10 @@ holds many **binders**: a `LibraryBinderItem` is serialisable metadata (`id`,
 `logic/binderId.ts`'s `binderId()`, unit-tested in `binderId.test.ts`) that
 survives renames and is the **storage-prefix root every one of the binder's
 pages persists under**. The binder list lives in `atomWithStorage('binders', …)`,
-**empty by default**; the open binder's id persists via
-`atomWithStorage('openBinder', …)` so a reload reopens it.
+**empty by default**. Which binder is open — and which page within it — is the
+app's single **location** (see the navigation hook below), persisted so a reload
+reopens the same binder and page; the library shows the grid when the location's
+binder id is empty.
 
 `Library.tsx` shows either the **grid** — an even grid (`Library.css`, columns
 and rows equally spaced, on the same `#e9e4d8` backdrop as the page area) of
@@ -155,10 +157,17 @@ metadata (`id`, `label`, `type`, `storagePrefix`), and
 `characterSheet` → `CharacterSheet` bound to the **binder-prefixed** storage
 prefix `${storagePrefix}:${page.storagePrefix}`, `empty` → an `EmptyPage` titled
 by its label. Page types live in `pageTypes.ts` (`PageType`, `PAGE_TYPES`). The
-page list and active page are **per-binder** atoms built in `makeBinderAtoms` —
+page list is a **per-binder** atom built in `makeBinderAtoms` —
 `atomWithStorage('${prefix}:pages', …)` (**empty by default** — the binder starts
-with no pages until the user adds one) and `atomWithStorage('${prefix}:activePage',
-…)` — so each binder keeps an isolated namespace; the view scale
+with no pages until the user adds one) — so each binder keeps an isolated
+namespace. The **active page is the app-wide location** (see the navigation hook
+below), not a per-binder atom; `makeBinderAtoms` still owns
+`atomWithStorage('${prefix}:activePage', …)`, but only as **last-viewed-page
+memory** — `Binder` writes the shown page to it so the library can reopen the
+binder at that page (parsed by `logic/activePage.ts`'s `activePage`, unit-tested in
+`activePage.test.ts`). Page navigation (opening a binder, selecting a tab, adding
+or deleting a page) goes through `useNavigate`, so each move is a browser-history
+entry. The view scale
 (`usePageScale`'s `atomWithStorage('pageScale', …)`) is shared across binders.
 `EmptyPage`
 (`features/EmptyPage/`) is both the stand-in for an `empty`-type page and the
@@ -244,12 +253,18 @@ stacking via the surrounding container so the pill can sit above neighbours (e.g
 Framework-agnostic pure helpers live in `src/lib` (colocated `*.test.ts`):
 `fieldNodes.ts` (the field-node factory), `parseNumericField.ts`
 (`parseNumericField(raw)` → `number | null`, the one place raw field strings are
-parsed to numbers), and `tabHue.ts` (the per-index tab/binder hue). Shared React
+parsed to numbers), `tabHue.ts` (the per-index tab/binder hue), and
+`navigation.ts` (the pure `Location` type — which binder is open and which page is
+active — with `libraryLocation`/`isLibrary`/`sameLocation`). Shared React
 hooks live in `src/hooks`: `useAutoFitFontSize(ref, value, maxFontSize, axis)`
 (the shrink-to-fit loop behind `AutoFitInput`/`AutoFitTextarea`, owning
-`DEFAULT_FONT_SIZE`/`MIN_FONT_SIZE`) and `usePageScale()` (the persisted
+`DEFAULT_FONT_SIZE`/`MIN_FONT_SIZE`), `usePageScale()` (the persisted
 page-view zoom — scale, step controls, and the viewport-fit `ResizeObserver` —
-consumed by `Binder`).
+consumed by `Binder`), and `useNavigation.ts` (the app's location, backed by the
+browser History API so Back/Forward step between visited binders and pages):
+`useLocation()` reads the persisted `location` atom, `useNavigate()` moves to a
+location and pushes a history entry, and `useNavigationHistory()` — called once in
+`App` — seeds and applies Back/Forward via `popstate`.
 
 ## Conventions
 

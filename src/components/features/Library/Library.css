@@ -130,13 +130,18 @@
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
 }
 
-/* The binder name across the cover foot, clipped to two lines when it is too long to fit. */
+/* The binder name across the cover foot: always reserves two lines (so the portrait never shifts) and force-wraps long
+   words, clipped to those two lines when it is too long to fit. */
 .library__cover-name {
     width: 100%;
+    /* Fixed two-line height (2 × line-height × font-size) so a one- or two-line name leaves the portrait in place. */
+    height: 2.88rem;
     text-align: center;
     font-size: 1.2rem;
     line-height: 1.2;
     overflow: hidden;
+    overflow-wrap: anywhere;
+    word-break: break-word;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;

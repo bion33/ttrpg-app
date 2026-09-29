@@ -41,7 +41,7 @@ function EditBinderModal({initialLabel, initialHue, onSave, onCancel}: EditBinde
             <form className="modal__body" onSubmit={submit}>
                 <label className="modal__field">
                     <span>Name</span>
-                    <input type="text" value={name} onChange={(event) => setName(event.target.value)}/>
+                    <input type="text" maxLength={24} value={name} onChange={(event) => setName(event.target.value)}/>
                 </label>
 
                 <ColorPicker hue={hue} onChange={setHue} presets={PRESET_HUES} preview={spineColor}/>

@@ -1,8 +1,9 @@
 import type {CSSProperties, ReactNode} from 'react'
-import {useMemo, useState} from 'react'
-import {useAtom} from 'jotai'
+import {useEffect, useMemo, useState} from 'react'
+import {useAtom, useSetAtom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
 import './Binder.css'
+import {useLocation, useNavigate} from '../../../hooks/useNavigation.ts'
 import Tabs, {type TabItem} from './tabs/Tabs.tsx'
 import AddTabModal from './tabs/modals/AddTabModal.tsx'
 import TabControls from './tabs/TabControls.tsx'
@@ -38,6 +39,7 @@ interface BinderProps {
 function makeBinderAtoms(prefix: string) {
     return {
         pagesAtom: atomWithStorage<Page[]>(`${prefix}:pages`, []),
+        // Remembers this binder's last active page so reopening it from the library returns to that page.
         activePageAtom: atomWithStorage(`${prefix}:activePage`, ''),
     }
 }
@@ -60,7 +62,10 @@ function renderPage(page: Page, storagePrefix: string): ReactNode {
 function Binder({storagePrefix, onExit}: BinderProps) {
     const {pagesAtom, activePageAtom} = useMemo(() => makeBinderAtoms(storagePrefix), [storagePrefix])
     const [pages, setPages] = useAtom(pagesAtom)
-    const [activeId, setActiveId] = useAtom(activePageAtom)
+    const location = useLocation()
+    const navigate = useNavigate()
+    const rememberActivePage = useSetAtom(activePageAtom)
+    const activeId = location.pageId
     const {scale, scaleUp, scaleDown, canScaleUp, canScaleDown, viewReference} = usePageScale()
     const [adding, setAdding] = useState(false)
     // The last tab's element, watched so the back-to-top button appears once it scrolls out of view.
@@ -70,11 +75,14 @@ function Binder({storagePrefix, onExit}: BinderProps) {
     const activeIndex = Math.max(0, pages.findIndex((page) => page.id === activeId))
     const active = pages.length ? pages[activeIndex] : undefined
 
+    // Persists the shown page as this binder's remembered active page, so reopening it returns here.
+    useEffect(() => rememberActivePage(activeId), [activeId, rememberActivePage])
+
     // Appends a new page of the chosen type; its GUID id doubles as the character-sheet storage prefix.
     function createPage(name: string, type: PageType) {
         const id = pageId()
         setPages([...pages, {id, label: name, type, storagePrefix: id, hue: tabHue(pages.length)}])
-        setActiveId(id)
+        navigate({binderId: storagePrefix, pageId: id})
         setAdding(false)
     }
 
@@ -89,7 +97,7 @@ function Binder({storagePrefix, onExit}: BinderProps) {
         const index = pages.findIndex((page) => page.id === activeId)
         const next = pages.filter((page) => page.id !== activeId)
         setPages(next)
-        setActiveId(next.length ? next[Math.min(index, next.length - 1)].id : '')
+        navigate({binderId: storagePrefix, pageId: next.length ? next[Math.min(index, next.length - 1)].id : ''})
         setEditing(null)
     }
 
@@ -107,7 +115,8 @@ function Binder({storagePrefix, onExit}: BinderProps) {
         <div className="app-shell" style={{'--active-hue': active?.hue ?? 0} as CSSProperties}>
             <div className="binder-view" ref={viewReference} style={{transform: `scale(${scale})`}}>
                 <main className="page">{active ? renderPage(active, storagePrefix) : <EmptyPage/>}</main>
-                <Tabs tabs={pages} activeId={active?.id ?? ''} onSelect={setActiveId} onReorder={reorderPages}
+                <Tabs tabs={pages} activeId={active?.id ?? ''}
+                      onSelect={(id) => navigate({binderId: storagePrefix, pageId: id})} onReorder={reorderPages}
                       onLastTabChange={setLastTab}/>
             </div>
             <TabControls onAdd={() => setAdding(true)} hasActive={!!active} onEdit={() => setEditing('edit')}

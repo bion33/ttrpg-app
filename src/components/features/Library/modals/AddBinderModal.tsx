@@ -36,7 +36,7 @@ function AddBinderModal({onCreate, onCancel}: AddBinderModalProps) {
                 </p>
                 <label className="modal__field">
                     <span>Character name</span>
-                    <input ref={nameReference} type="text" value={name}
+                    <input ref={nameReference} type="text" maxLength={24} value={name}
                            onChange={(event) => setName(event.target.value)}/>
                 </label>
 

@@ -15,7 +15,7 @@ function EmptyPage({title}: EmptyPageProps) {
         <PaperPage>
             <h1>{title ?? 'No pages yet'}</h1>
             <p>
-                This binder is currently empty. To add a page, click the button on the right.
+                This binder is currently empty. To add a page, click the button in the bottom-right corner.
             </p>
         </PaperPage>
     )
