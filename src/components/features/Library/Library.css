@@ -1,66 +1,89 @@
-/* The library: a warm reading-room backdrop holding a wooden bookcase whose shelves carry the binders as book spines. */
+/* The library: binder covers laid out in an even grid on the same backdrop as the page area. */
 
 .library {
     min-height: 100vh;
     box-sizing: border-box;
-    padding: 2.5rem 5% 5rem;
-    background: radial-gradient(circle at 50% 0, #4a3524, #2c1f14 70%);
+    padding: 5%;
+    background: #e9e4d8;
     font-family: 'Times-Roman', serif;
-    color: #f3e7d3;
-}
-
-.library__title {
-    margin: 0 0 1.75rem;
-    font-size: 2rem;
-    letter-spacing: 0.02em;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    color: #2c1f14;
 }
 
 .library__empty {
     margin: 4rem 0;
     font-size: 1.125rem;
-    opacity: 0.8;
+    opacity: 0.7;
 }
 
-/* The bookcase: a wood back panel with a plank every 15rem — the flex-wrap row pitch (cover height + row gap). The
-   pattern starts with a plank at the case top (a top board), and the 3rem top padding drops the first row onto the
-   plank below it, so every row gets equal headroom beneath the plank above. The bottom padding matches the plank
-   thickness so the last row's plank sits flush with the case foot. */
-.library__shelf {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    column-gap: 1.5rem;
-    row-gap: 3rem;
-    padding: 3rem 1.5rem .7rem;
-    border: 1px solid #1c130b;
-    border-radius: 0.5rem;
-    background-color: #6b4a2f;
-    background-image: repeating-linear-gradient(
-        to bottom,
-        #4a3117 0,
-        #3a2611 0.7rem,
-        #57381d 0.7rem,
-        #57381d 0.9rem,
-        transparent 0.9rem,
-        transparent 15rem
-    );
-    box-shadow: inset 0 0 3rem rgba(0, 0, 0, 0.55), 0 1.25rem 2.5rem rgba(0, 0, 0, 0.45);
+/* The binders in a grid whose column gap equals its row gap; columns are as many 9rem covers as fit each row. */
+.library__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 11.5rem);
+    gap: 7rem;
+    justify-content: center;
 }
 
-/* One binder standing face-out on the shelf: its clickable cover plus the edit/delete controls that surface on hover. */
+/* One binder in the grid: loose papers and decorative tabs behind a clickable cover, plus the edit/delete controls
+   that surface on hover. */
 .library__book {
     position: relative;
+    width: 11.5rem;
+    height: 15.25rem;
+}
+
+/* Loose sheets tucked behind the cover; the group fills the cover box so each sheet's jitter peeks past its edges. */
+.library__papers {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    transition: transform 0.15s ease;
+}
+
+/* One cream sheet, offset (rightward/vertical only) and rotated by its own jitter (--dx/--dy/--rot) so it peeks past
+   the cover's right edge, top, and bottom — never its left edge (the base inset absorbs the small rotation). */
+.library__paper {
+    position: absolute;
+    top: 0.375rem;
+    left: 0.65rem;
+    width: 10.75rem;
+    height: 14.5rem;
+    border-radius: 0.125rem;
+    background: #f6efe0;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.25);
+    transform: translate(var(--dx, 0), var(--dy, 0)) rotate(var(--rot, 0deg));
+    transition: box-shadow 0.15s ease;
+}
+
+/* Decorative, non-functional binder tabs: the real page-tab strip (its own `.tabs`/`.tabs__tab` styles from Tabs.css)
+   reused as-is and shrunk by a plain scale so it keeps the exact look — labels, hues, overlap and all — anchored at the
+   cover's top-right so the tabs poke past its right edge. */
+.library__tabs {
+    position: absolute;
+    top: 0.6rem;
+    right: -0.65rem;
+    z-index: 1;
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.library__tabs .tabs {
+    position: static;
+    transform: scale(0.33);
+    transform-origin: top right;
+    /* Purely decorative, so it never reacts to hover. */
+    pointer-events: none;
 }
 
 /* The book cover: a front-facing rectangle tinted by the binder's --hue, with a portrait above and the name below. */
 .library__cover {
+    position: relative;
+    /* Above the loose papers and tab bases behind it. */
+    z-index: 2;
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 9rem;
-    height: 12rem;
-    padding: 1rem 0.75rem;
+    width: 11.5rem;
+    height: 15.25rem;
+    padding: 1.25rem 1rem;
     border: none;
     border-radius: 0.25rem 0.125rem 0.125rem 0.25rem;
     background: linear-gradient(160deg, hsl(var(--hue) 45% 46%), hsl(var(--hue) 45% 34%));
@@ -75,8 +98,25 @@
 .library__book:hover .library__cover,
 .library__cover:focus-visible {
     transform: translateY(-0.6rem);
-    box-shadow: 0 1.25rem 1.5rem rgba(0, 0, 0, 0.5), inset 0.375rem 0 0.5rem -0.25rem rgba(0, 0, 0, 0.4),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+/* The papers and decorative tabs lift with the cover on hover, by the same amount so the whole book rises together. */
+.library__book:hover .library__papers,
+.library__book:focus-within .library__papers,
+.library__book:hover .library__tabs,
+.library__book:focus-within .library__tabs {
+    transform: translateY(-0.6rem);
+}
+
+/* On hover the papers and tabs cast a deeper shadow, so the lifted book reads as floating above the shelf. */
+.library__book:hover .library__paper,
+.library__book:focus-within .library__paper {
+    box-shadow: 0 0.9rem 1.1rem rgba(0, 0, 0, 0.16);
+}
+
+.library__book:hover .library__tabs,
+.library__book:focus-within .library__tabs {
+    filter: drop-shadow(0 0.7rem 0.85rem rgba(0, 0, 0, 0.14));
 }
 
 /* Placeholder portrait: the name's first letter in a cream circle, filling the space reserved for a future portrait. */
@@ -86,12 +126,12 @@
     justify-content: center;
     /* Centred in the space above the name (auto top/bottom margins), sized as a fixed circle. */
     margin: auto 0;
-    width: 6.5rem;
-    height: 6.5rem;
+    width: 8.25rem;
+    height: 8.25rem;
     border-radius: 50%;
     background: #f3e7d3;
     color: hsl(var(--hue) 45% 34%);
-    font-size: 3.25rem;
+    font-size: 4.25rem;
     font-weight: 700;
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
 }
@@ -100,7 +140,7 @@
 .library__cover-name {
     width: 100%;
     text-align: center;
-    font-size: 1rem;
+    font-size: 1.2rem;
     line-height: 1.2;
     overflow: hidden;
     display: -webkit-box;

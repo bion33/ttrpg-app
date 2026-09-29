@@ -4,11 +4,14 @@ import {useAtom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
 import {Pencil, Plus, Trash2} from 'lucide-react'
 import './Library.css'
+import '../Binder/Tabs.css'
 import Binder from '../Binder/Binder.tsx'
 import {tabHue} from '../Binder/logic/tabHue.ts'
 import IconButton from '../../ui/IconButton/IconButton'
 import {AddBinderModal, DeleteBinderModal, EditBinderModal} from './BinderDialogs.tsx'
 import {binderId} from './logic/binderId.ts'
+import {bookJitter} from './logic/bookJitter.ts'
+import {binderTabs} from './logic/binderTabs.ts'
 
 /**
  * A binder in the library: an opaque id (also the storage-prefix root every one of its pages persists under), a
@@ -27,8 +30,8 @@ const bindersAtom = atomWithStorage<LibraryBinder[]>('binders', [])
 const openBinderAtom = atomWithStorage('openBinder', '')
 
 /**
- * The library shelf: a grid of binder covers to open, add, rename, recolour, and delete. Opening one hands off to the
- * `Binder` bound to that binder's id as its storage prefix; a control there returns to this shelf.
+ * The library: a grid of binder covers to open, add, rename, recolour, and delete. Opening one hands off to the
+ * `Binder` bound to that binder's id as its storage prefix; a control there returns to the grid.
  */
 function Library() {
     const [binders, setBinders] = useAtom(bindersAtom)
@@ -38,6 +41,8 @@ function Library() {
     const [editing, setEditing] = useState<LibraryBinder | null>(null)
     const [deleting, setDeleting] = useState<LibraryBinder | null>(null)
     const open = binders.find((binder) => binder.id === openId)
+    // Displayed in name order (case-insensitive); the stored list keeps its own order for stable default hues.
+    const sorted = [...binders].sort((a, b) => a.label.localeCompare(b.label, undefined, {sensitivity: 'base'}))
 
     // Adds a binder with a fresh id and a spread-out default spine hue; the shelf stays open so the new book appears.
     function createBinder(name: string) {
@@ -61,13 +66,34 @@ function Library() {
 
     return (
         <div className="library">
-            <h1 className="library__title">Library</h1>
             {binders.length === 0 ? (
                 <p className="library__empty">No binders yet. Add one with the button in the corner.</p>
             ) : (
-                <div className="library__shelf">
-                    {binders.map((binder) => (
+                <div className="library__grid">
+                    {sorted.map((binder) => {
+                        const jitter = bookJitter(binder.id)
+                        // Decorative tabs mirror the binder's real pages (first four only), in their stored hue/label.
+                        const tabs = binderTabs(localStorage.getItem(`${binder.id}:pages`)).slice(0, 4)
+                        return (
                         <div key={binder.id} className="library__book" style={{'--hue': binder.hue} as CSSProperties}>
+                            {/* Loose sheets peeking out behind the cover, each tilted and offset for a messy look. */}
+                            <div className="library__papers" aria-hidden="true">
+                                {jitter.papers.map((paper, i) => (
+                                    <span key={i} className="library__paper"
+                                          style={{'--dx': `${paper.dx}rem`, '--dy': `${paper.dy}rem`,
+                                              '--rot': `${paper.rot}deg`} as CSSProperties}/>
+                                ))}
+                            </div>
+                            {/* Decorative, non-functional binder tabs: the real page-tab strip markup, scaled down. */}
+                            <div className="library__tabs" aria-hidden="true">
+                                <div className="tabs">
+                                    {tabs.map((tab, i) => (
+                                        <div key={i} className="tabs__tab" style={{'--hue': tab.hue} as CSSProperties}>
+                                            <span className="tabs__label">{tab.label}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                             <button type="button" className="library__cover" onClick={() => setOpenId(binder.id)}>
                                 <span className="library__portrait" aria-hidden="true">
                                     {binder.label.trim().charAt(0).toUpperCase()}
@@ -82,7 +108,8 @@ function Library() {
                                                 event.shiftKey ? removeBinder(binder.id) : setDeleting(binder)}/>
                             </div>
                         </div>
-                    ))}
+                        )
+                    })}
                 </div>
             )}
 

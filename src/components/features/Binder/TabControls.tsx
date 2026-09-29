@@ -43,15 +43,15 @@ function TabControls({onAdd, hasActive, onEdit, onDelete, onExit, lastTab}: TabC
                 <IconButton icon={<Library/>} label="Back to library" labelSide="right" onClick={onExit}/>
             </div>
             <div className="tab-controls">
-                <IconButton icon={<Plus/>} label="Add tab" onClick={onAdd}/>
                 {hasActive && (
                     <>
-                        <IconButton icon={<Pencil/>} label="Edit tab" onClick={onEdit}/>
-                        <IconButton icon={<Printer/>} label="Print" onClick={() => window.print()}/>
                         <IconButton icon={<Trash2/>} label="Delete tab" variant="danger"
                                     onClick={onDelete}/>
+                        <IconButton icon={<Printer/>} label="Print" onClick={() => window.print()}/>
+                        <IconButton icon={<Pencil/>} label="Edit tab" onClick={onEdit}/>
                     </>
                 )}
+                <IconButton icon={<Plus/>} label="Add tab" onClick={onAdd}/>
             </div>
             <div className={`tab-controls__to-top${scrolledPast ? ' tab-controls__to-top--visible' : ''}`}>
                 <IconButton icon={<ArrowUp/>} label="Back to top"

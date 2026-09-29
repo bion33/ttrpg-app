@@ -38,6 +38,7 @@ function AddTabModal({onCreate, onCancel}: AddTabModalProps) {
                     <input
                         ref={nameRef}
                         type="text"
+                        maxLength={14}
                         value={name}
                         onChange={(event) => setName(event.target.value)}
                     />

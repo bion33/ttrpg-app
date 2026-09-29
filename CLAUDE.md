@@ -98,11 +98,22 @@ pages persists under**. The binder list lives in `atomWithStorage('binders', …
 **empty by default**; the open binder's id persists via
 `atomWithStorage('openBinder', …)` so a reload reopens it.
 
-`Library.tsx` shows either a **shelf** — a wooden bookcase (`Library.css`) with
-each binder rendered face-out as a hue-tinted book **cover** (a circular
-placeholder portrait showing the name's first letter above the name, with room
-reserved for a future character portrait), edit/delete `IconButton`s surfacing on
-hover — or, when a binder is open,
+`Library.tsx` shows either the **grid** — an even grid (`Library.css`, columns
+and rows equally spaced, on the same `#e9e4d8` backdrop as the page area) of
+binder **covers**, each a hue-tinted rectangle with a circular placeholder
+portrait showing the name's first letter above the name (room reserved for a
+future character portrait), edit/delete `IconButton`s surfacing on
+hover. Each cover has a deliberately **messy** look: loose cream **papers** poke
+out from behind it at odd angles (with shadows), and **decorative, non-functional
+binder tabs** tuck along its right edge — **the real page-tab strip markup
+(`Binder/Tabs.css`'s `.tabs` classes) reused as-is and shrunk by a plain CSS
+`scale`**, so labels/hues/overlap match the actual tabs exactly, just tiny. It
+draws **one tab per real page in the binder, in that page's stored hue and
+label**, read from the binder's persisted `${id}:pages` by `logic/binderTabs.ts`'s
+`binderTabs` (pure, unit-tested in `binderTabs.test.ts`). The stable per-sheet paper
+offset/rotation comes from `logic/bookJitter.ts` (pure, seeded off the binder id,
+unit-tested in `bookJitter.test.ts`), so a book's mess is consistent across
+renders. When a binder is open the grid gives way to
 the `Binder` bound to that binder's id (`<Binder storagePrefix={id} onExit=…/>`,
 keyed by id so it remounts per binder). Adding/editing/deleting a binder go
 through the `Modal`-based dialogues in `BinderDialogs.tsx`/`.css` (`AddBinderModal`
@@ -114,7 +125,7 @@ pages are removed). Default spine hues reuse the binder feature's
 ### Binder feature (`src/components/features/Binder/`)
 
 `Binder` (`Binder.tsx`) is rendered per-open-binder by `Library` and takes a
-`storagePrefix` (the binder's id) and an `onExit` callback (back to the shelf).
+`storagePrefix` (the binder's id) and an `onExit` callback (back to the grid).
 It owns the whole page area: it renders the active page in a `.page` wrapper
 (`Binder.css`, which only carries the drop shadow and reserves room for the tabs
 — the page content styles itself) beside its `Tabs` strip

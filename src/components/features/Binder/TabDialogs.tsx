@@ -36,7 +36,7 @@ export function EditTabModal({initialLabel, initialHue, onSave, onCancel}: EditT
             <form className="modal__body" onSubmit={submit}>
                 <label className="modal__field">
                     <span>Name</span>
-                    <input type="text" value={name}
+                    <input type="text" maxLength={14} value={name}
                            onChange={(event) => setName(event.target.value)}/>
                 </label>
 
