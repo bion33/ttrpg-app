@@ -11,6 +11,8 @@
     "test": "vitest"
   },
   "dependencies": {
+    "hash-sum": "^2.0.0",
+    "idb-keyval": "^6.3.0",
     "jotai": "^3.0.0",
     "lucide-react": "^1.48.0",
     "react": "^19.2.8",
@@ -18,6 +20,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/hash-sum": "^1.0.2",
     "@types/node": "^24.13.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",

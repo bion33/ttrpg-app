@@ -1,0 +1,37 @@
+/* Corner placement for the storage cluster; the fixed-stack base comes from the shared `.corner-cluster` utility
+   (index.css) and printing hides it via `.no-print`. */
+
+/* In a binder: stacked in the top-left column beneath the "Back to library" button (a 2.5rem button at top 1.5rem). */
+.storage-controls--binder {
+    top: 4.75rem;
+    left: 1.5rem;
+}
+
+/* In the library grid, which has no back-to-library button: pinned to the top-left corner. */
+.storage-controls--library {
+    top: 1.5rem;
+    left: 1.5rem;
+}
+
+/* A transient status message beside the cluster. */
+.storage-controls__toast {
+    position: fixed;
+    z-index: var(--z-controls);
+    max-width: 16rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 0.3rem;
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    font-family: var(--font-serif);
+    font-size: 0.85rem;
+}
+
+.storage-controls__toast--binder {
+    top: 4.75rem;
+    left: 5rem;
+}
+
+.storage-controls__toast--library {
+    top: 1.5rem;
+    left: 5rem;
+}

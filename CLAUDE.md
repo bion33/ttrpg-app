@@ -141,7 +141,12 @@ the jotai atom holding its value. Position and state are one object.
 
 ### Library feature (`src/App.tsx`, `src/components/features/Library/`)
 
-`App` is a thin root that just renders the `Library` feature. The **library**
+`App` is the root: it holds the jotai store in state and renders the app inside a
+jotai `<Provider store={store}>`, exposing a `remount()` (a fresh `createStore()`)
+through `StorageRemountContext` so a storage **load** can swap the store and make
+every `atomWithStorage` atom re-read the bulk-rewritten `localStorage` (see the
+Storage feature below); `AppContent` inside the provider wires navigation and
+renders `Library`. The **library**
 holds many **binders**: a `LibraryBinderItem` is serialisable metadata (`id`,
 `label`, `hue`), where `id` is a `crypto.randomUUID()` GUID (minted by
 `src/lib/newId.ts`'s `newId()`, unit-tested in `newId.test.ts`, shared with the
@@ -263,6 +268,51 @@ dragged vertically to reorder (transform-based, so displaced tabs glide via the 
 and drops are committed via `onReorder(from, to)` (`Binder` reorders and persists the
 `pages` list).
 
+### Storage feature (`src/components/features/Storage/`, `src/lib/storage/`, `src/hooks/useStorage.ts`)
+
+Durable, whole-library persistence beyond `localStorage`. Persistence is **not**
+per-field: the entire `localStorage` key space is snapshotted to one JSON document
+and hydrated back, so the sync layer is fully decoupled from the field-node system.
+Phase 1 ships the pure core plus the **file provider** only (export/import); cloud
+providers land in later phases behind the same seams.
+
+- **Snapshot (`src/lib/snapshot.ts`).** `LibrarySnapshot` (`version`,
+  `revision` GUID, `savedAt`, and `entries`: every `localStorage` key → value) with
+  `createSnapshot`/`applySnapshot` (replace, not merge; migrates then clears then
+  writes) over an injected `StorageLike`, and `snapshotHash` (a **`hash-sum`** of the
+  key-sorted entries, used for dirty detection and conflict lineage). Colocated-tested.
+- **Migrations (`src/migrations/`).** `migrations.ts` is the engine — the `Migration`
+  type, the append-only `MIGRATIONS` list, `CURRENT_VERSION` (derived from the highest
+  `to`), `runMigrations(entries, fromVersion, migrations)`, and `migrateSnapshot`
+  (rejects a snapshot newer than this app). **Each migration is its own file** in this
+  directory (`v2.ts`, …), listed in `MIGRATIONS` in ascending `to` order; append new
+  ones, never edit or renumber an existing one. `v2` is currently a live no-op
+  (identity) migration documenting the shape. Version numbers are meaningless except to
+  trigger migrations. Each file is colocated-tested (`migrations.test.ts`, `v2.test.ts`).
+- **`src/lib/storage/` group.** `sync.ts` — the pure `evaluateSync({remoteRevision,
+  baseRevision, dirty})` → `SyncStatus` conflict decision (revision lineage, not
+  clocks; full truth-table tested). `StorageProvider.ts` — the `ProviderId`,
+  `StorageTarget`, and `StorageProvider` types (phase 1 needs only
+  `connect`/`isConnected`/`save`/`load`/`readRevision`). `fileProvider.ts` — the
+  `file` provider: pure `serialiseSnapshot`/`parseSnapshot` (validated, tested) plus
+  thin File System Access API / anchor-download / hidden-input glue; `readRevision`
+  returns `null` (a file can't be probed). `providers.ts` — the provider registry
+  (`getProvider`/`isProviderAvailable`), the single seam later phases extend.
+  `connectionStore.ts` — device-local `SyncState` (`baseRevision`/`baseHash`) and the
+  active provider id in **IndexedDB** (via **`idb-keyval`**), kept out of the snapshot.
+- **`useStorage()` hook.** Orchestration for the controls: derives `dirty`
+  (`baseHash === null ? libraryHasData() : snapshotHash(current) !== baseHash`) and
+  `status`, and drives `save` (mint revision → `provider.save` → persist `SyncState`),
+  `load` (`provider.load` → `evaluateSync` → apply, or raise the conflict flow on
+  `diverged`/`localAhead`), and `resolveConflict`. After applying a load it calls the
+  `StorageRemountContext` `remount()` so atoms re-read storage. Exports that context.
+- **UI (`features/Storage/`).** `StorageControls` — a `corner-cluster` of
+  `IconButton`s (Settings, Load, Save) with a `placement` prop (`binder` → top-left
+  under "Back to library"; `library` → top-left), mounted by `Binder` and
+  `Library`. `modals/StorageSettingsModal` picks the provider (cloud ones shown
+  disabled as "coming soon"); `modals/ConflictModal` (shared `Modal`) offers keep
+  this device / take the other on a divergent load.
+
 ### UI controls (`src/components/ui/`)
 
 `FieldInput` picks the control for a field's `type`: `NumericInput`,
@@ -329,7 +379,11 @@ mount-focus, and trim/guard submit shared by every add/edit dialogue), and
 browser History API so Back/Forward step between visited binders and pages):
 `useLocation()` reads the persisted `location` atom, `useNavigate()` moves to a
 location and pushes a history entry, and `useNavigationHistory()` — called once in
-`App` — seeds and applies Back/Forward via `popstate`.
+`AppContent` — seeds and applies Back/Forward via `popstate`. `useStorage()` owns
+the storage orchestration (see the Storage feature above) and exports
+`StorageRemountContext`. (The whole-library persistence pure helpers live under
+`src/lib/storage/`, `src/lib/snapshot.ts`, and `src/migrations/`, also documented
+with the Storage feature.)
 
 ## Conventions
 

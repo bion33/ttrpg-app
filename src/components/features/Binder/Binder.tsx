@@ -17,6 +17,7 @@ import {tabHue} from '../../../lib/tabHue.ts'
 import {usePageScale} from '../../../hooks/usePageScale.ts'
 import CharacterSheet from '../CharacterSheet/CharacterSheet'
 import EmptyPage from '../EmptyPage/EmptyPage'
+import StorageControls from '../Storage/StorageControls.tsx'
 
 /**
  * Props for a binder: the storage prefix (its library id) all its pages persist under, and the callback that returns
@@ -104,6 +105,7 @@ function Binder({storagePrefix, onExit}: BinderProps) {
             <TabControls onAdd={() => setAdding(true)} hasActive={!!active} onEdit={() => setEditing('edit')}
                          onDelete={(event) => (event.shiftKey ? deletePage() : setEditing('delete'))} onExit={onExit}
                          lastTab={lastTab}/>
+            <StorageControls placement="binder"/>
             <ViewControls onScaleUp={scaleUp} onScaleDown={scaleDown} canScaleUp={canScaleUp}
                           canScaleDown={canScaleDown}/>
             {adding && <AddTabModal onCreate={createPage} onCancel={() => setAdding(false)}/>}

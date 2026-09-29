@@ -14,6 +14,7 @@ import AddBinderModal from './modals/AddBinderModal.tsx'
 import EditBinderModal from './modals/EditBinderModal.tsx'
 import LibraryBinder from './LibraryBinder.tsx'
 import {binderTabs} from './logic/binderTabs.ts'
+import StorageControls from '../Storage/StorageControls.tsx'
 
 /**
  * A binder in the library: an opaque id (also the storage-prefix root every one of its pages persists under), a
@@ -112,6 +113,8 @@ function Library() {
                 <LibraryBinder ghost hue={30} label="Add binder" jitterSeed="library-add"
                                onOpen={() => setAdding(true)}/>
             </div>
+
+            <StorageControls placement="library"/>
 
             {adding && <AddBinderModal onCreate={createBinder} onCancel={() => setAdding(false)}/>}
             {editing && (
