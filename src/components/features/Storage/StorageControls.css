@@ -12,26 +12,3 @@
     top: 1.5rem;
     left: 1.5rem;
 }
-
-/* A transient status message beside the cluster. */
-.storage-controls__toast {
-    position: fixed;
-    z-index: var(--z-controls);
-    max-width: 16rem;
-    padding: 0.4rem 0.7rem;
-    border-radius: 0.3rem;
-    background: rgba(0, 0, 0, 0.8);
-    color: #fff;
-    font-family: var(--font-serif);
-    font-size: 0.85rem;
-}
-
-.storage-controls__toast--binder {
-    top: 4.75rem;
-    left: 5rem;
-}
-
-.storage-controls__toast--library {
-    top: 1.5rem;
-    left: 5rem;
-}

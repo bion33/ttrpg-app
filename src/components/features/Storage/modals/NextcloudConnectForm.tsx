@@ -9,6 +9,7 @@ interface NextcloudConnectFormProps {
     connection: NextcloudConnection | null
     onConnect: (connection: NextcloudConnection) => Promise<void>
     onDisconnect: () => Promise<void>
+    onClose: () => void
 }
 
 // Builds the display label for a connection ("host / path"), falling back to the raw URL if it cannot be parsed.
@@ -24,11 +25,11 @@ function buildLabel(baseUrl: string, path: string): string {
  * The Nextcloud connection form inside the storage settings modal: collects the instance URL, username, app password,
  * and file path (each with guidance on where to find it), or shows the connected target with a Disconnect button.
  */
-function NextcloudConnectForm({connection, onConnect, onDisconnect}: NextcloudConnectFormProps) {
+function NextcloudConnectForm({connection, onConnect, onDisconnect, onClose}: NextcloudConnectFormProps) {
     const [baseUrl, setBaseUrl] = useState('')
     const [username, setUsername] = useState('')
     const [appPassword, setAppPassword] = useState('')
-    const [path, setPath] = useState('dnd/library.json')
+    const [path, setPath] = useState('ttrpg-app.json')
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -39,7 +40,7 @@ function NextcloudConnectForm({connection, onConnect, onDisconnect}: NextcloudCo
                 <div className="modal__actions">
                     <button
                         type="button"
-                        className="modal__btn modal__btn--danger"
+                        className="modal__btn modal__btn--danger-outline"
                         disabled={busy}
                         onClick={() => {
                             setBusy(true)
@@ -48,6 +49,7 @@ function NextcloudConnectForm({connection, onConnect, onDisconnect}: NextcloudCo
                     >
                         Disconnect
                     </button>
+                    <button type="button" className="modal__btn modal__btn--primary" onClick={onClose}>Done</button>
                 </div>
             </div>
         )

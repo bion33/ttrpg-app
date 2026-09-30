@@ -1,5 +1,6 @@
 import type {WritableAtom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
+import {notifyingStorage} from '../../../lib/storage/observableStorage.ts'
 import type {TabItem} from './tabs/Tabs.tsx'
 import type {PageType} from './pageTypes.ts'
 
@@ -24,7 +25,7 @@ const activePageAtoms = new Map<string, WritableAtom<string, [string | ((previou
 export function pagesAtom(prefix: string) {
     let existing = pagesAtoms.get(prefix)
     if (!existing) {
-        existing = atomWithStorage<Page[]>(`${prefix}:pages`, [])
+        existing = atomWithStorage<Page[]>(`${prefix}:pages`, [], notifyingStorage<Page[]>())
         pagesAtoms.set(prefix, existing)
     }
     return existing
@@ -37,7 +38,7 @@ export function pagesAtom(prefix: string) {
 export function activePageAtom(prefix: string) {
     let existing = activePageAtoms.get(prefix)
     if (!existing) {
-        existing = atomWithStorage(`${prefix}:activePage`, '')
+        existing = atomWithStorage(`${prefix}:activePage`, '', notifyingStorage<string>())
         activePageAtoms.set(prefix, existing)
     }
     return existing

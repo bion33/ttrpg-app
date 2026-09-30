@@ -2,9 +2,10 @@ import type {RefObject} from 'react'
 import {useEffect, useRef, useState} from 'react'
 import {useAtom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
+import {notifyingStorage} from '../lib/storage/observableStorage.ts'
 
 /** How far the page and tab strip are scaled, shared across binders and persisted to storage. */
-const pageScaleAtom = atomWithStorage('pageScale', 1)
+const pageScaleAtom = atomWithStorage('pageScale', 1, notifyingStorage<number>())
 
 // How much each scale step changes the scale, and the smallest scale allowed.
 const SCALE_STEP = 0.25

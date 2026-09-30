@@ -8,8 +8,8 @@ const connection: NextcloudConnection = {
     baseUrl: 'https://cloud.example.com/',
     username: 'ada lovelace',
     appPassword: 'app-pass',
-    path: 'dnd/library.json',
-    label: 'cloud.example.com / dnd/library.json',
+    path: 'personal/ttrpg-app.json',
+    label: 'cloud.example.com > personal/ttrpg-app.json',
 }
 
 const snapshot: LibrarySnapshot = {
@@ -38,7 +38,7 @@ afterEach(() => {
 describe('webdavUrl', () => {
     it('encodes the username and path segments and normalises slashes', () => {
         expect(webdavUrl(connection)).toBe(
-            'https://cloud.example.com/remote.php/dav/files/ada%20lovelace/dnd/library.json',
+            'https://cloud.example.com/remote.php/dav/files/ada%20lovelace/personal/ttrpg-app.json',
         )
     })
 })
@@ -46,7 +46,7 @@ describe('webdavUrl', () => {
 describe('webdavParentUrls', () => {
     it('lists ancestor collections in order for a nested path', () => {
         expect(webdavParentUrls(connection)).toEqual([
-            'https://cloud.example.com/remote.php/dav/files/ada%20lovelace/dnd',
+            'https://cloud.example.com/remote.php/dav/files/ada%20lovelace/personal',
         ])
     })
 
@@ -99,7 +99,7 @@ describe('nextcloudProvider relay', () => {
     it('walks parent collections with MKCOL, tolerating existing ones, on connect', async () => {
         const responses = [
             new Response(null, {status: 207}), // PROPFIND base
-            new Response(null, {status: 405}), // MKCOL dnd (already exists)
+            new Response(null, {status: 405}), // MKCOL personal (already exists)
         ]
         vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(responses.shift())))
         await expect(nextcloudProvider.connect()).resolves.toBeUndefined()

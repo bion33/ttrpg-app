@@ -1,11 +1,13 @@
 import type {ProviderId, StorageProvider} from './StorageProvider.ts'
 import {fileProvider} from './fileProvider.ts'
 import {nextcloudProvider} from './nextcloudProvider.ts'
+import {onedriveProvider} from './onedriveProvider.ts'
 
 // The registered providers; later phases add their entries here — the registry is the single seam.
 const PROVIDERS: Partial<Record<ProviderId, StorageProvider>> = {
     file: fileProvider,
     nextcloud: nextcloudProvider,
+    onedrive: onedriveProvider,
 }
 
 /** The provider registered under the given id, or throws when none is registered (not yet implemented). */

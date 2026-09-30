@@ -84,10 +84,10 @@
     color: var(--color-text);
 }
 
-/* A readable failure message shown when a Nextcloud connect attempt fails. */
+/* A readable failure message shown when a connect attempt fails; darker ink and real bold set it apart. */
 .storage-connect__error {
     margin: 0;
     color: var(--color-ink);
-    font-size: 0.85rem;
+    font-size: 1rem;
     font-weight: 700;
 }

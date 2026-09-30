@@ -1,21 +1,30 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react'
+import {toast} from 'sonner'
+import {useDebouncedCallback} from 'use-debounce'
 import type {LibrarySnapshot} from '../lib/snapshot.ts'
 import {applySnapshot, createSnapshot, snapshotHash} from '../lib/snapshot.ts'
 import type {ProviderId} from '../lib/storage/StorageProvider.ts'
 import {getProvider} from '../lib/storage/providers.ts'
 import {evaluateSync, type SyncStatus} from '../lib/storage/sync.ts'
 import {chooseRemoteRevision, isProbeable, resolveTarget, saveIntent} from '../lib/storage/syncActions.ts'
+import {subscribeToStorageWrites} from '../lib/storage/observableStorage.ts'
 import type {SyncState} from '../lib/storage/connectionStore.ts'
 import {
     clearNextcloudConnection,
+    clearOneDriveConnection,
     loadActiveProvider,
     loadNextcloudConnection,
+    loadOneDriveConnection,
     loadSyncState,
     saveActiveProvider,
     saveNextcloudConnection,
+    saveOneDriveConnection,
     saveSyncState,
 } from '../lib/storage/connectionStore.ts'
-import {adoptConnection, type NextcloudConnection} from '../lib/storage/nextcloudProvider.ts'
+import {adoptConnection as adoptNextcloud, type NextcloudConnection} from '../lib/storage/nextcloudProvider.ts'
+import {adoptConnection as adoptOneDrive, type OneDriveConnection} from '../lib/storage/onedriveProvider.ts'
+import {exchangeCode, runMicrosoftAuth} from '../lib/storage/oauthClient.ts'
+import {useCloudConnection, type CloudConnectionPorts} from './useCloudConnection.ts'
 import {newId} from '../lib/newId.ts'
 
 /**
@@ -30,16 +39,14 @@ export interface ConflictPrompt {
     origin: 'load' | 'save'
 }
 
-/** A transient outcome of the last save/load, surfaced by the controls. */
-export type StorageActivity = 'idle' | 'saving' | 'saved' | 'error'
+// How long to wait after the last persisted-atom write before recomputing dirty, so rapid edits (typing) hash once.
+const DIRTY_DEBOUNCE_MS = 200
 
 /** The storage state and actions the controls consume. */
 export interface UseStorage {
     status: SyncStatus
     dirty: boolean
     provider: ProviderId
-    activity: StorageActivity
-    error: string | null
     save(): Promise<void>
     load(): Promise<void>
     conflict: ConflictPrompt | null
@@ -48,6 +55,9 @@ export interface UseStorage {
     nextcloudConnection: NextcloudConnection | null
     connectNextcloud(connection: NextcloudConnection): Promise<void>
     disconnectNextcloud(): Promise<void>
+    oneDriveConnection: OneDriveConnection | null
+    connectOneDrive(): Promise<void>
+    disconnectOneDrive(): Promise<void>
 }
 
 // App-view keys that hold no character data, so they do not by themselves make the library "have data".
@@ -55,6 +65,22 @@ const VIEW_ONLY_KEYS = new Set(['location', 'pageScale'])
 
 // A never-synced sync base, used on mount and whenever a target change invalidates the previous lineage.
 const UNSYNCED: SyncState = {baseRevision: null, baseHash: null}
+
+// The per-provider connection ports; module-level (stable) so the cloud-connection lifecycle callbacks stay stable.
+const nextcloudPorts: CloudConnectionPorts<NextcloudConnection> = {
+    providerId: 'nextcloud',
+    adopt: adoptNextcloud,
+    persist: saveNextcloudConnection,
+    clear: clearNextcloudConnection,
+    load: loadNextcloudConnection,
+}
+const onedrivePorts: CloudConnectionPorts<OneDriveConnection> = {
+    providerId: 'onedrive',
+    adopt: adoptOneDrive,
+    persist: saveOneDriveConnection,
+    clear: clearOneDriveConnection,
+    load: loadOneDriveConnection,
+}
 
 // True when a snapshot holds any binder, page, or field data (an empty binder list and view keys do not count).
 function libraryHasData(snapshot: LibrarySnapshot): boolean {
@@ -83,20 +109,42 @@ function messageFor(error: unknown, fallback: string): string {
 export function useStorage(): UseStorage {
     const remount = useContext(StorageRemountContext)
     const [provider, setProviderState] = useState<ProviderId>('file')
-    const [connection, setConnection] = useState<NextcloudConnection | null>(null)
     const [syncState, setSyncState] = useState<SyncState>(UNSYNCED)
     const [probedRevision, setProbedRevision] = useState<string | null>(null)
     const [conflict, setConflict] = useState<ConflictPrompt | null>(null)
-    const [activity, setActivity] = useState<StorageActivity>('idle')
-    const [error, setError] = useState<string | null>(null)
     const [dirty, setDirty] = useState(false)
     // Incremented on each probe so an out-of-order resolution can be discarded (never regress to a stale revision).
     const probeToken = useRef(0)
 
-    const probeable = isProbeable(provider)
-    const target = useMemo(() => resolveTarget(provider, connection), [provider, connection])
+    // Persists a sync base both to IndexedDB and to local state so the next decision starts from the new ancestor.
+    const commitSyncState = useCallback(async (next: SyncState) => {
+        await saveSyncState(next)
+        setSyncState(next)
+    }, [])
 
-    // Load the persisted provider selection, sync base, and (for Nextcloud) the stored connection once on mount.
+    // The shared lifecycle actions every cloud connection drives: make its provider active, reset the base, clear probe.
+    const cloudActions = useMemo(() => ({
+        async activateProvider(id: ProviderId) {
+            setProviderState(id)
+            await saveActiveProvider(id)
+        },
+        resetSyncBase: () => commitSyncState(UNSYNCED),
+        clearProbe: () => setProbedRevision(null),
+    }), [commitSyncState])
+
+    const nextcloud = useCloudConnection(nextcloudPorts, cloudActions)
+    const onedrive = useCloudConnection(onedrivePorts, cloudActions)
+    // Stable references to each cloud provider's mount hydration, so the mount effect lists them without re-running.
+    const hydrateNextcloud = nextcloud.hydrate
+    const hydrateOneDrive = onedrive.hydrate
+
+    const probeable = isProbeable(provider)
+    const target = useMemo(
+        () => resolveTarget(provider, {nextcloud: nextcloud.connection, oneDrive: onedrive.connection}),
+        [provider, nextcloud.connection, onedrive.connection],
+    )
+
+    // Load the persisted provider selection, sync base, and (for a cloud provider) the stored connection once on mount.
     useEffect(() => {
         let active = true
         void (async () => {
@@ -105,16 +153,13 @@ export function useStorage(): UseStorage {
             setSyncState(storedSync)
             if (!storedProvider) return
             setProviderState(storedProvider)
-            if (storedProvider !== 'nextcloud') return
-            const storedConnection = await loadNextcloudConnection()
-            if (!active) return
-            adoptConnection(storedConnection)
-            setConnection(storedConnection)
+            if (storedProvider === 'nextcloud') await hydrateNextcloud()
+            else if (storedProvider === 'onedrive') await hydrateOneDrive()
         })()
         return () => {
             active = false
         }
-    }, [])
+    }, [hydrateNextcloud, hydrateOneDrive])
 
     // Probes the current cloud target's remote revision; the file provider keeps the base as its stand-in remote, so a
     // stale probe on a non-probeable provider is never read (chooseRemoteRevision ignores it) and needs no clearing here.
@@ -129,27 +174,31 @@ export function useStorage(): UseStorage {
         }
     }, [provider, probeable, target])
 
+    const recomputeDirty = useCallback(() => setDirty(deriveDirty(syncState)), [syncState])
+    // Rapid edits (typing) each persist, so coalesce their dirty recompute — a full-storage hash — to one settled run.
+    const recomputeDirtyDebounced = useDebouncedCallback(recomputeDirty, DIRTY_DEBOUNCE_MS)
+
     // Re-derive dirty and re-probe the remote on mount, whenever the base or target changes, and on window focus (edits
     // or a remote save may have happened elsewhere). refreshRemote's identity tracks the target, so a target change
     // re-runs this and re-probes.
     useEffect(() => {
         const sync = () => {
-            setDirty(deriveDirty(syncState))
+            recomputeDirty()
             void refreshRemote()
         }
         sync()
         window.addEventListener('focus', sync)
-        return () => window.removeEventListener('focus', sync)
-    }, [syncState, refreshRemote])
+        // A local edit changes dirtiness but not the remote, so it only recomputes dirty (debounced, no re-probe).
+        const unsubscribe = subscribeToStorageWrites(recomputeDirtyDebounced)
+        return () => {
+            window.removeEventListener('focus', sync)
+            unsubscribe()
+            recomputeDirtyDebounced.cancel()
+        }
+    }, [recomputeDirty, recomputeDirtyDebounced, refreshRemote])
 
     const remoteRevision = chooseRemoteRevision({probeable, probedRevision, baseRevision: syncState.baseRevision})
     const status = evaluateSync({remoteRevision, baseRevision: syncState.baseRevision, dirty})
-
-    // Persists a sync base both to IndexedDB and to local state so the next decision starts from the new ancestor.
-    const commitSyncState = useCallback(async (next: SyncState) => {
-        await saveSyncState(next)
-        setSyncState(next)
-    }, [])
 
     // Applies a loaded snapshot to storage, records it as the new sync base, then swaps the store so atoms re-read.
     const applyLoaded = useCallback(async (snapshot: LibrarySnapshot) => {
@@ -163,22 +212,21 @@ export function useStorage(): UseStorage {
     // Writes the current library to the target and records the new revision as the sync base; assumes no conflict.
     const performSave = useCallback(async () => {
         if (!target) return
-        setError(null)
-        setActivity('saving')
+        const toastId = toast.loading('Saving…')
         try {
             const revision = newId()
             const snapshot = createSnapshot(localStorage, revision, new Date().toISOString())
             await getProvider(provider).save(target, snapshot)
             await commitSyncState({baseRevision: revision, baseHash: snapshotHash(snapshot)})
             setProbedRevision(revision)
-            setActivity('saved')
+            toast.success('Saved', {id: toastId})
         } catch (caught) {
+            // Dismissing the native file picker is a cancel, not a failure.
             if (isCancel(caught)) {
-                setActivity('idle')
+                toast.dismiss(toastId)
                 return
             }
-            setError(messageFor(caught, 'Save failed.'))
-            setActivity('error')
+            toast.error(messageFor(caught, 'Save failed.'), {id: toastId})
         }
     }, [target, provider, commitSyncState])
 
@@ -193,8 +241,7 @@ export function useStorage(): UseStorage {
                     return
                 }
             } catch (caught) {
-                setError(messageFor(caught, 'Save failed.'))
-                setActivity('error')
+                toast.error(messageFor(caught, 'Save failed.'))
                 return
             }
         }
@@ -203,10 +250,14 @@ export function useStorage(): UseStorage {
 
     const load = useCallback(async () => {
         if (!target) return
-        setError(null)
+        const toastId = toast.loading('Loading…')
         try {
             const snapshot = await getProvider(provider).load(target)
-            if (!snapshot) return
+            // Nothing to load: dismiss the pending toast rather than report an outcome.
+            if (!snapshot) {
+                toast.dismiss(toastId)
+                return
+            }
             const decision = evaluateSync({
                 remoteRevision: snapshot.revision,
                 baseRevision: syncState.baseRevision,
@@ -214,14 +265,19 @@ export function useStorage(): UseStorage {
             })
             // A clean load replaces local state; a divergent (or older-over-newer) load asks the user first.
             if (decision === 'localAhead' || decision === 'diverged') {
+                toast.dismiss(toastId)
                 setConflict({incoming: snapshot, origin: 'load'})
                 return
             }
             await applyLoaded(snapshot)
+            toast.success('Loaded', {id: toastId})
         } catch (caught) {
-            if (isCancel(caught)) return
-            setError(messageFor(caught, 'Load failed.'))
-            setActivity('error')
+            // Dismissing the native file picker is a cancel, not a failure.
+            if (isCancel(caught)) {
+                toast.dismiss(toastId)
+                return
+            }
+            toast.error(messageFor(caught, 'Load failed.'), {id: toastId})
         }
     }, [target, provider, syncState, applyLoaded])
 
@@ -248,34 +304,22 @@ export function useStorage(): UseStorage {
         })
     }, [commitSyncState])
 
-    const connectNextcloud = useCallback(async (form: NextcloudConnection) => {
-        adoptConnection(form)
-        try {
-            await getProvider('nextcloud').connect()
-        } catch (caught) {
-            adoptConnection(connection)
-            throw caught
-        }
-        await saveNextcloudConnection(form)
-        setConnection(form)
-        setProviderState('nextcloud')
-        await saveActiveProvider('nextcloud')
-        await commitSyncState(UNSYNCED)
-    }, [connection, commitSyncState])
-
-    const disconnectNextcloud = useCallback(async () => {
-        adoptConnection(null)
-        await clearNextcloudConnection()
-        setConnection(null)
-        setProviderState('file')
-        await saveActiveProvider('file')
-        setProbedRevision(null)
-        await commitSyncState(UNSYNCED)
-    }, [commitSyncState])
+    // Runs the interactive Microsoft sign-in, exchanges the code for tokens, and connects with a generic label.
+    const connectOneDrive = useCallback(async () => {
+        const {code, verifier} = await runMicrosoftAuth()
+        const tokens = await exchangeCode(code, verifier)
+        if (!tokens.refresh_token) throw new Error('Microsoft did not return a refresh token.')
+        await onedrive.connect({refreshToken: tokens.refresh_token, label: 'OneDrive'})
+    }, [onedrive])
 
     return {
-        status, dirty, provider, activity, error, save, load, conflict, resolveConflict, setProvider,
-        nextcloudConnection: connection, connectNextcloud, disconnectNextcloud,
+        status, dirty, provider, save, load, conflict, resolveConflict, setProvider,
+        nextcloudConnection: nextcloud.connection,
+        connectNextcloud: nextcloud.connect,
+        disconnectNextcloud: nextcloud.disconnect,
+        oneDriveConnection: onedrive.connection,
+        connectOneDrive,
+        disconnectOneDrive: onedrive.disconnect,
     }
 }
 

@@ -2,6 +2,7 @@ import type {MouseEvent} from 'react'
 import {useState} from 'react'
 import {useAtom, useAtomValue} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
+import {notifyingStorage} from '../../../lib/storage/observableStorage.ts'
 import './Library.css'
 import Binder from '../Binder/Binder.tsx'
 import {activePageAtom, pagesAtom} from '../Binder/binderAtoms.ts'
@@ -27,7 +28,7 @@ interface LibraryBinderItem {
 }
 
 /** The user's binders, loaded from and persisted to storage. Empty until the user adds one. */
-const bindersAtom = atomWithStorage<LibraryBinderItem[]>('binders', [])
+const bindersAtom = atomWithStorage<LibraryBinderItem[]>('binders', [], notifyingStorage<LibraryBinderItem[]>())
 
 /**
  * One binder cover on the shelf, subscribed to that binder's persisted pages and last-active page so its decorative

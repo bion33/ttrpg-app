@@ -2,9 +2,16 @@ import type {ProviderId, StorageTarget} from './StorageProvider.ts'
 import type {SyncStatus} from './sync.ts'
 import type {NextcloudConnection} from './nextcloudProvider.ts'
 import {webdavUrl} from './nextcloudProvider.ts'
+import type {OneDriveConnection} from './onedriveProvider.ts'
 
 // The file provider's target: its locator is ignored (the user picks a file each save/load).
 const FILE_TARGET: StorageTarget = {provider: 'file', locator: '', label: 'File'}
+
+/** The cloud connections a target may resolve from; additive as providers are added, so no per-provider parameter list. */
+export interface CloudConnections {
+    nextcloud: NextcloudConnection | null
+    oneDrive: OneDriveConnection | null
+}
 
 /**
  * Whether a provider's remote revision can be fetched silently: true for every provider except the file provider, which
@@ -18,11 +25,17 @@ export function isProbeable(provider: ProviderId): boolean {
  * The target to act on for the active provider, or null when a cloud provider is selected but not yet connected (its
  * Save/Load controls are then disabled).
  */
-export function resolveTarget(provider: ProviderId, connection: NextcloudConnection | null): StorageTarget | null {
+export function resolveTarget(provider: ProviderId, connections: CloudConnections): StorageTarget | null {
     if (provider === 'file') return FILE_TARGET
     if (provider === 'nextcloud') {
+        const connection = connections.nextcloud
         if (!connection) return null
         return {provider: 'nextcloud', locator: webdavUrl(connection), label: connection.label}
+    }
+    if (provider === 'onedrive') {
+        const connection = connections.oneDrive
+        if (!connection) return null
+        return {provider: 'onedrive', locator: 'library.json', label: connection.label}
     }
     return null
 }
@@ -40,12 +53,12 @@ export function chooseRemoteRevision(input: {
 }
 
 /**
- * Whether the Save control is enabled for a provider at a status: the file provider (export) is always enabled; a cloud
- * provider gates on status (a save that would clobber a strictly-ahead remote, or a no-op up-to-date, is disabled).
+ * Whether the Save control is enabled: the file provider (export) is always enabled; a cloud provider gates only on
+ * local dirtiness, decoupled from the remote probe — save() re-checks the remote and routes a conflict at click time.
  */
-export function canSave(status: SyncStatus, probeable: boolean): boolean {
+export function canSave(dirty: boolean, probeable: boolean): boolean {
     if (!probeable) return true
-    return status !== 'upToDate' && status !== 'remoteAhead'
+    return dirty
 }
 
 /**

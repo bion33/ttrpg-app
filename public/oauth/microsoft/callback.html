@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Signing in…</title>
+</head>
+<body>
+    <p>Completing sign-in… you can close this window.</p>
+    <script>
+        // Relay the authorization code (or error) back to the app that opened this popup, then close.
+        (function () {
+            var params = new URLSearchParams(location.search)
+            var message = {
+                source: 'onedrive-auth',
+                code: params.get('code') || undefined,
+                state: params.get('state') || undefined,
+                error: params.get('error_description') || params.get('error') || undefined,
+            }
+            if (window.opener) window.opener.postMessage(message, location.origin)
+            window.close()
+        })()
+    </script>
+</body>
+</html>

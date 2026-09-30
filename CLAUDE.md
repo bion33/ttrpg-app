@@ -303,44 +303,95 @@ providers land in later phases behind the same seams.
   base then recursively `MKCOL`s the target's parent folders, `readRevision` GETs and
   returns the in-file `revision` (a file is sheet-sized, so a full fetch is fine). It
   holds the active `NextcloudConnection` in a module variable set via `adoptConnection`;
-  persistence is the caller's (see `connectionStore`). `providers.ts` — the provider
-  registry (`getProvider`/`isProviderAvailable`) now registers `{file, nextcloud}`, so
-  Nextcloud stops showing as "coming soon". `syncActions.ts` — the **pure**
+  persistence is the caller's (see `connectionStore`). `onedriveProvider.ts` — the
+  `onedrive` provider (phase 4): a pure `contentUrl` builder for the fixed
+  Graph app-folder file (`me/drive/special/approot:/library.json:/content`) plus
+  save/load/readRevision/connect against Microsoft Graph. It holds the active
+  `OneDriveConnection` (a rotated refresh token + generic label) and a short-lived
+  in-memory access token; `withAccessToken` refreshes via `/api/oauth/microsoft/refresh`
+  (and retries once on a Graph 401), and — since Microsoft rotates the refresh token on
+  every refresh — `adoptConnection(connection, onChange?)` takes an **optional change
+  callback** so the caller persists the rotated token without the provider importing
+  `connectionStore`. `readRevision` returns the **in-file** `revision` GUID (not Graph's
+  eTag/cTag), 404→null. `pkce.ts` — pure PKCE/OAuth helpers
+  (`createCodeVerifier`/`createState`/`codeChallenge`/`base64UrlEncode` and the
+  `authorizeUrl` builder), tested against the RFC 7636 known-answer vector.
+  `oauthClient.ts` — side-effectful browser glue (untested, like `fileProvider`'s
+  picker): `runMicrosoftAuth` opens the sign-in popup (synchronously, to keep the user
+  gesture) and awaits the code the static `public/oauth/microsoft/callback.html`
+  `postMessage`s back (state + origin validated), and `exchangeCode` posts to the relay.
+  `providers.ts` — the provider registry
+  (`getProvider`/`isProviderAvailable`) now registers `{file, nextcloud, onedrive}`, so
+  OneDrive stops showing as "coming soon". `syncActions.ts` — the **pure**
   provider-dependent decisions (`isProbeable`, `resolveTarget`, `chooseRemoteRevision`,
   `canSave`/`canLoad`, `saveIntent`), unit-tested over every `(status, probeable)`
   combination so the hook and the controls can never disagree about enablement or the
-  save guard. `connectionStore.ts` — device-local `SyncState` (`baseRevision`/`baseHash`),
-  the active provider id, and (phase 3) the `NextcloudConnection`
-  (`load`/`save`/`clearNextcloudConnection`) in **IndexedDB** (via **`idb-keyval`**),
-  kept out of the snapshot.
+  save guard. `resolveTarget(provider, connections)` takes a `CloudConnections` bag
+  (`{nextcloud, oneDrive}`) — additive as providers are added, not a per-provider
+  parameter. `connectionStore.ts` — device-local `SyncState` (`baseRevision`/`baseHash`),
+  the active provider id, the `NextcloudConnection`
+  (`load`/`save`/`clearNextcloudConnection`), and the `OneDriveConnection`
+  (`load`/`save`/`clearOneDriveConnection`) in **IndexedDB** (via **`idb-keyval`**),
+  kept out of the snapshot. `observableStorage.ts` — `notifyingStorage<Value>()`, the
+  jotai `atomWithStorage` storage **every persisted atom uses** (field nodes, binders,
+  pages, active page, location, page scale): it is the default JSON localStorage storage
+  plus a write notification, and `subscribeToStorageWrites` lets the hook recompute
+  `dirty` the moment any edit persists — not only on window focus.
 - **`useStorage()` hook.** Orchestration for the controls: resolves the active target
   per provider via `resolveTarget`, derives `dirty`
-  (`baseHash === null ? libraryHasData() : snapshotHash(current) !== baseHash`) and
-  `status`, and drives `save` (mint revision → `provider.save` → persist `SyncState`;
+  (`baseHash === null ? libraryHasData() : snapshotHash(current) !== baseHash`,
+  recomputed immediately on window focus and — **debounced** (`use-debounce`'s
+  `useDebouncedCallback`, so a burst of edits hashes once) — on persisted-atom writes
+  via `subscribeToStorageWrites`) and `status`, and drives `save` (mint revision → `provider.save` → persist `SyncState`;
   a probeable remote that is ahead/diverged routes through the conflict flow via
   `saveIntent`), `load` (`provider.load` → `evaluateSync` → apply, or raise the conflict
   flow on `diverged`/`localAhead`), and `resolveConflict`. For a **probeable** provider
   (every one but `file`) it probes the remote revision through `readRevision` — on
   mount, on `window` focus, and after each save/load — feeding the real value (not the
   base) into `evaluateSync`, with a request-token stale guard so an out-of-order probe
-  never regresses the revision; `file` keeps the base as its stand-in remote. Switching
-  provider or (dis)connecting Nextcloud resets the sync base (a base from another target
-  is meaningless). Exposes `connectNextcloud`/`disconnectNextcloud` and the active
-  `nextcloudConnection`. After applying a load it calls the `StorageRemountContext`
+  never regresses the revision; `file` keeps the base as its stand-in remote. **A single
+  instance is held above the library/binder switch** (see `StorageProvider` below), so it
+  is not remounted — and the remote re-probed — on every navigation between the two. Switching
+  provider or (dis)connecting a cloud provider resets the sync base (a base from another
+  target is meaningless). Exposes `connectNextcloud`/`disconnectNextcloud` +
+  `nextcloudConnection` and `connectOneDrive`/`disconnectOneDrive` + `oneDriveConnection`
+  (`connectOneDrive` runs the OAuth flow, then builds a generic-labelled connection). The
+  near-identical cloud connect/disconnect/mount-hydrate lifecycle lives **once** in
+  `useCloudConnection(ports, actions)` (`src/hooks/`): adopt → validate → persist →
+  activate → reset base, and the inverse on disconnect; both cloud providers route
+  through it, differing only in building their `Connection` (Nextcloud's form fields vs
+  OneDrive's OAuth exchange) and in exposing their typed connection state. Its `adopt`
+  call passes the provider's own `persist` port as the rotation `onChange`, so a rotated
+  OneDrive refresh token is saved through the one persister (Nextcloud ignores the extra
+  argument). After applying a load it calls the `StorageRemountContext`
   `remount()` so atoms re-read storage. Exports that context.
-- **UI (`features/Storage/`).** `StorageControls` — a `corner-cluster` of
+- **UI (`features/Storage/`).** `StorageProvider` (mounted once in `AppContent`, above the
+  library/binder switch) holds the single `useStorage()` instance and exposes it through
+  `storageContext.ts`'s `StorageContext`/`useStorageContext()`, so navigation does not
+  remount the orchestration (re-probing the cloud remote each crossing). `StorageControls`
+  — a `corner-cluster` of
   `IconButton`s (Settings, Load, Save) with a `placement` prop (`binder` → top-left
   under "Back to library"; `library` → top-left), mounted by `Binder` and
-  `Library`; Save/Load enablement and labels come from the pure `canSave`/`canLoad`
-  (file export/import is always enabled; a cloud provider gates on `status`).
+  `Library` (both reading the shared instance via `useStorageContext()`); Save/Load enablement and labels come from the pure `canSave`/`canLoad`
+  (file export/import is always enabled; a cloud provider gates **Save on local
+  `dirty`ness alone** — decoupled from the remote probe, since `save` re-checks the
+  remote and routes a conflict at click time — and **Load on `status`**).
+  Save/load progress and failures surface as **toasts** — `useStorage` calls
+  [`sonner`](https://sonner.emilkowal.ski)'s `toast` directly (a `toast.loading`
+  updated in place to `toast.success`/`toast.error`), rendered by the single
+  top-left `<Toaster/>` mounted once in `App`; the hook exposes no activity/error state.
   `modals/StorageSettingsModal` picks the provider (unimplemented ones disabled as
-  "coming soon"); choosing Nextcloud replaces the modal body with its setup view
-  (a Back button returns to the provider list), and selecting Nextcloud active
-  happens only on a successful connect, not on merely opening its setup.
-  `modals/NextcloudConnectForm` collects the instance URL, username, app password (with
-  the exact Settings → Security path and a never-your-account-password warning), and
+  "coming soon"); choosing a cloud provider (Nextcloud or OneDrive) replaces the modal
+  body with that provider's setup view (a Back button returns to the provider list), and
+  the provider becomes active only on a successful connect, not on merely opening its
+  setup. `modals/NextcloudConnectForm` collects the instance URL, username, app password
+  (with the exact Settings → Security path and a never-your-account-password warning), and
   file path, discloses that data passes through the relay, and shows the connected
-  target with a Disconnect button. `modals/ConflictModal` (shared `Modal`) offers keep
+  target with a Disconnect button. `modals/OneDriveConnectForm` has no form fields (auth
+  is an interactive Microsoft popup): a disclosure (Microsoft sign-in, token stored in
+  this browser only, access limited to the app's own OneDrive folder) + a Connect button
+  calling `onConnect`, or the connected state with a Disconnect button.
+  `modals/ConflictModal` (shared `Modal`) offers keep
   this device / take the other on a divergent load or a save-time conflict.
 
 ### Storage api service (`server/`)
@@ -360,7 +411,17 @@ a public relay with no allowlist is an open proxy), a set one is enforced (exact
 case-insensitive hostname match) and https is required; in development an unset
 allowlist allows any target (so a local/http Nextcloud works). No DNS/IP machinery —
 a pure hostname string match. Both are colocated-tested (`ssrf.test.ts`,
-`nextcloud.test.ts`, run by the app's root Vitest). Run the three-container dev stack
+`nextcloud.test.ts`, run by the app's root Vitest). **Phase 4** adds the
+confidential-client OAuth relay: `oauth.ts` (a `Hono` sub-app mounted at `/api/oauth`),
+generic over provider — `configFor(provider)` resolves the fixed token endpoint and
+`clientId`/`clientSecret`/`redirectUri` from env vars (`microsoft` now via `MS_*`,
+`google` ready for phase 5; unknown → 404). `POST /:provider/exchange`
+(`{code, codeVerifier}`) and `POST /:provider/refresh` (`{refreshToken}`) forward a
+form-encoded grant to the token endpoint and return only `{access_token, refresh_token,
+expires_in}`, 400 on a missing field or an upstream failure — the client secret never
+reaches the browser. No SSRF guard (the token endpoints are fixed constants).
+`env.ts`'s `env(name, fallback?)` is the required-env accessor (throws when unset).
+Both are colocated-tested (`oauth.test.ts`, `env.test.ts`). Run the three-container dev stack
 with `docker compose up`: the
 `proxy` (nginx, `nginx.dev.conf`) serves the app at `http://localhost:8080`,
 forwarding `/` to the Vite dev server (`web`) and `/api/*` to this service
@@ -436,7 +497,9 @@ browser History API so Back/Forward step between visited binders and pages):
 location and pushes a history entry, and `useNavigationHistory()` — called once in
 `AppContent` — seeds and applies Back/Forward via `popstate`. `useStorage()` owns
 the storage orchestration (see the Storage feature above) and exports
-`StorageRemountContext`. (The whole-library persistence pure helpers live under
+`StorageRemountContext`; `useCloudConnection(ports, actions)` owns the connect/
+disconnect/mount-hydrate lifecycle shared by every cloud provider (also with the Storage
+feature). (The whole-library persistence pure helpers live under
 `src/lib/storage/`, `src/lib/snapshot.ts`, and `src/migrations/`, also documented
 with the Storage feature.)
 
@@ -497,7 +560,7 @@ CSS literals: the components set them as inline custom properties computed by
 ### Naming: no unapproved abbreviations
 
 Every name you introduce must be spelled out in full — function parameters,
-lambda/callback parameters, local variables (`let`/`const`), type/interface
+lambda/callback.html parameters, local variables (`let`/`const`), type/interface
 properties, and the names of components, types, classes, interfaces, functions,
 files, and directories alike. **Abbreviating or using a shorthand always requires
 the user's approval first**, and they will usually prefer the full word (`factory`

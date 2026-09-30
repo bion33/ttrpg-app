@@ -3,8 +3,10 @@ import {ArrowLeft} from 'lucide-react'
 import Modal from '../../../ui/Modal/Modal'
 import type {ProviderId} from '../../../../lib/storage/StorageProvider.ts'
 import type {NextcloudConnection} from '../../../../lib/storage/nextcloudProvider.ts'
+import type {OneDriveConnection} from '../../../../lib/storage/onedriveProvider.ts'
 import {isProviderAvailable} from '../../../../lib/storage/providers.ts'
 import NextcloudConnectForm from './NextcloudConnectForm.tsx'
+import OneDriveConnectForm from './OneDriveConnectForm.tsx'
 import './StorageSettingsModal.css'
 
 /** The providers offered in settings, in display order; availability is read from the registry. */
@@ -25,38 +27,55 @@ interface StorageSettingsModalProps {
     nextcloudConnection: NextcloudConnection | null
     onConnectNextcloud: (connection: NextcloudConnection) => Promise<void>
     onDisconnectNextcloud: () => Promise<void>
+    oneDriveConnection: OneDriveConnection | null
+    onConnectOneDrive: () => Promise<void>
+    onDisconnectOneDrive: () => Promise<void>
 }
 
+// The providers that open their own setup view instead of being selected inline from the list.
+const SETUP_TITLES: Record<'nextcloud' | 'onedrive', string> = {nextcloud: 'Nextcloud', onedrive: 'OneDrive'}
+
 /**
- * Modal for choosing the storage provider: shows the provider list, or — once Nextcloud is chosen — replaces the body
- * with its setup form, with a Back button returning to the list.
+ * Modal for choosing the storage provider: shows the provider list, or — once a cloud provider is chosen — replaces the
+ * body with its setup form, with a Back button returning to the list.
  */
 function StorageSettingsModal({
     provider, onSelect, onClose, nextcloudConnection, onConnectNextcloud, onDisconnectNextcloud,
+    oneDriveConnection, onConnectOneDrive, onDisconnectOneDrive,
 }: StorageSettingsModalProps) {
-    const [setupProvider, setSetupProvider] = useState<'nextcloud' | null>(null)
+    const [setupProvider, setSetupProvider] = useState<'nextcloud' | 'onedrive' | null>(null)
 
-    // Nextcloud opens its own setup view; every other provider is selected inline from the list.
+    // A cloud provider opens its own setup view; every other provider is selected inline from the list.
     const chooseProvider = (id: ProviderId) => {
-        if (id === 'nextcloud') {
-            setSetupProvider('nextcloud')
+        if (id === 'nextcloud' || id === 'onedrive') {
+            setSetupProvider(id)
             return
         }
         onSelect(id)
     }
 
-    if (setupProvider === 'nextcloud') {
+    if (setupProvider) {
         return (
-            <Modal title="Nextcloud" onClose={onClose}>
+            <Modal title={SETUP_TITLES[setupProvider]} onClose={onClose}>
                 <div className="modal__body">
                     <button type="button" className="storage-settings__back" onClick={() => setSetupProvider(null)}>
                         <ArrowLeft size={16}/> Providers
                     </button>
-                    <NextcloudConnectForm
-                        connection={nextcloudConnection}
-                        onConnect={onConnectNextcloud}
-                        onDisconnect={onDisconnectNextcloud}
-                    />
+                    {setupProvider === 'nextcloud' ? (
+                        <NextcloudConnectForm
+                            connection={nextcloudConnection}
+                            onConnect={onConnectNextcloud}
+                            onDisconnect={onDisconnectNextcloud}
+                            onClose={onClose}
+                        />
+                    ) : (
+                        <OneDriveConnectForm
+                            connection={oneDriveConnection}
+                            onConnect={onConnectOneDrive}
+                            onDisconnect={onDisconnectOneDrive}
+                            onClose={onClose}
+                        />
+                    )}
                 </div>
             </Modal>
         )

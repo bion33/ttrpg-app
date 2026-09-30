@@ -228,7 +228,7 @@ migrations keep their own tests.
   user's instance, passing URL + app password per request, streaming the reply.
 - **Picker:** no native picker — a small folder browser using `PROPFIND`, or just
   let the user type/confirm a path. `locator` = WebDAV path (e.g.
-  `/remote.php/dav/files/<user>/dnd/library.json`).
+  `/remote.php/dav/files/<user>/ttrpg-app.json`).
 - **save/load:** `PUT` / `GET` file contents through the relay (browser sends the
   target URL + `Authorization: Basic` header per request).
 - **Function:** `/api/nextcloud` — thin authenticated relay. **Must** validate the
@@ -527,7 +527,7 @@ console.log(`storage-api listening on :${port}`)
 
 ```json
 {
-  "name": "dnd-storage-api",
+  "name": "ttrpg-app-storage-api",
   "private": true,
   "type": "module",
   "scripts": {
@@ -550,12 +550,12 @@ APP_ORIGIN=http://localhost:8080
 
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
-GOOGLE_REDIRECT_URI=http://localhost:8080/oauth/google/callback
+GOOGLE_REDIRECT_URI=http://localhost:8080/oauth/google/callback.html
 
 MS_TENANT=common
 MS_CLIENT_ID=
 MS_CLIENT_SECRET=
-MS_REDIRECT_URI=http://localhost:8080/oauth/microsoft/callback
+MS_REDIRECT_URI=http://localhost:8080/oauth/microsoft/callback.html
 ```
 
 ## Deployment — local development
@@ -713,7 +713,7 @@ choices, HMR, source mounts — is dev-only and replaced by their own infra):
 
 ## Data format
 
-- **One whole-library document** (`library.json`). Save/load and import/export are
+- **One whole-library document** (`ttrpg-app.json`). Save/load and import/export are
   **always the full library snapshot** — no per-binder granularity. Simplest, and
   matches "Save saves everything".
 
@@ -747,11 +747,21 @@ choices, HMR, source mounts — is dev-only and replaced by their own infra):
    the `nextcloud` provider, the pure `syncActions` target/enablement decisions, the
    `NextcloudConnectForm`, and `useStorage` remote probing. Detailed plan:
    [STORAGE_PLAN_PHASE3.md](./STORAGE_PLAN_PHASE3.md).
-4. **OneDrive** (auth-code/PKCE + exchange/refresh functions + Graph adapter + File Picker).
+4. **OneDrive** (auth-code/PKCE + exchange/refresh functions + Graph adapter).
+   **Shipped** — the generic `/api/oauth/:provider/{exchange,refresh}` confidential-client
+   relay, the `onedrive` provider against Graph's app folder (`Files.ReadWrite.AppFolder`,
+   fixed `ttrpg-app.json`), pure `pkce`/`authorizeUrl` helpers, the popup OAuth flow
+   (`oauthClient` + static `callback.html`), the shared `useCloudConnection` lifecycle
+   (Nextcloud refitted onto it), and the `OneDriveConnectForm`. Detailed plan:
+   [STORAGE_PLAN_PHASE4.md](./STORAGE_PLAN_PHASE4.md).
 5. **Google Drive** (GIS + exchange/refresh functions + Drive adapter + Picker).
-6. **Autosave** (debounced) across the cloud providers, and **consider autoload**
-   of a clean `remoteAhead` remote to pre-empt most conflicts (see the Autoload note
-   under [UI / UX](#ui--ux)).
+6. **Autosave** (debounced) across the cloud providers, autoload of a clean `remoteAhead` 
+   remote to pre-empt most conflicts (see the Autoload note under [UI / UX](#ui--ux)),
+   and automatically show storage settings when unconfigured. Add one "Autosave" toggle
+   (on by default) to the cloud providers dialogue which controls both autosave and autoload.
+   If enabled, toasts should still be shown during loading / saving and upon success / failure.
+   For this feature, we must be absolutely sure that even if the browser is closed, it's still 
+   been saved.
 
 ## Decisions settled during planning
 
@@ -759,3 +769,13 @@ choices, HMR, source mounts — is dev-only and replaced by their own infra):
   [Sync state & conflict detection](#sync-state--conflict-detection--srclibstoragesyncts-pure-unit-tested).
 - **`baseHash`:** a small non-crypto hash over the serialised entries (integrity,
   not security) — any stable one; decided at implementation, not a blocker.
+- **OneDrive locator (phase 4):** Graph's **app folder**
+  (`me/drive/special/approot`, `Files.ReadWrite.AppFolder`) with a fixed
+  `ttrpg-app.json` path — not the File Picker SDK with a Graph item id. Least
+  privilege (no whole-drive access), no SDK/iframe/picker-token channel, and the same
+  fixed-path shape as Nextcloud. Cost: the file lives under `Apps/<app>/`, not the
+  user's normal tree (acceptable for a sync file; the File provider is the escape hatch).
+- **OneDrive auth flow (phase 4):** a **popup** to the Microsoft authorize URL with a
+  static `postMessage` callback page — not a full-page redirect, so the SPA is never torn
+  down. The code→token exchange stays a confidential-client server call (MS caps SPA
+  refresh tokens at 24h). Redirect remains a possible fallback.

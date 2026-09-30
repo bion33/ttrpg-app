@@ -2,11 +2,12 @@ import {useCallback} from 'react'
 import {useEffect} from 'react'
 import {useAtomValue, useStore} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
+import {notifyingStorage} from '../lib/storage/observableStorage.ts'
 import type {Location} from '../lib/navigation.ts'
 import {libraryLocation, sameLocation} from '../lib/navigation.ts'
 
 /** The location currently shown, persisted so a reload reopens the same binder and page. */
-const locationAtom = atomWithStorage<Location>('location', libraryLocation())
+const locationAtom = atomWithStorage<Location>('location', libraryLocation(), notifyingStorage<Location>())
 
 /**
  * The location currently shown (which binder is open and which page is active).

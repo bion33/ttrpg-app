@@ -1,5 +1,5 @@
 {
-  "name": "dnd-storage-api",
+  "name": "ttrpg-app-storage-api",
   "private": true,
   "type": "module",
   "packageManager": "yarn@4.18.1",

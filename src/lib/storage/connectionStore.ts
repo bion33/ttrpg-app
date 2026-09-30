@@ -1,6 +1,7 @@
 import {createStore, del, get, set} from 'idb-keyval'
 import type {ProviderId} from './StorageProvider.ts'
 import type {NextcloudConnection} from './nextcloudProvider.ts'
+import type {OneDriveConnection} from './onedriveProvider.ts'
 
 /**
  * Device-local sync state for the active target: the revision the local library descends from and its hash at that
@@ -12,11 +13,12 @@ export interface SyncState {
 }
 
 // A dedicated IndexedDB store so this device-local state never mixes with anything else on the origin.
-const store = createStore('dnd-storage', 'connection')
+const store = createStore('ttrpg-app-storage', 'connection')
 
 const SYNC_STATE_KEY = 'syncState'
 const ACTIVE_PROVIDER_KEY = 'activeProvider'
 const NEXTCLOUD_KEY = 'nextcloudConnection'
+const ONEDRIVE_KEY = 'onedriveConnection'
 
 /** The sync state for the active target, or a never-synced default when none has been stored yet. */
 export async function loadSyncState(): Promise<SyncState> {
@@ -55,4 +57,19 @@ export async function saveNextcloudConnection(connection: NextcloudConnection): 
 /** Clears the stored Nextcloud connection on disconnect. */
 export async function clearNextcloudConnection(): Promise<void> {
     await del(NEXTCLOUD_KEY, store)
+}
+
+/** The stored OneDrive connection (refresh token + label), or null when none is connected. */
+export async function loadOneDriveConnection(): Promise<OneDriveConnection | null> {
+    return (await get<OneDriveConnection>(ONEDRIVE_KEY, store)) ?? null
+}
+
+/** Persists the OneDrive connection after a successful connect, and on each refresh-token rotation. */
+export async function saveOneDriveConnection(connection: OneDriveConnection): Promise<void> {
+    await set(ONEDRIVE_KEY, connection, store)
+}
+
+/** Clears the stored OneDrive connection on disconnect. */
+export async function clearOneDriveConnection(): Promise<void> {
+    await del(ONEDRIVE_KEY, store)
 }

@@ -27,6 +27,11 @@ body {
     gap: 0.75rem;
 }
 
+/* Sonner's success toast: tint just the checkmark icon green, leaving the rest of the toast at its default styling. */
+[data-sonner-toast][data-type='success'] [data-icon] {
+    color: #2e7d32;
+}
+
 /* On-screen chrome hidden when printing, so only the page content prints. */
 @media print {
     .no-print {

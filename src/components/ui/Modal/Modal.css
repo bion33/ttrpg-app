@@ -89,3 +89,9 @@
     border-color: hsl(0 55% 35%);
     color: #fff;
 }
+
+/* Neutral cancel-button styling (default background) but with red text and outline. */
+.modal__btn--danger-outline {
+    border-color: hsl(0 55% 45%);
+    color: hsl(0 55% 40%);
+}

@@ -219,16 +219,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dnd-storage-api@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "dnd-storage-api@workspace:."
-  dependencies:
-    "@hono/node-server": "npm:^1.13.0"
-    hono: "npm:^4.6.0"
-    tsx: "npm:^4.19.0"
-  languageName: unknown
-  linkType: soft
-
 "env-paths@npm:^2.2.0":
   version: 2.2.1
   resolution: "env-paths@npm:2.2.1"
@@ -491,6 +481,16 @@ __metadata:
   checksum: 10c0/3c5fc53e578da87d3a63565286b1ecbb0e01b9bb646daec1957294ef890d14f22cc67bb4b09b5daffab0e7ce0217b1e7645393feb0f524b1ddf26ae9595d7e75
   languageName: node
   linkType: hard
+
+"ttrpg-app-storage-api@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "ttrpg-app-storage-api@workspace:."
+  dependencies:
+    "@hono/node-server": "npm:^1.13.0"
+    hono: "npm:^4.6.0"
+    tsx: "npm:^4.19.0"
+  languageName: unknown
+  linkType: soft
 
 "undici@npm:^8.4.1":
   version: 8.11.2

@@ -1,16 +1,8 @@
 import {useCallback, useState} from 'react'
 import {Provider, createStore} from 'jotai'
-import Library from './components/features/Library/Library.tsx'
-import {useNavigationHistory} from './hooks/useNavigation.ts'
+import {Toaster} from 'sonner'
+import AppContent from './AppContent.tsx'
 import {StorageRemountContext} from './hooks/useStorage.ts'
-
-/**
- * The app's contents inside the jotai store: wires location to browser history and renders the library of binders.
- */
-function AppContent() {
-    useNavigationHistory()
-    return <Library/>
-}
 
 /**
  * Application root; holds the jotai store so a storage load can swap it (making `atomWithStorage` atoms re-read the
@@ -24,6 +16,7 @@ function App() {
             <Provider store={store}>
                 <AppContent/>
             </Provider>
+            <Toaster position="top-left" offset={{top: '1.5rem', left: '5.5rem'}}/>
         </StorageRemountContext.Provider>
     )
 }

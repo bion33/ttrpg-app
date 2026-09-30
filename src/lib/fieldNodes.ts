@@ -1,6 +1,7 @@
 import type {Atom, Getter} from 'jotai'
 import {atom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
+import {notifyingStorage} from './storage/observableStorage.ts'
 import type {FieldDefinition} from '../types/FieldDefinition.ts'
 import type {DerivedNode, FieldNode, FieldValue, InputNode, NodeTree} from '../types/FieldNode.ts'
 import type {CheckFieldDefinition} from "../types/CheckFieldDefinition.ts";
@@ -43,7 +44,7 @@ export function createFieldFactory(storagePrefix: string) {
         type Value = ValueForType<Definition['type']>
         return {
             definition,
-            atom: atomWithStorage<Value>(storageKey(definition.id), initialValue(definition) as Value, undefined, {getOnInit: true}),
+            atom: atomWithStorage<Value>(storageKey(definition.id), initialValue(definition) as Value, notifyingStorage<Value>(), {getOnInit: true}),
         }
     }
 
@@ -62,7 +63,7 @@ export function createFieldFactory(storagePrefix: string) {
         enabled: Atom<boolean>,
         compute: (get: Getter) => T,
     ): InputNode<T> {
-        const stored = atomWithStorage<T>(storageKey(definition.id), initialValue(definition) as T, undefined, {getOnInit: true})
+        const stored = atomWithStorage<T>(storageKey(definition.id), initialValue(definition) as T, notifyingStorage<T>(), {getOnInit: true})
         const value = atom(
             (get) => (get(enabled) ? compute(get) : get(stored)),
             (get, set, next: T) => {
