@@ -2,7 +2,7 @@ import type {LibrarySnapshot} from '../snapshot.ts'
 import type {StorageProvider, StorageTarget} from './StorageProvider.ts'
 
 // The default filename offered when saving, and the accept filter when opening.
-const DEFAULT_FILENAME = 'library.json'
+const DEFAULT_FILENAME = 'ttrpg-app.json'
 
 /**
  * Serialises a snapshot to the JSON text written to an exported file (pretty-printed for a human-readable file).
