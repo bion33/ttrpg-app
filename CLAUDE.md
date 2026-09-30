@@ -296,30 +296,72 @@ providers land in later phases behind the same seams.
   `connect`/`isConnected`/`save`/`load`/`readRevision`). `fileProvider.ts` — the
   `file` provider: pure `serialiseSnapshot`/`parseSnapshot` (validated, tested) plus
   thin File System Access API / anchor-download / hidden-input glue; `readRevision`
-  returns `null` (a file can't be probed). `providers.ts` — the provider registry
-  (`getProvider`/`isProviderAvailable`), the single seam later phases extend.
-  `connectionStore.ts` — device-local `SyncState` (`baseRevision`/`baseHash`) and the
-  active provider id in **IndexedDB** (via **`idb-keyval`**), kept out of the snapshot.
-- **`useStorage()` hook.** Orchestration for the controls: derives `dirty`
+  returns `null` (a file can't be probed). `nextcloudProvider.ts` — the `nextcloud`
+  provider (phase 3): pure `webdavUrl`/`webdavParentUrls` URL builders plus
+  save/load/readRevision/connect that relay one WebDAV request each through the
+  same-origin `/api/nextcloud` (Basic auth built client-side); `connect` PROPFINDs the
+  base then recursively `MKCOL`s the target's parent folders, `readRevision` GETs and
+  returns the in-file `revision` (a file is sheet-sized, so a full fetch is fine). It
+  holds the active `NextcloudConnection` in a module variable set via `adoptConnection`;
+  persistence is the caller's (see `connectionStore`). `providers.ts` — the provider
+  registry (`getProvider`/`isProviderAvailable`) now registers `{file, nextcloud}`, so
+  Nextcloud stops showing as "coming soon". `syncActions.ts` — the **pure**
+  provider-dependent decisions (`isProbeable`, `resolveTarget`, `chooseRemoteRevision`,
+  `canSave`/`canLoad`, `saveIntent`), unit-tested over every `(status, probeable)`
+  combination so the hook and the controls can never disagree about enablement or the
+  save guard. `connectionStore.ts` — device-local `SyncState` (`baseRevision`/`baseHash`),
+  the active provider id, and (phase 3) the `NextcloudConnection`
+  (`load`/`save`/`clearNextcloudConnection`) in **IndexedDB** (via **`idb-keyval`**),
+  kept out of the snapshot.
+- **`useStorage()` hook.** Orchestration for the controls: resolves the active target
+  per provider via `resolveTarget`, derives `dirty`
   (`baseHash === null ? libraryHasData() : snapshotHash(current) !== baseHash`) and
-  `status`, and drives `save` (mint revision → `provider.save` → persist `SyncState`),
-  `load` (`provider.load` → `evaluateSync` → apply, or raise the conflict flow on
-  `diverged`/`localAhead`), and `resolveConflict`. After applying a load it calls the
-  `StorageRemountContext` `remount()` so atoms re-read storage. Exports that context.
+  `status`, and drives `save` (mint revision → `provider.save` → persist `SyncState`;
+  a probeable remote that is ahead/diverged routes through the conflict flow via
+  `saveIntent`), `load` (`provider.load` → `evaluateSync` → apply, or raise the conflict
+  flow on `diverged`/`localAhead`), and `resolveConflict`. For a **probeable** provider
+  (every one but `file`) it probes the remote revision through `readRevision` — on
+  mount, on `window` focus, and after each save/load — feeding the real value (not the
+  base) into `evaluateSync`, with a request-token stale guard so an out-of-order probe
+  never regresses the revision; `file` keeps the base as its stand-in remote. Switching
+  provider or (dis)connecting Nextcloud resets the sync base (a base from another target
+  is meaningless). Exposes `connectNextcloud`/`disconnectNextcloud` and the active
+  `nextcloudConnection`. After applying a load it calls the `StorageRemountContext`
+  `remount()` so atoms re-read storage. Exports that context.
 - **UI (`features/Storage/`).** `StorageControls` — a `corner-cluster` of
   `IconButton`s (Settings, Load, Save) with a `placement` prop (`binder` → top-left
   under "Back to library"; `library` → top-left), mounted by `Binder` and
-  `Library`. `modals/StorageSettingsModal` picks the provider (cloud ones shown
-  disabled as "coming soon"); `modals/ConflictModal` (shared `Modal`) offers keep
-  this device / take the other on a divergent load.
+  `Library`; Save/Load enablement and labels come from the pure `canSave`/`canLoad`
+  (file export/import is always enabled; a cloud provider gates on `status`).
+  `modals/StorageSettingsModal` picks the provider (unimplemented ones disabled as
+  "coming soon"); choosing Nextcloud replaces the modal body with its setup view
+  (a Back button returns to the provider list), and selecting Nextcloud active
+  happens only on a successful connect, not on merely opening its setup.
+  `modals/NextcloudConnectForm` collects the instance URL, username, app password (with
+  the exact Settings → Security path and a never-your-account-password warning), and
+  file path, discloses that data passes through the relay, and shows the connected
+  target with a Disconnect button. `modals/ConflictModal` (shared `Modal`) offers keep
+  this device / take the other on a divergent load or a save-time conflict.
 
 ### Storage api service (`server/`)
 
 A standalone Node/Hono api project (its own Yarn 4 install and `yarn.lock`,
 **not** part of the app's install — different runtime and deps: Hono + tsx),
 exposing the same-origin `/api/*` backend later storage phases extend with
-relay/OAuth routes. Phase 2 ships only a CORS lock and `GET /api/health`
-(returns `ok`). Run the three-container dev stack with `docker compose up`: the
+relay/OAuth routes. Phase 2 shipped a CORS lock and `GET /api/health`
+(returns `ok`); **phase 3** adds the Nextcloud WebDAV relay: `nextcloud.ts` (a
+`Hono` sub-app mounted at `/api/nextcloud`) forwards one WebDAV request per call —
+reading `x-nc-url`, `x-nc-method`, `authorization`, `depth` — rejecting a missing
+target/credential (400) or a method outside `{GET, PUT, PROPFIND, MKCOL, DELETE,
+MOVE}` (405), and refusing to follow a 3xx (502). `ssrf.ts`'s `assertAllowedTarget`
+is the SSRF control: a **fail-closed hostname allowlist** (`NEXTCLOUD_ALLOWED_HOSTS`,
+comma-separated) — in production an unset allowlist refuses every forward (503, since
+a public relay with no allowlist is an open proxy), a set one is enforced (exact,
+case-insensitive hostname match) and https is required; in development an unset
+allowlist allows any target (so a local/http Nextcloud works). No DNS/IP machinery —
+a pure hostname string match. Both are colocated-tested (`ssrf.test.ts`,
+`nextcloud.test.ts`, run by the app's root Vitest). Run the three-container dev stack
+with `docker compose up`: the
 `proxy` (nginx, `nginx.dev.conf`) serves the app at `http://localhost:8080`,
 forwarding `/` to the Vite dev server (`web`) and `/api/*` to this service
 (`api`). `vite.config.ts` gates `hmr.clientPort` on `DOCKER=true` so HMR works

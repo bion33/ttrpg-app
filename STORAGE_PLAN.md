@@ -696,6 +696,15 @@ choices, HMR, source mounts — is dev-only and replaced by their own infra):
   connected — but only when `evaluateSync` is `localAhead`/`noRemote`; a `diverged`
   result suppresses autosave and surfaces the conflict modal instead (built in phase
   6 — see [Phased delivery](#phased-delivery)).
+- **Autoload (consider in phase 6):** since `readRevision` already tells us
+  `remoteAhead` cheaply (a clean local state whose remote moved on), auto-apply that
+  load on connect / focus / interval so a device silently catches up to the newest
+  remote before the user edits — this pre-empts most `diverged` conflicts (they arise
+  when local edits pile up on a stale base). Only `remoteAhead` (clean) auto-loads;
+  a `diverged` result must still stop and immediately surface the conflict dialogue,
+  never silently discard local edits. Gate it on the same probe the status already
+  runs, and treat it as best-effort (offline / probe failure just leaves the manual
+  Load button).
 - **Load behaviour:** loading applies the fetched snapshot. After `applySnapshot`,
   remount the affected React tree (e.g. bump a top-level `key`) so atoms re-read from
   the updated `localStorage` — `atomWithStorage` won't otherwise notice a bulk
@@ -733,10 +742,16 @@ choices, HMR, source mounts — is dev-only and replaced by their own infra):
    phases have somewhere to add functions. **Shipped** — `docker compose up`
    serves the app at `http://localhost:8080` with same-origin `/api/health`; see
    [STORAGE_PLAN_PHASE2.md](./STORAGE_PLAN_PHASE2.md).
-3. **Nextcloud** (relay function + WebDAV adapter).
+3. **Nextcloud** (relay function + WebDAV adapter). **Shipped** — the
+   `/api/nextcloud` WebDAV relay (fail-closed `NEXTCLOUD_ALLOWED_HOSTS` allowlist),
+   the `nextcloud` provider, the pure `syncActions` target/enablement decisions, the
+   `NextcloudConnectForm`, and `useStorage` remote probing. Detailed plan:
+   [STORAGE_PLAN_PHASE3.md](./STORAGE_PLAN_PHASE3.md).
 4. **OneDrive** (auth-code/PKCE + exchange/refresh functions + Graph adapter + File Picker).
 5. **Google Drive** (GIS + exchange/refresh functions + Drive adapter + Picker).
-6. **Autosave** (debounced) across the cloud providers.
+6. **Autosave** (debounced) across the cloud providers, and **consider autoload**
+   of a clean `remoteAhead` remote to pre-empt most conflicts (see the Autoload note
+   under [UI / UX](#ui--ux)).
 
 ## Decisions settled during planning
 

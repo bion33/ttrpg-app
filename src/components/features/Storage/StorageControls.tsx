@@ -2,6 +2,7 @@ import {useState} from 'react'
 import {FolderOpen, Save, Settings} from 'lucide-react'
 import IconButton from '../../ui/IconButton/IconButton'
 import {useStorage} from '../../../hooks/useStorage.ts'
+import {canLoad, canSave, isProbeable} from '../../../lib/storage/syncActions.ts'
 import StorageSettingsModal from './modals/StorageSettingsModal.tsx'
 import ConflictModal from './modals/ConflictModal.tsx'
 import './StorageControls.css'
@@ -24,14 +25,23 @@ function StorageControls({placement}: StorageControlsProps) {
     // Both placements sit against the left edge, so their hover labels open rightward.
     const labelSide = 'right'
 
+    const probeable = isProbeable(storage.provider)
+    // A cloud provider with no connection has no target, so both controls are inert until it is connected.
+    const ready = storage.provider === 'file' || storage.nextcloudConnection !== null
+    // File save/load is export/import (always valid); a cloud provider gates enablement on the sync status.
+    const saveEnabled = ready && canSave(storage.status, probeable)
+    const loadEnabled = ready && canLoad(storage.status, probeable)
+    const saveLabel = storage.provider === 'file' ? 'Save to file' : 'Save'
+    const loadLabel = storage.provider === 'file' ? 'Load from file' : 'Load'
+
     return (
         <>
             <div className={`storage-controls storage-controls--${placement} corner-cluster no-print`}>
                 <IconButton icon={<Settings/>} label="Storage settings" labelSide={labelSide}
                             onClick={() => setSettingsOpen(true)}/>
-                <IconButton icon={<FolderOpen/>} label="Load from file" labelSide={labelSide}
+                <IconButton icon={<FolderOpen/>} label={loadLabel} labelSide={labelSide} disabled={!loadEnabled}
                             onClick={() => void storage.load()}/>
-                <IconButton icon={<Save/>} label="Save to file" labelSide={labelSide}
+                <IconButton icon={<Save/>} label={saveLabel} labelSide={labelSide} disabled={!saveEnabled}
                             onClick={() => void storage.save()}/>
             </div>
 
@@ -45,7 +55,10 @@ function StorageControls({placement}: StorageControlsProps) {
 
             {settingsOpen && (
                 <StorageSettingsModal provider={storage.provider} onSelect={storage.setProvider}
-                                      onClose={() => setSettingsOpen(false)}/>
+                                      onClose={() => setSettingsOpen(false)}
+                                      nextcloudConnection={storage.nextcloudConnection}
+                                      onConnectNextcloud={storage.connectNextcloud}
+                                      onDisconnectNextcloud={storage.disconnectNextcloud}/>
             )}
             {storage.conflict && (
                 <ConflictModal

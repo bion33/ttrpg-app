@@ -1,6 +1,10 @@
+import {useState} from 'react'
+import {ArrowLeft} from 'lucide-react'
 import Modal from '../../../ui/Modal/Modal'
 import type {ProviderId} from '../../../../lib/storage/StorageProvider.ts'
+import type {NextcloudConnection} from '../../../../lib/storage/nextcloudProvider.ts'
 import {isProviderAvailable} from '../../../../lib/storage/providers.ts'
+import NextcloudConnectForm from './NextcloudConnectForm.tsx'
 import './StorageSettingsModal.css'
 
 /** The providers offered in settings, in display order; availability is read from the registry. */
@@ -18,13 +22,46 @@ interface StorageSettingsModalProps {
     provider: ProviderId
     onSelect: (id: ProviderId) => void
     onClose: () => void
+    nextcloudConnection: NextcloudConnection | null
+    onConnectNextcloud: (connection: NextcloudConnection) => Promise<void>
+    onDisconnectNextcloud: () => Promise<void>
 }
 
 /**
- * Modal for choosing the storage provider: lists every provider, with the unimplemented ones disabled as "coming soon".
- * The seam later phases extend with per-provider connect forms and their security disclosures.
+ * Modal for choosing the storage provider: shows the provider list, or — once Nextcloud is chosen — replaces the body
+ * with its setup form, with a Back button returning to the list.
  */
-function StorageSettingsModal({provider, onSelect, onClose}: StorageSettingsModalProps) {
+function StorageSettingsModal({
+    provider, onSelect, onClose, nextcloudConnection, onConnectNextcloud, onDisconnectNextcloud,
+}: StorageSettingsModalProps) {
+    const [setupProvider, setSetupProvider] = useState<'nextcloud' | null>(null)
+
+    // Nextcloud opens its own setup view; every other provider is selected inline from the list.
+    const chooseProvider = (id: ProviderId) => {
+        if (id === 'nextcloud') {
+            setSetupProvider('nextcloud')
+            return
+        }
+        onSelect(id)
+    }
+
+    if (setupProvider === 'nextcloud') {
+        return (
+            <Modal title="Nextcloud" onClose={onClose}>
+                <div className="modal__body">
+                    <button type="button" className="storage-settings__back" onClick={() => setSetupProvider(null)}>
+                        <ArrowLeft size={16}/> Providers
+                    </button>
+                    <NextcloudConnectForm
+                        connection={nextcloudConnection}
+                        onConnect={onConnectNextcloud}
+                        onDisconnect={onDisconnectNextcloud}
+                    />
+                </div>
+            </Modal>
+        )
+    }
+
     return (
         <Modal title="Storage settings" onClose={onClose}>
             <div className="modal__body">
@@ -40,7 +77,7 @@ function StorageSettingsModal({provider, onSelect, onClose}: StorageSettingsModa
                                         provider === option.id ? ' storage-settings__option--selected' : ''
                                     }`}
                                     disabled={!available}
-                                    onClick={() => onSelect(option.id)}
+                                    onClick={() => chooseProvider(option.id)}
                                 >
                                     <span className="storage-settings__label">
                                         {option.label}
