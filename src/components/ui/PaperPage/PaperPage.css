@@ -3,6 +3,9 @@
     width: 100%;
     aspect-ratio: 210 / 297;
     box-sizing: border-box;
+    /* Stack content top-down and let a child (e.g. the editor) grow to fill the sheet. */
+    display: flex;
+    flex-direction: column;
     /* Word-document margins: generous, with text flowing from the top-left rather than centred. */
     padding: 4rem 4.5rem;
     background: #fff;

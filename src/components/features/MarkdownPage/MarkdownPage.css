@@ -1,0 +1,456 @@
+/* The editor fills the paper page; it is the positioning context for the floating block handle. */
+.markdown-page__editor {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    font-family: var(--font-serif);
+    color: var(--color-text);
+}
+
+/* The content wrapper and its ProseMirror surface grow to fill the sheet, so hovering/clicking the empty
+   space below the last line still lands on the editable area (targets the last block). */
+.markdown-page__content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* The editable surface: no focus outline; fills the remaining page height. */
+.markdown-page__content .ProseMirror {
+    outline: none;
+    flex: 1;
+    line-height: 1.6;
+}
+
+.markdown-page__content .ProseMirror > * + * {
+    margin-top: 0.75rem;
+}
+
+.markdown-page__content h1 {
+    font-size: 1.75rem;
+    margin: 1.5rem 0 0.5rem;
+}
+
+.markdown-page__content h2 {
+    font-size: 1.4rem;
+    margin: 1.25rem 0 0.5rem;
+}
+
+.markdown-page__content h3 {
+    font-size: 1.15rem;
+    margin: 1rem 0 0.5rem;
+}
+
+.markdown-page__content blockquote {
+    margin: 0;
+    padding-left: 1rem;
+    border-left: 3px solid var(--color-border);
+    color: #555;
+}
+
+.markdown-page__content ul,
+.markdown-page__content ol {
+    padding-left: 1.5rem;
+}
+
+/* Task list: no bullets, checkbox aligned with its label. */
+.markdown-page__content ul[data-type='taskList'] {
+    list-style: none;
+    padding-left: 0.25rem;
+}
+
+.markdown-page__content ul[data-type='taskList'] li {
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+}
+
+.markdown-page__content ul[data-type='taskList'] li > label {
+    margin-top: 0.15rem;
+}
+
+/* Tables: bordered cells with a tinted header row. */
+.markdown-page__content table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.markdown-page__content th,
+.markdown-page__content td {
+    border: 1px solid var(--color-border);
+    padding: 0.35rem 0.6rem;
+    text-align: left;
+    vertical-align: middle;
+}
+
+/* Cell content is a paragraph nested in the cell node view; drop its default block margins so the row height is text
+   height plus the cell padding. */
+.markdown-page__content th p,
+.markdown-page__content td p {
+    margin: 0;
+}
+
+.markdown-page__content th {
+    background: var(--color-paper);
+    font-weight: 600;
+}
+
+.markdown-page__content img {
+    max-width: 100%;
+    height: auto;
+}
+
+.markdown-page__content hr {
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 1.5rem 0;
+}
+
+/* Callouts: a tinted, left-accented block per kind. */
+.markdown-page__content .callout {
+    --callout-accent: #3b82f6;
+    --callout-tint: #eff6ff;
+    padding: 0.75rem 1rem;
+    border-left: 4px solid var(--callout-accent);
+    border-radius: 0.25rem;
+    background: var(--callout-tint);
+}
+
+.markdown-page__content .callout[data-callout='success'] {
+    --callout-accent: #16a34a;
+    --callout-tint: #f0fdf4;
+}
+
+.markdown-page__content .callout[data-callout='warning'] {
+    --callout-accent: #d97706;
+    --callout-tint: #fffbeb;
+}
+
+.markdown-page__content .callout[data-callout='danger'] {
+    --callout-accent: #dc2626;
+    --callout-tint: #fef2f2;
+}
+
+/* ---- Toolbar ---- */
+
+/* Floats over the page at the bottom of the viewport. It is portalled to the body (see MarkdownEditor), escaping the
+   .binder-view zoom transform, which would otherwise reparent a fixed/sticky toolbar to that scrolling element; so
+   it is centred over the page with a plain viewport-fixed position and stays put as the page scrolls beneath it. */
+.markdown-toolbar {
+    position: fixed;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--z-controls);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    max-width: calc(100vw - 2rem);
+    gap: 0.25rem;
+    padding: 0.35rem;
+    background: var(--color-paper);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.markdown-toolbar__btn {
+    min-width: 1.9rem;
+    height: 1.9rem;
+    padding: 0 0.4rem;
+    border: 1px solid transparent;
+    border-radius: 0.35rem;
+    background: transparent;
+    color: var(--color-ink);
+    font-family: var(--font-serif);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.markdown-toolbar__btn:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.markdown-toolbar__btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.markdown-toolbar__btn.is-active {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: var(--color-border);
+}
+
+/* The undo/redo arrow glyphs read small at the base button size; enlarge them. */
+.markdown-toolbar__btn--history {
+    font-size: 1.3rem;
+}
+
+/* Icon marks (bold/italic/underline/strikethrough): centre the lucide glyph in the square button. */
+.markdown-toolbar__btn--icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.markdown-toolbar__sep {
+    width: 1px;
+    align-self: stretch;
+    margin: 0.15rem 0.2rem;
+    background: var(--color-border);
+}
+
+/* ---- Toolbar dropdowns (Radix DropdownMenu; the menu is positioned by Radix and portalled to the body) ---- */
+
+/* The dropdown triggers carry the shared parchment button look (matching the modal buttons), not the bare
+   transparent toolbar-button style, so they read as buttons rather than plain text. */
+.markdown-toolbar__btn--menu {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: #efe8d5;
+    border-color: var(--color-border);
+}
+
+.markdown-toolbar__btn--menu:hover:not(:disabled) {
+    background: #e6dcc2;
+}
+
+/* Active marker mirrors the inline marks (light shift + outline, ink text), not a dark fill, so a highlighted
+   dropdown never turns light-on-white on hover. */
+.markdown-toolbar__btn--menu.is-active {
+    background: #e6dcc2;
+    border-color: var(--color-border);
+}
+
+.markdown-toolbar__menu {
+    z-index: var(--z-controls);
+    min-width: 10rem;
+    padding: 0.25rem;
+    background: #fdfaf3;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.markdown-toolbar__menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.35rem;
+    color: var(--color-ink);
+    font-family: var(--font-serif);
+    font-size: 0.9rem;
+    cursor: pointer;
+    /* Transparent border reserves space so the active outline below never shifts the row. */
+    border: 1px solid transparent;
+    /* Radix items are focusable divs; drop the focus ring in favour of the highlight below. */
+    outline: none;
+}
+
+.markdown-toolbar__menu-item[data-highlighted] {
+    background: #efe8d5;
+}
+
+/* Same light shift + outline as the inline marks, so the selected item reads as active without a dark fill. */
+.markdown-toolbar__menu-item.is-active {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: var(--color-border);
+    font-weight: 600;
+}
+
+/* ---- Block handle ---- */
+
+.block-handle {
+    /* Positioned by the drag-handle extension via floating-ui; kept clear of the text column. */
+    display: flex;
+}
+
+.block-handle__cluster {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+}
+
+.block-handle__btn,
+.block-handle__grip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.3rem;
+    height: 1.3rem;
+    border: none;
+    border-radius: 0.25rem;
+    background: transparent;
+    color: #999;
+    font-size: 1rem;
+    line-height: 1;
+    cursor: grab;
+}
+
+.block-handle__btn {
+    cursor: pointer;
+}
+
+.block-handle__btn:hover,
+.block-handle__grip:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: var(--color-ink);
+}
+
+.block-handle__menu {
+    position: absolute;
+    top: 1.6rem;
+    left: 0;
+    z-index: var(--z-controls);
+    min-width: 10rem;
+    margin: 0;
+    padding: 0.25rem;
+    list-style: none;
+    background: #fff;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.block-handle__menu button {
+    width: 100%;
+    padding: 0.35rem 0.6rem;
+    border: none;
+    border-radius: 0.35rem;
+    background: transparent;
+    color: var(--color-ink);
+    font-family: var(--font-serif);
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.block-handle__menu button:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+/* A destructive menu item (delete row/column/table), reusing the shared dropdown item styling. */
+.markdown-toolbar__menu-item--danger {
+    color: #dc2626;
+}
+
+/* ---- Table editing node views (Nextcloud-style edge buttons and per-column/row "…" menus) ---- */
+
+/* The table wrapper is the positioning context for the overlaid edge buttons. The buttons overlay rather than reserve
+   horizontal space, so the table itself keeps its full width; only a little bottom room is reserved for the add-row bar. */
+.tiptap-table-wrapper {
+    position: relative;
+    padding-bottom: 1.4rem;
+}
+
+.tiptap-table {
+    width: 100%;
+}
+
+/* The cell node-view wrapper fills its <th>/<td> and anchors that cell's overlaid "…" menus. */
+.tiptap-cell {
+    position: relative;
+}
+
+/* The per-column menu (header cells) sits at the cell's top-right, revealed on cell hover. */
+.tiptap-cell__menu {
+    position: absolute;
+    top: 0.1rem;
+    right: 0.1rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.markdown-page__content th:hover .tiptap-cell__menu,
+.tiptap-cell__menu:focus-within {
+    opacity: 1;
+}
+
+/* The per-row menu lives on the row's last cell, overlaid just past the cell's right edge (clear of the add-column
+   bar) and vertically centred on the row, revealed on row hover. */
+.tiptap-cell__row-menu {
+    position: absolute;
+    top: 50%;
+    right: 0.2rem;
+    transform: translateY(-50%);
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.markdown-page__content tr:hover .tiptap-cell__row-menu,
+.tiptap-cell__row-menu:focus-within {
+    opacity: 1;
+}
+
+/* The right-edge control column (table "…" menu above the add-column button), pushed into the page margin so it never
+   shrinks the table, revealed on table hover. */
+.tiptap-table-controls {
+    position: absolute;
+    top: 0;
+    bottom: 1.4rem;
+    left: 100%;
+    margin-left: 0.3rem;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.3rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.tiptap-table-wrapper:hover .tiptap-table-controls,
+.tiptap-table-controls:focus-within {
+    opacity: 1;
+}
+
+/* The edge add-row (bottom) and add-column (in the right-edge control column) buttons, revealed on table hover. The
+   add-row bar overlays the reserved bottom strip, so neither shrinks the table. */
+.tiptap-table-add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed var(--color-border);
+    border-radius: 0.35rem;
+    background: #fdfaf3;
+    color: #777;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.tiptap-table-wrapper:hover .tiptap-table-add {
+    opacity: 0.6;
+}
+
+.tiptap-table-add:hover {
+    color: var(--color-ink);
+    opacity: 1;
+}
+
+/* Pin the plus glyph: an SVG is a replaced element, so flexbox would otherwise scale it to the button's shape — the
+   tall column button and the wide row button sized the same icon differently. flex: none holds its intrinsic size. */
+.tiptap-table-add svg {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Fills the control column below the "…" menu, spanning the table's remaining height. */
+.tiptap-table-add--column {
+    flex: 1;
+    width: 1.5rem;
+}
+
+/* The add-row bar overlays the reserved bottom strip, spanning the table's full width. */
+.tiptap-table-add--row {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1.1rem;
+}

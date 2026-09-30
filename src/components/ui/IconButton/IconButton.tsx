@@ -1,24 +1,26 @@
-import type {MouseEvent, ReactNode} from 'react'
+import {forwardRef} from 'react'
+import type {ButtonHTMLAttributes, MouseEvent, ReactNode} from 'react'
 import './IconButton.css'
 
 /**
  * Props for a round icon button: the icon it shows, its accessible name and hover label, which side that label
  * opens toward, an optional colour variant and size, whether it is disabled, and the click handler (given the event).
+ * Any other native button attributes (and a ref) pass through, so it can back a Radix `asChild` trigger.
  */
-interface IconButtonProps {
+interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
     icon: ReactNode
     label: string
-    onClick: (event: MouseEvent<HTMLButtonElement>) => void
+    onClick?: (event: MouseEvent<HTMLButtonElement>) => void
     labelSide?: 'left' | 'right'
     variant?: 'default' | 'danger'
-    size?: 'default' | 'large'
+    size?: 'small' | 'default' | 'large'
     disabled?: boolean
 }
 
 /**
  * A round, Material-style button showing an icon at rest and revealing its text label on hover or focus.
  */
-function IconButton(
+const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconButton(
     {
         icon,
         label,
@@ -26,23 +28,30 @@ function IconButton(
         labelSide = 'left',
         variant = 'default',
         size = 'default',
-        disabled = false
-    }: IconButtonProps,
+        disabled = false,
+        className,
+        ...rest
+    },
+    ref,
 ) {
     return (
         <button
             type="button"
+            ref={ref}
             className={`icon-button icon-button--label-${labelSide}${
                 variant === 'danger' ? ' icon-button--danger' : ''
-            }${size === 'large' ? ' icon-button--large' : ''}`}
+            }${size === 'large' ? ' icon-button--large' : ''}${
+                size === 'small' ? ' icon-button--small' : ''
+            }${className ? ` ${className}` : ''}`}
             data-label={label}
             aria-label={label}
             disabled={disabled}
             onClick={onClick}
+            {...rest}
         >
             {icon}
         </button>
     )
-}
+})
 
 export default IconButton

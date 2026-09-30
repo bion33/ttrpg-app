@@ -3,14 +3,14 @@
 @font-face {
     font-family: 'Mongolian Baiti';
     /*noinspection CssUnknownTarget*/
-    src: url('/fonts/MongolianBaiti.ttf') format('truetype');
+    src: url('/fonts/MongolianBaiti.woff2') format('woff2');
     font-display: swap;
 }
 
 @font-face {
     font-family: 'Times-Roman';
     /*noinspection CssUnknownTarget*/
-    src: url('/fonts/LiberationSerif.ttf') format('truetype');
+    src: url('/fonts/LiberationSerif.woff2') format('woff2');
     font-display: swap;
 }
 
@@ -19,7 +19,7 @@
     font-family: 'Times-Roman';
     font-weight: 700;
     /*noinspection CssUnknownTarget*/
-    src: url('/fonts/LiberationSerif-Bold.ttf') format('truetype');
+    src: url('/fonts/LiberationSerif-Bold.woff2') format('woff2');
     font-display: swap;
 }
 

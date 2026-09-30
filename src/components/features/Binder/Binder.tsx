@@ -16,6 +16,7 @@ import {newId} from '@lib/ids/newId.ts'
 import {tabHue} from '@lib/colors/tabHue.ts'
 import {usePageScale} from '@hooks/usePageScale.ts'
 import CharacterSheet from '@features/CharacterSheet/CharacterSheet'
+import MarkdownPage from '@features/MarkdownPage/MarkdownPage'
 import EmptyPage from '@features/EmptyPage/EmptyPage'
 import StorageControls from '@features/Storage/StorageControls.tsx'
 
@@ -29,12 +30,17 @@ interface BinderProps {
 }
 
 /**
- * Resolves a page descriptor to its element: a character sheet bound to its binder-prefixed storage prefix, or the
- * labelled empty page.
+ * Resolves a page descriptor to its element, each bound to its binder-prefixed storage prefix: a character sheet, a
+ * markdown notes page, or the labelled empty page.
  */
 function renderPage(page: Page, storagePrefix: string): ReactNode {
+    const pagePrefix = `${storagePrefix}:${page.storagePrefix}`
     if (page.type === 'characterSheet') {
-        return <CharacterSheet storagePrefix={`${storagePrefix}:${page.storagePrefix}`}/>
+        return <CharacterSheet storagePrefix={pagePrefix}/>
+    }
+    // Keyed so the uncontrolled editor remounts with the right initial markdown when switching between notes tabs.
+    if (page.type === 'markdown') {
+        return <MarkdownPage key={pagePrefix} storagePrefix={pagePrefix}/>
     }
     return <EmptyPage title={page.label}/>
 }
@@ -55,11 +61,21 @@ function Binder({storagePrefix, onExit}: BinderProps) {
     const [lastTab, setLastTab] = useState<HTMLElement | null>(null)
     // Which edit dialogue is open for the active tab, if any.
     const [editing, setEditing] = useState<'edit' | 'delete' | null>(null)
+    // True only while a zoom transition runs, so the view is promoted to its own compositor layer just for the zoom.
+    const [zooming, setZooming] = useState(false)
     const activeIndex = Math.max(0, pages.findIndex((page) => page.id === activeId))
     const active = pages.length ? pages[activeIndex] : undefined
 
     // Persists the shown page as this binder's remembered active page, so reopening it returns here.
     useEffect(() => rememberActivePage(activeId), [activeId, rememberActivePage])
+
+    // Promote the view layer only for the duration of a zoom (a little past the 0.25s transition), then drop it: a
+    // permanent compositor layer around the editable markdown surface blanks out after inactivity until an interaction.
+    useEffect(() => {
+        setZooming(true)
+        const timer = window.setTimeout(() => setZooming(false), 300)
+        return () => window.clearTimeout(timer)
+    }, [scale])
 
     // Appends a new page of the chosen type; its GUID id doubles as the character-sheet storage prefix.
     function createPage(name: string, type: PageType) {
@@ -96,7 +112,8 @@ function Binder({storagePrefix, onExit}: BinderProps) {
 
     return (
         <div className="app-shell" style={{'--active-hue': active?.hue ?? 0} as CSSProperties}>
-            <div className="binder-view" ref={viewReference} style={{transform: `scale(${scale})`}}>
+            <div className="binder-view" ref={viewReference}
+                 style={{transform: `scale(${scale})`, willChange: zooming ? 'transform' : 'auto'}}>
                 <main className="page">{active ? renderPage(active, storagePrefix) : <EmptyPage/>}</main>
                 <Tabs tabs={pages} activeId={active?.id ?? ''}
                       onSelect={(id) => navigate({binderId: storagePrefix, pageId: id})} onReorder={reorderPages}

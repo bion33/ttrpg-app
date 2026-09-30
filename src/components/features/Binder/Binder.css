@@ -23,9 +23,10 @@
     transform-origin: top center;
     /* Ease the zoom directly on transform (a concrete scale(), not a var) so it composites instead of jittering. */
     transition: transform 0.25s ease-in-out;
-    /* Keep the wrapper on its own compositor layer permanently so the heavy character-sheet SVG is rasterised once
-       and GPU-scaled during the zoom, rather than the layer being rebuilt (and repainting) at each step. */
-    will-change: transform;
+    /* `will-change: transform` is applied transiently in Binder.tsx only while a zoom runs, so the heavy
+       character-sheet SVG GPU-scales smoothly. It is deliberately NOT permanent: a permanently-promoted compositor
+       layer holding the editable markdown surface has its rasterised tiles evicted after inactivity and goes blank
+       until an interaction forces a repaint. */
 }
 
 .page {

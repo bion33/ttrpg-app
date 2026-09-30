@@ -46,9 +46,20 @@
     color: hsl(0 55% 42%);
 }
 
+.icon-button--small {
+    width: 1.5rem;
+    height: 1.5rem;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
 .icon-button--large {
     width: 3.25rem;
     height: 3.25rem;
+}
+
+.icon-button--small svg {
+    width: 0.9375rem;
+    height: 0.9375rem;
 }
 
 .icon-button svg {

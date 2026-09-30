@@ -139,6 +139,102 @@ the jotai atom holding its value. Position and state are one object.
     `buildSheet(prefix)`, fetches/injects the artwork SVG, and renders the
     resulting `fields`.
 
+### MarkdownPage feature (`src/components/features/MarkdownPage/`)
+
+The `markdown` ("Notes") page type: a general-purpose WYSIWYG markdown editor a
+user can add as many times as they like per binder — the catch-all, unstructured
+tab, in contrast to the specific character sheet. Content persists as a **plain
+markdown string**, riding the existing localStorage → snapshot → providers path
+with no new persistence plumbing.
+
+- `markdownAtoms.ts` — `markdownAtom(prefix)`, a cached-per-prefix
+  `atomWithStorage<string>('${prefix}:markdown', '', notifyingStorage())`,
+  mirroring `binderAtoms.ts`'s cached-atom pattern; `notifyingStorage`
+  (`@lib/storage/observableStorage.ts`) is what makes edits count toward
+  dirty-detection and the snapshot.
+- `MarkdownPage.tsx` — the eager, thin page: binds the markdown atom, wraps the
+  editor in the shared `PaperPage`, and `React.lazy`-loads `MarkdownEditor` behind
+  a `<Suspense>`. Responsibility: atom binding + page layout.
+- `MarkdownEditor.tsx` — the lazy chunk (the editor is heavy, so it code-splits out
+  of the main bundle): builds a [Tiptap](https://tiptap.dev) v3 editor via `useEditor`
+  and renders `<EditorContent>` with the `MarkdownToolbar` and `BlockHandle`.
+  Extensions: `StarterKit` (core formatting + undo/redo history, with `link` and
+  `codeBlock` disabled — links are intentionally excluded), `Markdown`
+  (`@tiptap/markdown`, the bidirectional markdown layer — `content`/`contentType:
+  'markdown'` on load and `editor.getMarkdown()` on change), `TaskList`/`TaskItem`, the
+  `tableExtensions` (see `extensions/table/` below), `Image`, and the custom `Callout`. Tiptap reads `content` only on mount
+  and reports edits via `onUpdate`, hence the remount-on-prefix keying in `renderPage`.
+  Responsibility: editor configuration + composition. Images are by URL/paste only for
+  now — real upload needs a later storage decision (base64 bloats the snapshot).
+- `MarkdownToolbar.tsx` — the formatting toolbar, all `lucide-react` icons: undo/redo, the
+  Headings dropdown, inline marks (bold/italic/underline/strikethrough), the Blocks and Lists
+  dropdowns (one `ToolbarDropdown` per non-insert `BLOCK_GROUPS` entry), then the standalone
+  `INSERT_ACTIONS` buttons (divider, table, image). Active/enabled state comes from
+  `useEditorState`. Responsibility: toolbar layout.
+- `ToolbarDropdown.tsx` — one toolbar dropdown grouping a block group's actions; its
+  trigger shows the active action's icon (else the group icon) and its menu runs the
+  chosen action (each item an icon + label). Built on **Radix `DropdownMenu`** (`@radix-ui/react-dropdown-menu`) for
+  keyboard navigation, ARIA menu roles, focus management, and zoom-aware positioning (its
+  `strategy: 'fixed'` popper is portalled to the body, so it is unaffected by the page
+  zoom — see the block handle note below for the same concern). Responsibility: the dropdown.
+- `BlockHandle.tsx` — the Nextcloud-style per-block hover affordance, wrapping
+  `@tiptap/extension-drag-handle-react`'s `<DragHandle>`: a drag grip to reorder blocks
+  plus a "+" button opening a menu (dismissed via `useDismissOnOutside`) that inserts any
+  block. It passes floating-ui `{placement: 'left', strategy: 'fixed'}`: `left` centres
+  the handle on the block, and `fixed` anchors it to the zoomed `.binder-view` (its
+  containing block) — the only case floating-ui compensates page zoom for, so the handle
+  stays aligned at any scale and anywhere down the page (`absolute` drifts with distance
+  under zoom). Responsibility: the block handle.
+- `extensions/table/` — the Nextcloud-style table editing affordances, added as React **node views**
+  over `@tiptap/extension-table`'s nodes (the schemas are untouched, so tables still round-trip as
+  plain markdown via the `Markdown` extension; cell merge/split are deliberately unsupported since
+  plain markdown cannot represent them). `tableExtensions.ts` exports the extension array the editor
+  uses in place of `TableKit`: `Table` and both cell nodes (`TableHeader`/`TableCell`) `.extend`ed
+  with a `ReactNodeViewRenderer`, plus the unchanged `TableRow`. The menus live on the **cells**, not
+  on a row node view: a row node view is impossible to render as valid HTML (its host `<tr>` can only
+  contain `<td>`/`<th>`, never the wrapper the React renderer inserts), so the per-row menu is hosted
+  by each row's last cell instead. The cell renderers pass `{as: 'th'}`/`{as: 'td'}` so the host is
+  the real cell element and the table markup stays valid.
+  - `TableNodeView.tsx` — wraps the table in a positioned container with a bottom-edge "add row"
+    button and a right-edge control column (outside the table, in the page margin) holding the
+    whole-table "…" menu (delete table) above an "add column" button, revealed on table hover. The
+    body is a real `<tbody>` (`NodeViewContent as="tbody"`) holding ProseMirror's rows.
+  - `TableCellNodeView.tsx` — the one node view for both header and data cells (`node.type.name`
+    distinguishes them). It renders a per-column "…" menu on every header cell, and — on each **data**
+    row's **last** cell (`isLastCellInRow`) — the row's insert/delete-row "…" menu. Both menus are
+    absolutely overlaid on the cell, shown on hover. (The whole-table delete menu lives on the table
+    node view, not the header row.)
+  - `TableActionMenu.tsx` — the shared "…" dropdown (Radix `DropdownMenu`, portalled/fixed so it is
+    zoom-safe) the column and row menus use.
+  - `tableActions.ts` — the `TableAction` type and the `columnActions`/`rowActions`/
+    `deleteTableActions` builders (each `{id, label, icon, destructive, run}`), each placing the
+    caret in the right cell before running the command.
+  - `tablePositions.ts` — the **pure, unit-tested** (`tablePositions.test.ts`) caret-position math:
+    `isHeaderRow`, `firstCellInnerPosition`, `isLastCellInRow` (which cell carries the row menu), and
+    `lastRowCellPosition`/`lastColumnCellPosition` (the append-at-end targets for the edge buttons).
+- `blocks/insertBlocks.ts` — `BLOCK_ACTIONS`, the **single source of truth** for the
+  block types a user can apply/insert (headings 1–6, text/paragraph, quote, the four
+  callout variants, the three list kinds, divider, table, image): each is `{id, label,
+  icon, group, isActive(editor), run(editor)}` (`icon` a `lucide-react` component). Two
+  projections derive from it: `BLOCK_GROUPS` buckets the dropdown groups — `heading`
+  (Headings), `block` (Blocks: text, quote, callouts), `list` (Lists) — each with a
+  default trigger label/icon; `INSERT_ACTIONS` is the flat `insert` group (divider, table,
+  image), rendered as standalone toolbar buttons rather than a dropdown. The block handle's
+  "+" menu renders the flat `BLOCK_ACTIONS`, so toolbar and handle never drift.
+- `extensions/callout.ts` — the custom `Callout` Tiptap `Node` (info/success/warning/
+  danger), which round-trips as a Pandoc fenced directive (`:::callout {type=info} …
+  :::`) via `createBlockMarkdownSpec` from `@tiptap/core`.
+- `MarkdownPage.css` — themes the ProseMirror surface, toolbar, block handle, and
+  callouts to the parchment/serif tokens (transparent inside `PaperPage`). The toolbar
+  and handle carry `.no-print`, so `index.css`'s print rule hides them.
+
+The toolbar/handle cover Nextcloud's editor as far as Tiptap allows; Nextcloud's math,
+collapsible details, and word-count/help are omitted. `@tiptap/extension-drag-handle`
+statically imports two Yjs collaboration modules (`@tiptap/extension-collaboration`,
+`@tiptap/y-tiptap`) it only uses under live collaboration; since this app has none, both
+are aliased to tiny stubs in `src/shims/` (wired in `vite.config.ts`) to keep the Yjs
+stack out of the bundle.
+
 ### Library feature (`src/App.tsx`, `src/components/features/Library/`)
 
 `App` is the root: it holds the jotai store in state and renders the app inside a
@@ -213,8 +309,10 @@ metadata (`id`, `label`, `type`, `storagePrefix`), declared with the per-binder
 atoms in `binderAtoms.ts`, and `renderPage(page, storagePrefix)` (in `Binder.tsx`)
 resolves it to an element by `type` — `characterSheet` → `CharacterSheet` bound to
 the **binder-prefixed** storage prefix `${storagePrefix}:${page.storagePrefix}`,
-`empty` → an `EmptyPage` titled by its label. Page types live in `pageTypes.ts`
-(`PageType`, `PAGE_TYPES`). The page list is a **per-binder** atom from
+`markdown` → a `MarkdownPage` bound to the same binder-prefixed prefix (and
+**keyed** by it, so the uncontrolled editor remounts with the right content when
+switching between notes tabs), `empty` → an `EmptyPage` titled by its label. Page
+types live in `pageTypes.ts` (`PageType`, `PAGE_TYPES`). The page list is a **per-binder** atom from
 `binderAtoms.ts`'s `pagesAtom(prefix)` — `atomWithStorage('${prefix}:pages', …)`,
 one **shared, cached instance per prefix** so the binder and the library shelf read
 the same list (**empty by default** — the binder starts with no pages until the
@@ -548,9 +646,11 @@ binders and tabs). Props are `title`, `message`, `confirmLabel`, an optional
 
 `IconButton` is the shared round, Material-style button: an icon at rest with a
 floating text-label pill that fades in on hover/focus. Props are `icon`, `label`
-(used as both the pill text and the accessible name), `onClick`, an optional
-`labelSide` (`left`/`right`), `variant` (`default`/`danger`), `size`
-(`default`/`large`), and `disabled`. Callers control
+(used as both the pill text and the accessible name), an optional `onClick`, an
+optional `labelSide` (`left`/`right`), `variant` (`default`/`danger`), `size`
+(`small`/`default`/`large`), and `disabled`; it forwards a ref and spreads any
+other native button attributes, so it can back a Radix `asChild` trigger (e.g.
+the markdown table's `TableActionMenu` "…" menu). Callers control
 stacking via the surrounding container so the pill can sit above neighbours (e.g.
 `Binder`'s `TabControls` gives its cluster a high `z-index`).
 
@@ -574,7 +674,9 @@ shrink-to-fit loop behind `AutoFitInput`/`AutoFitTextarea`, owning
 `DEFAULT_FONT_SIZE`/`MIN_FONT_SIZE`), `usePageScale()` (the persisted
 page-view zoom — scale, step controls, and the viewport-fit `ResizeObserver` —
 consumed by `Binder`), `useNameForm(initialName, onSubmit)` (the name-field state,
-mount-focus, and trim/guard submit shared by every add/edit dialogue), and
+mount-focus, and trim/guard submit shared by every add/edit dialogue),
+`useDismissOnOutside(ref, active, onDismiss)` (the outside-pointer-dismiss listener
+behind the block handle's "+" menu), and
 `useNavigation.ts` (the app's location, backed by the
 browser History API so Back/Forward step between visited binders and pages):
 `useLocation()` reads the persisted `location` atom, `useNavigate()` moves to a

@@ -16,6 +16,9 @@ export default defineConfig({
       '@hooks': resolveSrc('./src/hooks'),
       '@lib': resolveSrc('./src/lib'),
       '@type': resolveSrc('./src/type'),
+      // Stub out @tiptap/extension-drag-handle's Yjs collaboration imports (unused here) to keep Yjs out of the bundle.
+      '@tiptap/extension-collaboration': resolveSrc('./src/shims/tiptapCollaboration.ts'),
+      '@tiptap/y-tiptap': resolveSrc('./src/shims/tiptapYtiptap.ts'),
     },
   },
   server: {
