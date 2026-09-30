@@ -754,7 +754,13 @@ choices, HMR, source mounts — is dev-only and replaced by their own infra):
    (`oauthClient` + static `callback.html`), the shared `useCloudConnection` lifecycle
    (Nextcloud refitted onto it), and the `OneDriveConnectForm`. Detailed plan:
    [STORAGE_PLAN_PHASE4.md](./STORAGE_PLAN_PHASE4.md).
-5. **Google Drive** (GIS + exchange/refresh functions + Drive adapter + Picker).
+5. **Google Drive** (Drive v3 REST adapter against the app-data folder + the generic
+   OAuth relay). **Shipped** — the `googleDrive` provider (id-addressed app-data file,
+   resolved once via `ensureFileId`), the generalized `pkce`/`oauthClient` glue (now
+   serving Microsoft **and** Google), the `google` env wiring on the existing
+   `/api/oauth/:provider` relay, the shared `CloudConnectForm` (OneDrive refitted onto
+   it), and `useStorage`'s `saving` guard. Detailed plan:
+   [STORAGE_PLAN_PHASE5.md](./STORAGE_PLAN_PHASE5.md).
 6. **Autosave** (debounced) across the cloud providers, autoload of a clean `remoteAhead` 
    remote to pre-empt most conflicts (see the Autoload note under [UI / UX](#ui--ux)),
    and automatically show storage settings when unconfigured. Add one "Autosave" toggle

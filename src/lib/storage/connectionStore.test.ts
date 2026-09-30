@@ -18,15 +18,19 @@ vi.mock('idb-keyval', () => {
 
 import {get} from 'idb-keyval'
 import {
+    clearGoogleDriveConnection,
     clearNextcloudConnection,
     clearOneDriveConnection,
+    loadGoogleDriveConnection,
     loadNextcloudConnection,
     loadOneDriveConnection,
+    saveGoogleDriveConnection,
     saveNextcloudConnection,
     saveOneDriveConnection,
 } from './connectionStore.ts'
 import type {NextcloudConnection} from './nextcloudProvider.ts'
 import type {OneDriveConnection} from './onedriveProvider.ts'
+import type {GoogleDriveConnection} from './googleDriveProvider.ts'
 
 const connection: NextcloudConnection = {
     baseUrl: 'https://cloud.example.com',
@@ -38,9 +42,14 @@ const connection: NextcloudConnection = {
 
 const oneDriveConnection: OneDriveConnection = {refreshToken: 'refresh-token', label: 'OneDrive'}
 
+const googleDriveConnection: GoogleDriveConnection = {
+    refreshToken: 'refresh-token', label: 'Google Drive', fileId: 'file-42',
+}
+
 beforeEach(async () => {
     await clearNextcloudConnection()
     await clearOneDriveConnection()
+    await clearGoogleDriveConnection()
 })
 
 describe('Nextcloud connection store', () => {
@@ -76,5 +85,23 @@ describe('OneDrive connection store', () => {
         await saveOneDriveConnection(oneDriveConnection)
         await clearOneDriveConnection()
         expect(await loadOneDriveConnection()).toBeNull()
+    })
+})
+
+describe('Google Drive connection store', () => {
+    it('returns null when nothing is stored', async () => {
+        expect(await loadGoogleDriveConnection()).toBeNull()
+    })
+
+    it('round-trips a saved connection', async () => {
+        await saveGoogleDriveConnection(googleDriveConnection)
+        expect(await loadGoogleDriveConnection()).toEqual(googleDriveConnection)
+        expect(await get('googleDriveConnection', 'store' as never)).toEqual(googleDriveConnection)
+    })
+
+    it('clears a stored connection', async () => {
+        await saveGoogleDriveConnection(googleDriveConnection)
+        await clearGoogleDriveConnection()
+        expect(await loadGoogleDriveConnection()).toBeNull()
     })
 })

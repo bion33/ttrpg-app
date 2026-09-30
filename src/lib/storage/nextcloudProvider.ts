@@ -1,6 +1,7 @@
 import type {LibrarySnapshot} from '../snapshot.ts'
 import type {StorageProvider, StorageTarget} from './StorageProvider.ts'
 import {parseSnapshot, serialiseSnapshot} from './fileProvider.ts'
+import {describeHttpFailure} from './httpError.ts'
 
 /**
  * A Nextcloud connection: the instance URL, credentials (username + a scoped app password), the library file's path
@@ -97,11 +98,13 @@ export const nextcloudProvider: StorageProvider = {
         if (!active) throw new Error('No Nextcloud connection to validate.')
         // Confirm reachability and credentials before touching anything (PROPFIND returns 207 Multi-Status on success).
         const probe = await relay('PROPFIND', webdavRoot(active), active, undefined, '0')
-        if (!probe.ok && probe.status !== 207) throw new Error(describeFailure(probe.status))
+        if (!probe.ok && probe.status !== 207) throw new Error(await describeHttpFailure(probe, describeFailure))
         // WebDAV MKCOL creates one level at a time, so walk the parent segments, tolerating collections that exist.
         for (const url of webdavParentUrls(active)) {
             const made = await relay('MKCOL', url, active)
-            if (!made.ok && made.status !== 405 && made.status !== 301) throw new Error(describeFailure(made.status))
+            if (!made.ok && made.status !== 405 && made.status !== 301) {
+                throw new Error(await describeHttpFailure(made, describeFailure))
+            }
         }
     },
 
@@ -112,14 +115,14 @@ export const nextcloudProvider: StorageProvider = {
     async save(target: StorageTarget, snapshot: LibrarySnapshot) {
         if (!active) throw new Error('Not connected to Nextcloud.')
         const response = await relay('PUT', target.locator, active, serialiseSnapshot(snapshot))
-        if (!response.ok) throw new Error(describeFailure(response.status))
+        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
     },
 
     async load(target: StorageTarget) {
         if (!active) throw new Error('Not connected to Nextcloud.')
         const response = await relay('GET', target.locator, active)
         if (response.status === 404) return null
-        if (!response.ok) throw new Error(describeFailure(response.status))
+        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
         return parseSnapshot(await response.text())
     },
 
@@ -127,7 +130,7 @@ export const nextcloudProvider: StorageProvider = {
         if (!active) return null
         const response = await relay('GET', target.locator, active)
         if (response.status === 404) return null
-        if (!response.ok) throw new Error(describeFailure(response.status))
+        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
         return parseSnapshot(await response.text()).revision
     },
 }

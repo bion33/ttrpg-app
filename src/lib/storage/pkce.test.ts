@@ -24,12 +24,13 @@ describe('createCodeVerifier', () => {
 describe('authorizeUrl', () => {
     it('builds the Microsoft authorize URL with PKCE and query response mode', () => {
         const url = new URL(authorizeUrl({
-            tenant: 'common',
+            authorizeEndpoint: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
             clientId: 'client-id',
             redirectUri: 'http://localhost:8080/oauth/microsoft/callback.html',
             scope: 'Files.ReadWrite.AppFolder offline_access openid',
             state: 'state-token',
             challenge: 'challenge-value',
+            extraParams: {response_mode: 'query'},
         }))
         expect(url.origin + url.pathname).toBe('https://login.microsoftonline.com/common/oauth2/v2.0/authorize')
         expect(url.searchParams.get('client_id')).toBe('client-id')
@@ -39,5 +40,22 @@ describe('authorizeUrl', () => {
         expect(url.searchParams.get('response_mode')).toBe('query')
         expect(url.searchParams.get('scope')).toBe('Files.ReadWrite.AppFolder offline_access openid')
         expect(url.searchParams.get('state')).toBe('state-token')
+    })
+
+    it('builds the Google authorize URL with offline access and consent prompt', () => {
+        const url = new URL(authorizeUrl({
+            authorizeEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+            clientId: 'google-client',
+            redirectUri: 'http://localhost:8080/oauth/google/callback.html',
+            scope: 'https://www.googleapis.com/auth/drive.appdata',
+            state: 'state-token',
+            challenge: 'challenge-value',
+            extraParams: {access_type: 'offline', prompt: 'consent'},
+        }))
+        expect(url.origin + url.pathname).toBe('https://accounts.google.com/o/oauth2/v2/auth')
+        expect(url.searchParams.get('code_challenge_method')).toBe('S256')
+        expect(url.searchParams.get('access_type')).toBe('offline')
+        expect(url.searchParams.get('prompt')).toBe('consent')
+        expect(url.searchParams.get('scope')).toBe('https://www.googleapis.com/auth/drive.appdata')
     })
 })

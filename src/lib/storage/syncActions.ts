@@ -3,14 +3,19 @@ import type {SyncStatus} from './sync.ts'
 import type {NextcloudConnection} from './nextcloudProvider.ts'
 import {webdavUrl} from './nextcloudProvider.ts'
 import type {OneDriveConnection} from './onedriveProvider.ts'
+import type {GoogleDriveConnection} from './googleDriveProvider.ts'
 
 // The file provider's target: its locator is ignored (the user picks a file each save/load).
 const FILE_TARGET: StorageTarget = {provider: 'file', locator: '', label: 'File'}
+
+// The fixed snapshot filename the cloud providers store under (consumed via target.locator).
+const SNAPSHOT_FILENAME = 'ttrpg-app.json'
 
 /** The cloud connections a target may resolve from; additive as providers are added, so no per-provider parameter list. */
 export interface CloudConnections {
     nextcloud: NextcloudConnection | null
     oneDrive: OneDriveConnection | null
+    googleDrive: GoogleDriveConnection | null
 }
 
 /**
@@ -35,7 +40,12 @@ export function resolveTarget(provider: ProviderId, connections: CloudConnection
     if (provider === 'onedrive') {
         const connection = connections.oneDrive
         if (!connection) return null
-        return {provider: 'onedrive', locator: 'library.json', label: connection.label}
+        return {provider: 'onedrive', locator: SNAPSHOT_FILENAME, label: connection.label}
+    }
+    if (provider === 'googleDrive') {
+        const connection = connections.googleDrive
+        if (!connection) return null
+        return {provider: 'googleDrive', locator: SNAPSHOT_FILENAME, label: connection.label}
     }
     return null
 }

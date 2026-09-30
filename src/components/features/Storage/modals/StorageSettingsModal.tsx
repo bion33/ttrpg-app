@@ -4,9 +4,11 @@ import Modal from '../../../ui/Modal/Modal'
 import type {ProviderId} from '../../../../lib/storage/StorageProvider.ts'
 import type {NextcloudConnection} from '../../../../lib/storage/nextcloudProvider.ts'
 import type {OneDriveConnection} from '../../../../lib/storage/onedriveProvider.ts'
+import type {GoogleDriveConnection} from '../../../../lib/storage/googleDriveProvider.ts'
 import {isProviderAvailable} from '../../../../lib/storage/providers.ts'
 import NextcloudConnectForm from './NextcloudConnectForm.tsx'
 import OneDriveConnectForm from './OneDriveConnectForm.tsx'
+import GoogleDriveConnectForm from './GoogleDriveConnectForm.tsx'
 import './StorageSettingsModal.css'
 
 /** The providers offered in settings, in display order; availability is read from the registry. */
@@ -30,10 +32,15 @@ interface StorageSettingsModalProps {
     oneDriveConnection: OneDriveConnection | null
     onConnectOneDrive: () => Promise<void>
     onDisconnectOneDrive: () => Promise<void>
+    googleDriveConnection: GoogleDriveConnection | null
+    onConnectGoogleDrive: () => Promise<void>
+    onDisconnectGoogleDrive: () => Promise<void>
 }
 
 // The providers that open their own setup view instead of being selected inline from the list.
-const SETUP_TITLES: Record<'nextcloud' | 'onedrive', string> = {nextcloud: 'Nextcloud', onedrive: 'OneDrive'}
+const SETUP_TITLES: Record<'nextcloud' | 'onedrive' | 'googleDrive', string> = {
+    nextcloud: 'Nextcloud', onedrive: 'OneDrive', googleDrive: 'Google Drive',
+}
 
 /**
  * Modal for choosing the storage provider: shows the provider list, or — once a cloud provider is chosen — replaces the
@@ -42,12 +49,13 @@ const SETUP_TITLES: Record<'nextcloud' | 'onedrive', string> = {nextcloud: 'Next
 function StorageSettingsModal({
     provider, onSelect, onClose, nextcloudConnection, onConnectNextcloud, onDisconnectNextcloud,
     oneDriveConnection, onConnectOneDrive, onDisconnectOneDrive,
+    googleDriveConnection, onConnectGoogleDrive, onDisconnectGoogleDrive,
 }: StorageSettingsModalProps) {
-    const [setupProvider, setSetupProvider] = useState<'nextcloud' | 'onedrive' | null>(null)
+    const [setupProvider, setSetupProvider] = useState<'nextcloud' | 'onedrive' | 'googleDrive' | null>(null)
 
     // A cloud provider opens its own setup view; every other provider is selected inline from the list.
     const chooseProvider = (id: ProviderId) => {
-        if (id === 'nextcloud' || id === 'onedrive') {
+        if (id === 'nextcloud' || id === 'onedrive' || id === 'googleDrive') {
             setSetupProvider(id)
             return
         }
@@ -61,18 +69,27 @@ function StorageSettingsModal({
                     <button type="button" className="storage-settings__back" onClick={() => setSetupProvider(null)}>
                         <ArrowLeft size={16}/> Providers
                     </button>
-                    {setupProvider === 'nextcloud' ? (
+                    {setupProvider === 'nextcloud' && (
                         <NextcloudConnectForm
                             connection={nextcloudConnection}
                             onConnect={onConnectNextcloud}
                             onDisconnect={onDisconnectNextcloud}
                             onClose={onClose}
                         />
-                    ) : (
+                    )}
+                    {setupProvider === 'onedrive' && (
                         <OneDriveConnectForm
                             connection={oneDriveConnection}
                             onConnect={onConnectOneDrive}
                             onDisconnect={onDisconnectOneDrive}
+                            onClose={onClose}
+                        />
+                    )}
+                    {setupProvider === 'googleDrive' && (
+                        <GoogleDriveConnectForm
+                            connection={googleDriveConnection}
+                            onConnect={onConnectGoogleDrive}
+                            onDisconnect={onDisconnectGoogleDrive}
                             onClose={onClose}
                         />
                     )}

@@ -30,6 +30,7 @@ function StorageControls({placement}: StorageControlsProps) {
     const ready = storage.provider === 'file'
         || (storage.provider === 'nextcloud' && storage.nextcloudConnection !== null)
         || (storage.provider === 'onedrive' && storage.oneDriveConnection !== null)
+        || (storage.provider === 'googleDrive' && storage.googleDriveConnection !== null)
     // Save enables on local dirtiness alone (the click re-checks the remote and flags a conflict); load stays gated on
     // the sync status, since only a remote that is ahead or diverged can be pulled.
     const saveEnabled = ready && canSave(storage.dirty, probeable)
@@ -44,7 +45,8 @@ function StorageControls({placement}: StorageControlsProps) {
                             onClick={() => setSettingsOpen(true)}/>
                 <IconButton icon={<FolderOpen/>} label={loadLabel} labelSide={labelSide} disabled={!loadEnabled}
                             onClick={() => void storage.load()}/>
-                <IconButton icon={<Save/>} label={saveLabel} labelSide={labelSide} disabled={!saveEnabled}
+                <IconButton icon={<Save/>} label={saveLabel} labelSide={labelSide}
+                            disabled={!saveEnabled || storage.saving}
                             onClick={() => void storage.save()}/>
             </div>
 
@@ -56,7 +58,10 @@ function StorageControls({placement}: StorageControlsProps) {
                                       onDisconnectNextcloud={storage.disconnectNextcloud}
                                       oneDriveConnection={storage.oneDriveConnection}
                                       onConnectOneDrive={storage.connectOneDrive}
-                                      onDisconnectOneDrive={storage.disconnectOneDrive}/>
+                                      onDisconnectOneDrive={storage.disconnectOneDrive}
+                                      googleDriveConnection={storage.googleDriveConnection}
+                                      onConnectGoogleDrive={storage.connectGoogleDrive}
+                                      onDisconnectGoogleDrive={storage.disconnectGoogleDrive}/>
             )}
             {storage.conflict && (
                 <ConflictModal

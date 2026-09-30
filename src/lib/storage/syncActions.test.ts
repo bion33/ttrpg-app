@@ -2,6 +2,7 @@ import {describe, expect, it} from 'vitest'
 import type {SyncStatus} from './sync.ts'
 import type {NextcloudConnection} from './nextcloudProvider.ts'
 import type {OneDriveConnection} from './onedriveProvider.ts'
+import type {GoogleDriveConnection} from './googleDriveProvider.ts'
 import type {CloudConnections} from './syncActions.ts'
 import {canLoad, canSave, chooseRemoteRevision, isProbeable, resolveTarget, saveIntent} from './syncActions.ts'
 
@@ -17,13 +18,16 @@ const connection: NextcloudConnection = {
 
 const oneDriveConnection: OneDriveConnection = {refreshToken: 'refresh-token', label: 'OneDrive'}
 
-const NO_CONNECTIONS: CloudConnections = {nextcloud: null, oneDrive: null}
+const googleDriveConnection: GoogleDriveConnection = {refreshToken: 'refresh-token', label: 'Google Drive'}
+
+const NO_CONNECTIONS: CloudConnections = {nextcloud: null, oneDrive: null, googleDrive: null}
 
 describe('isProbeable', () => {
     it('is false only for the file provider', () => {
         expect(isProbeable('file')).toBe(false)
         expect(isProbeable('nextcloud')).toBe(true)
         expect(isProbeable('onedrive')).toBe(true)
+        expect(isProbeable('googleDrive')).toBe(true)
     })
 })
 
@@ -33,7 +37,7 @@ describe('resolveTarget', () => {
     })
 
     it('builds a Nextcloud target from the connection', () => {
-        expect(resolveTarget('nextcloud', {nextcloud: connection, oneDrive: null})).toEqual({
+        expect(resolveTarget('nextcloud', {...NO_CONNECTIONS, nextcloud: connection})).toEqual({
             provider: 'nextcloud',
             locator: 'https://cloud.example.com/remote.php/dav/files/ada/personal/ttrpg-app.json',
             label: 'cloud.example.com > personal/ttrpg-app.json',
@@ -41,16 +45,25 @@ describe('resolveTarget', () => {
     })
 
     it('builds a OneDrive target with the fixed locator from the connection', () => {
-        expect(resolveTarget('onedrive', {nextcloud: null, oneDrive: oneDriveConnection})).toEqual({
+        expect(resolveTarget('onedrive', {...NO_CONNECTIONS, oneDrive: oneDriveConnection})).toEqual({
             provider: 'onedrive',
-            locator: 'library.json',
+            locator: 'ttrpg-app.json',
             label: 'OneDrive',
+        })
+    })
+
+    it('builds a Google Drive target with the fixed locator from the connection', () => {
+        expect(resolveTarget('googleDrive', {...NO_CONNECTIONS, googleDrive: googleDriveConnection})).toEqual({
+            provider: 'googleDrive',
+            locator: 'ttrpg-app.json',
+            label: 'Google Drive',
         })
     })
 
     it('returns null for a cloud provider that is not connected', () => {
         expect(resolveTarget('nextcloud', NO_CONNECTIONS)).toBeNull()
         expect(resolveTarget('onedrive', NO_CONNECTIONS)).toBeNull()
+        expect(resolveTarget('googleDrive', NO_CONNECTIONS)).toBeNull()
     })
 })
 

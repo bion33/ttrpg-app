@@ -10,20 +10,24 @@ import {chooseRemoteRevision, isProbeable, resolveTarget, saveIntent} from '../l
 import {subscribeToStorageWrites} from '../lib/storage/observableStorage.ts'
 import type {SyncState} from '../lib/storage/connectionStore.ts'
 import {
+    clearGoogleDriveConnection,
     clearNextcloudConnection,
     clearOneDriveConnection,
     loadActiveProvider,
+    loadGoogleDriveConnection,
     loadNextcloudConnection,
     loadOneDriveConnection,
     loadSyncState,
     saveActiveProvider,
+    saveGoogleDriveConnection,
     saveNextcloudConnection,
     saveOneDriveConnection,
     saveSyncState,
 } from '../lib/storage/connectionStore.ts'
 import {adoptConnection as adoptNextcloud, type NextcloudConnection} from '../lib/storage/nextcloudProvider.ts'
 import {adoptConnection as adoptOneDrive, type OneDriveConnection} from '../lib/storage/onedriveProvider.ts'
-import {exchangeCode, runMicrosoftAuth} from '../lib/storage/oauthClient.ts'
+import {adoptConnection as adoptGoogleDrive, type GoogleDriveConnection} from '../lib/storage/googleDriveProvider.ts'
+import {exchangeCode, runGoogleAuth, runMicrosoftAuth} from '../lib/storage/oauthClient.ts'
 import {useCloudConnection, type CloudConnectionPorts} from './useCloudConnection.ts'
 import {newId} from '../lib/newId.ts'
 
@@ -58,6 +62,10 @@ export interface UseStorage {
     oneDriveConnection: OneDriveConnection | null
     connectOneDrive(): Promise<void>
     disconnectOneDrive(): Promise<void>
+    googleDriveConnection: GoogleDriveConnection | null
+    connectGoogleDrive(): Promise<void>
+    disconnectGoogleDrive(): Promise<void>
+    saving: boolean
 }
 
 // App-view keys that hold no character data, so they do not by themselves make the library "have data".
@@ -80,6 +88,13 @@ const onedrivePorts: CloudConnectionPorts<OneDriveConnection> = {
     persist: saveOneDriveConnection,
     clear: clearOneDriveConnection,
     load: loadOneDriveConnection,
+}
+const googleDrivePorts: CloudConnectionPorts<GoogleDriveConnection> = {
+    providerId: 'googleDrive',
+    adopt: adoptGoogleDrive,
+    persist: saveGoogleDriveConnection,
+    clear: clearGoogleDriveConnection,
+    load: loadGoogleDriveConnection,
 }
 
 // True when a snapshot holds any binder, page, or field data (an empty binder list and view keys do not count).
@@ -113,6 +128,7 @@ export function useStorage(): UseStorage {
     const [probedRevision, setProbedRevision] = useState<string | null>(null)
     const [conflict, setConflict] = useState<ConflictPrompt | null>(null)
     const [dirty, setDirty] = useState(false)
+    const [saving, setSaving] = useState(false)
     // Incremented on each probe so an out-of-order resolution can be discarded (never regress to a stale revision).
     const probeToken = useRef(0)
 
@@ -134,14 +150,20 @@ export function useStorage(): UseStorage {
 
     const nextcloud = useCloudConnection(nextcloudPorts, cloudActions)
     const onedrive = useCloudConnection(onedrivePorts, cloudActions)
+    const googleDrive = useCloudConnection(googleDrivePorts, cloudActions)
     // Stable references to each cloud provider's mount hydration, so the mount effect lists them without re-running.
     const hydrateNextcloud = nextcloud.hydrate
     const hydrateOneDrive = onedrive.hydrate
+    const hydrateGoogleDrive = googleDrive.hydrate
 
     const probeable = isProbeable(provider)
     const target = useMemo(
-        () => resolveTarget(provider, {nextcloud: nextcloud.connection, oneDrive: onedrive.connection}),
-        [provider, nextcloud.connection, onedrive.connection],
+        () => resolveTarget(provider, {
+            nextcloud: nextcloud.connection,
+            oneDrive: onedrive.connection,
+            googleDrive: googleDrive.connection,
+        }),
+        [provider, nextcloud.connection, onedrive.connection, googleDrive.connection],
     )
 
     // Load the persisted provider selection, sync base, and (for a cloud provider) the stored connection once on mount.
@@ -155,11 +177,12 @@ export function useStorage(): UseStorage {
             setProviderState(storedProvider)
             if (storedProvider === 'nextcloud') await hydrateNextcloud()
             else if (storedProvider === 'onedrive') await hydrateOneDrive()
+            else if (storedProvider === 'googleDrive') await hydrateGoogleDrive()
         })()
         return () => {
             active = false
         }
-    }, [hydrateNextcloud, hydrateOneDrive])
+    }, [hydrateNextcloud, hydrateOneDrive, hydrateGoogleDrive])
 
     // Probes the current cloud target's remote revision; the file provider keeps the base as its stand-in remote, so a
     // stale probe on a non-probeable provider is never read (chooseRemoteRevision ignores it) and needs no clearing here.
@@ -210,8 +233,12 @@ export function useStorage(): UseStorage {
     }, [commitSyncState, remount])
 
     // Writes the current library to the target and records the new revision as the sync base; assumes no conflict.
+    // Gates the Save button for the whole write (this is every write path, including the conflict resolution below), so
+    // two overlapping saves cannot be issued — which could otherwise let an id-addressed cloud provider create a
+    // duplicate file; the toasts still report progress.
     const performSave = useCallback(async () => {
         if (!target) return
+        setSaving(true)
         const toastId = toast.loading('Saving…')
         try {
             const revision = newId()
@@ -227,13 +254,17 @@ export function useStorage(): UseStorage {
                 return
             }
             toast.error(messageFor(caught, 'Save failed.'), {id: toastId})
+        } finally {
+            setSaving(false)
         }
     }, [target, provider, commitSyncState])
 
     const save = useCallback(async () => {
         if (!target) return
-        // A cloud remote that is ahead or diverged must be reconciled, not clobbered: surface the conflict instead.
+        // A cloud remote that is ahead or diverged must be reconciled, not clobbered: surface the conflict instead. Gate
+        // the button around the pre-write probe too, so a second save cannot be launched while this one decides.
         if (saveIntent(status, probeable) === 'conflict') {
+            setSaving(true)
             try {
                 const incoming = await getProvider(provider).load(target)
                 if (incoming) {
@@ -243,6 +274,8 @@ export function useStorage(): UseStorage {
             } catch (caught) {
                 toast.error(messageFor(caught, 'Save failed.'))
                 return
+            } finally {
+                setSaving(false)
             }
         }
         await performSave()
@@ -307,19 +340,30 @@ export function useStorage(): UseStorage {
     // Runs the interactive Microsoft sign-in, exchanges the code for tokens, and connects with a generic label.
     const connectOneDrive = useCallback(async () => {
         const {code, verifier} = await runMicrosoftAuth()
-        const tokens = await exchangeCode(code, verifier)
+        const tokens = await exchangeCode('microsoft', code, verifier)
         if (!tokens.refresh_token) throw new Error('Microsoft did not return a refresh token.')
         await onedrive.connect({refreshToken: tokens.refresh_token, label: 'OneDrive'})
     }, [onedrive])
 
+    // Runs the interactive Google sign-in, exchanges the code for tokens, and connects with a generic label.
+    const connectGoogleDrive = useCallback(async () => {
+        const {code, verifier} = await runGoogleAuth()
+        const tokens = await exchangeCode('google', code, verifier)
+        if (!tokens.refresh_token) throw new Error('Google did not return a refresh token.')
+        await googleDrive.connect({refreshToken: tokens.refresh_token, label: 'Google Drive'})
+    }, [googleDrive])
+
     return {
-        status, dirty, provider, save, load, conflict, resolveConflict, setProvider,
+        status, dirty, provider, save, load, conflict, resolveConflict, setProvider, saving,
         nextcloudConnection: nextcloud.connection,
         connectNextcloud: nextcloud.connect,
         disconnectNextcloud: nextcloud.disconnect,
         oneDriveConnection: onedrive.connection,
         connectOneDrive,
         disconnectOneDrive: onedrive.disconnect,
+        googleDriveConnection: googleDrive.connection,
+        connectGoogleDrive,
+        disconnectGoogleDrive: googleDrive.disconnect,
     }
 }
 

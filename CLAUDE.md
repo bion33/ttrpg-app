@@ -304,35 +304,65 @@ providers land in later phases behind the same seams.
   returns the in-file `revision` (a file is sheet-sized, so a full fetch is fine). It
   holds the active `NextcloudConnection` in a module variable set via `adoptConnection`;
   persistence is the caller's (see `connectionStore`). `onedriveProvider.ts` — the
-  `onedrive` provider (phase 4): a pure `contentUrl` builder for the fixed
-  Graph app-folder file (`me/drive/special/approot:/library.json:/content`) plus
-  save/load/readRevision/connect against Microsoft Graph. It holds the active
+  `onedrive` provider (phase 4): a pure `contentUrl(fileName)` builder for the
+  Graph app-folder file (`me/drive/special/approot:/<fileName>:/content`, the filename
+  owned by `target.locator`) plus save/load/readRevision/connect against Microsoft Graph.
+  It holds the active
   `OneDriveConnection` (a rotated refresh token + generic label) and a short-lived
-  in-memory access token; `withAccessToken` refreshes via `/api/oauth/microsoft/refresh`
+  in-memory access token — both held by the shared `oauthTokenClient.ts` (see below), whose
+  `withAccessToken` refreshes via `/api/oauth/microsoft/refresh`
   (and retries once on a Graph 401), and — since Microsoft rotates the refresh token on
   every refresh — `adoptConnection(connection, onChange?)` takes an **optional change
   callback** so the caller persists the rotated token without the provider importing
   `connectionStore`. `readRevision` returns the **in-file** `revision` GUID (not Graph's
-  eTag/cTag), 404→null. `pkce.ts` — pure PKCE/OAuth helpers
+  eTag/cTag), 404→null. `googleDriveProvider.ts` — the `googleDrive` provider (phase 5):
+  save/load/readRevision/connect against the Drive v3 REST API in the app's own hidden
+  **app-data folder** (`spaces=appDataFolder`, the least-privilege `drive.appdata` scope).
+  Drive addresses files by **id**, so the provider stores the file id in the connection
+  (`GoogleDriveConnection.fileId`) and resolves it **at most once** via `ensureFileId` —
+  the stored id (no request), else a single name lookup, creating the file (multipart) when
+  absent — persisting the discovered/created id through the same `adoptConnection(…, onChange?)`
+  rotation seam OneDrive uses. `save` PATCHes the media by id (recreating once on a 404 from an
+  external delete); `readRevision` returns the **in-file** `revision` GUID. Google does not
+  rotate its refresh token, so the rotation guard is a harmless no-op. `oauthTokenClient.ts` —
+  `createOAuthTokenClient(config)`, the **shared** connection/access-token machinery both OAuth
+  providers build on (active connection + rotation callback, cached access token, relay refresh,
+  and the 401-retry `withAccessToken`); each provider makes one instance bound to its relay
+  refresh endpoint and messages, and layers only its own REST calls on top (so `adoptConnection`
+  is that instance's `adopt`). It is covered through both provider test suites. `httpError.ts` —
+  `describeHttpFailure(response, lead)`, the shared failure-message builder every cloud provider
+  throws through: a provider-specific `lead(status)` (with any credential/permission hint)
+  followed by the server's own response text (whitespace-collapsed, length-capped) so a failure
+  is diagnosable rather than an opaque status code (colocated-tested). `pkce.ts` — pure
+  PKCE/OAuth helpers
   (`createCodeVerifier`/`createState`/`codeChallenge`/`base64UrlEncode` and the
-  `authorizeUrl` builder), tested against the RFC 7636 known-answer vector.
+  generic `authorizeUrl` builder — an authorize endpoint plus provider-specific
+  `extraParams`, serving Microsoft **and** Google), tested against the RFC 7636
+  known-answer vector.
   `oauthClient.ts` — side-effectful browser glue (untested, like `fileProvider`'s
-  picker): `runMicrosoftAuth` opens the sign-in popup (synchronously, to keep the user
-  gesture) and awaits the code the static `public/oauth/microsoft/callback.html`
-  `postMessage`s back (state + origin validated), and `exchangeCode` posts to the relay.
-  `providers.ts` — the provider registry
-  (`getProvider`/`isProviderAvailable`) now registers `{file, nextcloud, onedrive}`, so
-  OneDrive stops showing as "coming soon". `syncActions.ts` — the **pure**
+  picker), **generic over provider**: `runOAuth(config)` opens the sign-in popup
+  (synchronously, to keep the user gesture) and awaits the code the static per-provider
+  callback page (`public/oauth/microsoft/callback.html`, `public/oauth/google/callback.html`)
+  `postMessage`s back (state + origin + message source validated); `runMicrosoftAuth`/
+  `runGoogleAuth` are thin config builders over it, and `exchangeCode(provider, …)` posts to
+  the relay, surfacing the relay's own error detail on failure (unwrapping the token endpoint's
+  `error_description`, or naming a missing server OAuth config on a 500/404) so a failed sign-in
+  is diagnosable. `providers.ts` — the provider registry
+  (`getProvider`/`isProviderAvailable`) now registers `{file, nextcloud, onedrive, googleDrive}`,
+  so Google Drive stops showing as "coming soon". `syncActions.ts` — the **pure**
   provider-dependent decisions (`isProbeable`, `resolveTarget`, `chooseRemoteRevision`,
   `canSave`/`canLoad`, `saveIntent`), unit-tested over every `(status, probeable)`
   combination so the hook and the controls can never disagree about enablement or the
   save guard. `resolveTarget(provider, connections)` takes a `CloudConnections` bag
-  (`{nextcloud, oneDrive}`) — additive as providers are added, not a per-provider
-  parameter. `connectionStore.ts` — device-local `SyncState` (`baseRevision`/`baseHash`),
+  (`{nextcloud, oneDrive, googleDrive}`) — additive as providers are added, not a per-provider
+  parameter — and owns the fixed snapshot filename (`SNAPSHOT_FILENAME = 'ttrpg-app.json'`),
+  passed to both cloud providers as `target.locator`. `connectionStore.ts` — device-local
+  `SyncState` (`baseRevision`/`baseHash`),
   the active provider id, the `NextcloudConnection`
-  (`load`/`save`/`clearNextcloudConnection`), and the `OneDriveConnection`
-  (`load`/`save`/`clearOneDriveConnection`) in **IndexedDB** (via **`idb-keyval`**),
-  kept out of the snapshot. `observableStorage.ts` — `notifyingStorage<Value>()`, the
+  (`load`/`save`/`clearNextcloudConnection`), the `OneDriveConnection`
+  (`load`/`save`/`clearOneDriveConnection`), and the `GoogleDriveConnection`
+  (`load`/`save`/`clearGoogleDriveConnection`, storing the resolved `fileId`) in
+  **IndexedDB** (via **`idb-keyval`**), kept out of the snapshot. `observableStorage.ts` — `notifyingStorage<Value>()`, the
   jotai `atomWithStorage` storage **every persisted atom uses** (field nodes, binders,
   pages, active page, location, page scale): it is the default JSON localStorage storage
   plus a write notification, and `subscribeToStorageWrites` lets the hook recompute
@@ -354,16 +384,23 @@ providers land in later phases behind the same seams.
   is not remounted — and the remote re-probed — on every navigation between the two. Switching
   provider or (dis)connecting a cloud provider resets the sync base (a base from another
   target is meaningless). Exposes `connectNextcloud`/`disconnectNextcloud` +
-  `nextcloudConnection` and `connectOneDrive`/`disconnectOneDrive` + `oneDriveConnection`
-  (`connectOneDrive` runs the OAuth flow, then builds a generic-labelled connection). The
+  `nextcloudConnection`, `connectOneDrive`/`disconnectOneDrive` + `oneDriveConnection`,
+  and `connectGoogleDrive`/`disconnectGoogleDrive` + `googleDriveConnection`
+  (each `connect*` runs its OAuth flow via `exchangeCode(provider, …)`, then builds a
+  generic-labelled connection). It also exposes a **`saving`** flag — set for the whole
+  `save()` (the conflict-probe branch and the write) so the controls can disable Save while
+  a save runs, which prevents two overlapping saves from letting the id-addressed Google
+  provider create a duplicate app-data file; it is the one deliberate exception to "the hook
+  exposes no activity/error state" (toasts otherwise), gating the button rather than reporting
+  progress. The
   near-identical cloud connect/disconnect/mount-hydrate lifecycle lives **once** in
   `useCloudConnection(ports, actions)` (`src/hooks/`): adopt → validate → persist →
-  activate → reset base, and the inverse on disconnect; both cloud providers route
+  activate → reset base, and the inverse on disconnect; all three cloud providers route
   through it, differing only in building their `Connection` (Nextcloud's form fields vs
-  OneDrive's OAuth exchange) and in exposing their typed connection state. Its `adopt`
+  the OAuth providers' code exchange) and in exposing their typed connection state. Its `adopt`
   call passes the provider's own `persist` port as the rotation `onChange`, so a rotated
-  OneDrive refresh token is saved through the one persister (Nextcloud ignores the extra
-  argument). After applying a load it calls the `StorageRemountContext`
+  OneDrive refresh token (or a resolved Google file id) is saved through the one persister
+  (Nextcloud ignores the extra argument). After applying a load it calls the `StorageRemountContext`
   `remount()` so atoms re-read storage. Exports that context.
 - **UI (`features/Storage/`).** `StorageProvider` (mounted once in `AppContent`, above the
   library/binder switch) holds the single `useStorage()` instance and exposes it through
@@ -380,17 +417,21 @@ providers land in later phases behind the same seams.
   [`sonner`](https://sonner.emilkowal.ski)'s `toast` directly (a `toast.loading`
   updated in place to `toast.success`/`toast.error`), rendered by the single
   top-left `<Toaster/>` mounted once in `App`; the hook exposes no activity/error state.
-  `modals/StorageSettingsModal` picks the provider (unimplemented ones disabled as
-  "coming soon"); choosing a cloud provider (Nextcloud or OneDrive) replaces the modal
+  Save is additionally disabled while `saving` is true. `modals/StorageSettingsModal`
+  picks the provider (unimplemented ones disabled as
+  "coming soon"); choosing a cloud provider (Nextcloud, OneDrive, or Google Drive) replaces
+  the modal
   body with that provider's setup view (a Back button returns to the provider list), and
   the provider becomes active only on a successful connect, not on merely opening its
   setup. `modals/NextcloudConnectForm` collects the instance URL, username, app password
   (with the exact Settings → Security path and a never-your-account-password warning), and
   file path, discloses that data passes through the relay, and shows the connected
-  target with a Disconnect button. `modals/OneDriveConnectForm` has no form fields (auth
-  is an interactive Microsoft popup): a disclosure (Microsoft sign-in, token stored in
-  this browser only, access limited to the app's own OneDrive folder) + a Connect button
-  calling `onConnect`, or the connected state with a Disconnect button.
+  target with a Disconnect button. The two OAuth providers have no form fields (auth is an
+  interactive popup), so `modals/OneDriveConnectForm` and `modals/GoogleDriveConnectForm`
+  are thin wrappers over the shared `modals/CloudConnectForm` (a disclosure node + Connect
+  button calling `onConnect`, or the connected state with a Disconnect button), each
+  supplying only its label and disclosure copy (OneDrive → Microsoft sign-in, app's own
+  OneDrive folder; Google Drive → Google sign-in, app's own hidden Drive app-data folder).
   `modals/ConflictModal` (shared `Modal`) offers keep
   this device / take the other on a divergent load or a save-time conflict.
 
@@ -414,11 +455,15 @@ a pure hostname string match. Both are colocated-tested (`ssrf.test.ts`,
 `nextcloud.test.ts`, run by the app's root Vitest). **Phase 4** adds the
 confidential-client OAuth relay: `oauth.ts` (a `Hono` sub-app mounted at `/api/oauth`),
 generic over provider — `configFor(provider)` resolves the fixed token endpoint and
-`clientId`/`clientSecret`/`redirectUri` from env vars (`microsoft` now via `MS_*`,
-`google` ready for phase 5; unknown → 404). `POST /:provider/exchange`
+`clientId`/`clientSecret`/`redirectUri` from env vars (`microsoft` via `MS_*`,
+`google` via `GOOGLE_*` (phase 5)). A shared `resolveConfig` maps a genuinely unknown provider
+to **404** but a known provider whose env is missing/blank to **500** (a server
+misconfiguration, so it is not mistaken for an unknown provider — the client surfaces this as a
+missing-config hint). `POST /:provider/exchange`
 (`{code, codeVerifier}`) and `POST /:provider/refresh` (`{refreshToken}`) forward a
 form-encoded grant to the token endpoint and return only `{access_token, refresh_token,
-expires_in}`, 400 on a missing field or an upstream failure — the client secret never
+expires_in}`, 400 on a missing field or an upstream failure (with the token endpoint's error
+`detail`) — the client secret never
 reaches the browser. No SSRF guard (the token endpoints are fixed constants).
 `env.ts`'s `env(name, fallback?)` is the required-env accessor (throws when unset).
 Both are colocated-tested (`oauth.test.ts`, `env.test.ts`). Run the three-container dev stack

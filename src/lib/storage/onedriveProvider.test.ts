@@ -13,7 +13,7 @@ const snapshot: LibrarySnapshot = {
     entries: {binders: '[]'},
 }
 
-const target = {provider: 'onedrive' as const, locator: 'library.json', label: 'OneDrive'}
+const target = {provider: 'onedrive' as const, locator: 'ttrpg-app.json', label: 'OneDrive'}
 
 // A JSON Response for a token-refresh reply.
 function refreshResponse(refreshToken = 'refresh-0'): Response {
@@ -31,8 +31,9 @@ afterEach(() => {
 })
 
 describe('contentUrl', () => {
-    it('builds the exact Graph app-folder content URL', () => {
-        expect(contentUrl()).toBe('https://graph.microsoft.com/v1.0/me/drive/special/approot:/library.json:/content')
+    it('builds the exact Graph app-folder content URL for the named file', () => {
+        expect(contentUrl('ttrpg-app.json'))
+            .toBe('https://graph.microsoft.com/v1.0/me/drive/special/approot:/ttrpg-app.json:/content')
     })
 })
 
@@ -45,7 +46,7 @@ describe('onedriveProvider', () => {
         const [refreshUrl] = vi.mocked(fetch).mock.calls[0]
         expect(refreshUrl).toBe('/api/oauth/microsoft/refresh')
         const [contentGetUrl, init] = vi.mocked(fetch).mock.calls[1]
-        expect(contentGetUrl).toBe(contentUrl())
+        expect(contentGetUrl).toBe(contentUrl(target.locator))
         expect((init?.headers as Record<string, string>).authorization).toBe('Bearer access')
     })
 
@@ -75,7 +76,7 @@ describe('onedriveProvider', () => {
             .mockResolvedValueOnce(new Response(null, {status: 200})))
         await onedriveProvider.save(target, snapshot)
         const [url, init] = vi.mocked(fetch).mock.calls[1]
-        expect(url).toBe(contentUrl())
+        expect(url).toBe(contentUrl(target.locator))
         expect(init?.method).toBe('PUT')
         expect(init?.body).toBe(serialiseSnapshot(snapshot))
     })

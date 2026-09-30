@@ -17,6 +17,9 @@ beforeEach(() => {
   process.env.MS_CLIENT_ID = 'client-id'
   process.env.MS_CLIENT_SECRET = 'client-secret'
   process.env.MS_REDIRECT_URI = 'http://localhost:8080/oauth/microsoft/callback.html'
+  process.env.GOOGLE_CLIENT_ID = 'google-client-id'
+  process.env.GOOGLE_CLIENT_SECRET = 'google-client-secret'
+  process.env.GOOGLE_REDIRECT_URI = 'http://localhost:8080/oauth/google/callback.html'
 })
 
 afterEach(() => {
@@ -78,5 +81,44 @@ describe('oauth relay', () => {
     const response = await request('/microsoft/exchange', {code: 'c', codeVerifier: 'v'})
     expect(response.status).toBe(400)
     expect(await response.json()).toEqual({error: 'token_request_failed', detail: 'invalid_grant'})
+  })
+
+  it('forwards a Google authorization_code grant to the Google token endpoint', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({access_token: 'g-at', refresh_token: 'g-rt', expires_in: 3600}), {status: 200}),
+    )
+    const response = await request('/google/exchange', {code: 'the-code', codeVerifier: 'the-verifier'})
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({access_token: 'g-at', refresh_token: 'g-rt', expires_in: 3600})
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('https://oauth2.googleapis.com/token')
+    const params = new URLSearchParams(init?.body as string)
+    expect(params.get('grant_type')).toBe('authorization_code')
+    expect(params.get('client_id')).toBe('google-client-id')
+    expect(params.get('client_secret')).toBe('google-client-secret')
+    expect(params.get('redirect_uri')).toBe('http://localhost:8080/oauth/google/callback.html')
+  })
+
+  it('forwards a Google refresh_token grant', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({access_token: 'g-at2', expires_in: 3600}), {status: 200}),
+    )
+    const response = await request('/google/refresh', {refreshToken: 'g-old-refresh'})
+
+    expect(response.status).toBe(200)
+    const params = new URLSearchParams(fetchMock.mock.calls[0][1]?.body as string)
+    expect(params.get('grant_type')).toBe('refresh_token')
+    expect(params.get('refresh_token')).toBe('g-old-refresh')
+  })
+
+  it('returns 400 when a Google exchange is missing a field', async () => {
+    expect((await request('/google/exchange', {code: 'c'})).status).toBe(400)
+  })
+
+  it('maps a missing Google env var to 500 (misconfigured), not 404 (unknown provider)', async () => {
+    delete process.env.GOOGLE_CLIENT_SECRET
+    const response = await request('/google/exchange', {code: 'c', codeVerifier: 'v'})
+    expect(response.status).toBe(500)
   })
 })

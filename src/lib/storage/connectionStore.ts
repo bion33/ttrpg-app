@@ -2,6 +2,7 @@ import {createStore, del, get, set} from 'idb-keyval'
 import type {ProviderId} from './StorageProvider.ts'
 import type {NextcloudConnection} from './nextcloudProvider.ts'
 import type {OneDriveConnection} from './onedriveProvider.ts'
+import type {GoogleDriveConnection} from './googleDriveProvider.ts'
 
 /**
  * Device-local sync state for the active target: the revision the local library descends from and its hash at that
@@ -19,6 +20,7 @@ const SYNC_STATE_KEY = 'syncState'
 const ACTIVE_PROVIDER_KEY = 'activeProvider'
 const NEXTCLOUD_KEY = 'nextcloudConnection'
 const ONEDRIVE_KEY = 'onedriveConnection'
+const GOOGLEDRIVE_KEY = 'googleDriveConnection'
 
 /** The sync state for the active target, or a never-synced default when none has been stored yet. */
 export async function loadSyncState(): Promise<SyncState> {
@@ -72,4 +74,19 @@ export async function saveOneDriveConnection(connection: OneDriveConnection): Pr
 /** Clears the stored OneDrive connection on disconnect. */
 export async function clearOneDriveConnection(): Promise<void> {
     await del(ONEDRIVE_KEY, store)
+}
+
+/** The stored Google Drive connection (refresh token, label, resolved file id), or null when none is connected. */
+export async function loadGoogleDriveConnection(): Promise<GoogleDriveConnection | null> {
+    return (await get<GoogleDriveConnection>(GOOGLEDRIVE_KEY, store)) ?? null
+}
+
+/** Persists the Google Drive connection after a successful connect, and whenever the resolved file id is stored. */
+export async function saveGoogleDriveConnection(connection: GoogleDriveConnection): Promise<void> {
+    await set(GOOGLEDRIVE_KEY, connection, store)
+}
+
+/** Clears the stored Google Drive connection on disconnect. */
+export async function clearGoogleDriveConnection(): Promise<void> {
+    await del(GOOGLEDRIVE_KEY, store)
 }

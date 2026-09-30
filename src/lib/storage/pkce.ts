@@ -39,29 +39,31 @@ export async function codeChallenge(verifier: string): Promise<string> {
     return base64UrlEncode(new Uint8Array(digest))
 }
 
-/** The parameters for the Microsoft authorize URL: the public client id, redirect URI, scope, CSRF state, and tenant. */
+/** The parameters for a provider's authorize URL: its endpoint, the public client id, redirect URI, scope, CSRF state,
+ * the S256 challenge, and any provider-specific extra query params (Microsoft's response_mode; Google's access_type). */
 export interface AuthorizeUrlParams {
-    tenant: string
+    authorizeEndpoint: string
     clientId: string
     redirectUri: string
     scope: string
     state: string
     challenge: string
+    extraParams?: Record<string, string>
 }
 
 /**
- * Builds the Microsoft authorize URL for an auth-code + PKCE flow (`response_type=code`, S256, query response mode).
+ * Builds an OAuth authorize URL for an auth-code + PKCE flow (`response_type=code`, S256) at a provider's endpoint.
  */
 export function authorizeUrl(params: AuthorizeUrlParams): string {
     const query = new URLSearchParams({
         client_id: params.clientId,
         response_type: 'code',
         redirect_uri: params.redirectUri,
-        response_mode: 'query',
         scope: params.scope,
         state: params.state,
         code_challenge: params.challenge,
         code_challenge_method: 'S256',
+        ...params.extraParams,
     })
-    return `https://login.microsoftonline.com/${params.tenant}/oauth2/v2.0/authorize?${query.toString()}`
+    return `${params.authorizeEndpoint}?${query.toString()}`
 }

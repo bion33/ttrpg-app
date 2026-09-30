@@ -4,6 +4,7 @@
  * `google` ready for phase 5); the token endpoints are fixed constants, so no SSRF guard is needed.
  */
 import {Hono} from 'hono'
+import type {Context} from 'hono'
 import {env} from './env.ts'
 
 /** The token-endpoint configuration for one OAuth provider, resolved lazily from environment variables. */
@@ -77,13 +78,20 @@ async function forwardTokenRequest(config: ProviderConfig, params: URLSearchPara
 
 export const oauth = new Hono()
 
-oauth.post('/:provider/exchange', async (context) => {
-  let config: ProviderConfig
+// Resolves a provider's config, or the error Response to return: 404 for a genuinely unknown provider, 500 for a known
+// provider whose env is missing/blank — so a server misconfiguration is not mistaken for (and reported as) an unknown provider.
+function resolveConfig(context: Context, provider: string): {config: ProviderConfig} | {error: Response} {
   try {
-    config = configFor(context.req.param('provider'))
-  } catch {
-    return context.text('Unknown provider', 404)
+    return {config: configFor(provider)}
+  } catch (caught) {
+    if (caught instanceof UnknownProviderError) return {error: context.text('Unknown provider', 404)}
+    return {error: context.text(`OAuth provider "${provider}" is not configured on the server.`, 500)}
   }
+}
+
+oauth.post('/:provider/exchange', async (context) => {
+  const resolved = resolveConfig(context, context.req.param('provider'))
+  if ('error' in resolved) return resolved.error
   const {code, codeVerifier} = await context.req.json<{code?: string; codeVerifier?: string}>()
   if (!code || !codeVerifier) return context.text('Missing code or codeVerifier', 400)
 
@@ -91,25 +99,21 @@ oauth.post('/:provider/exchange', async (context) => {
     grant_type: 'authorization_code',
     code,
     code_verifier: codeVerifier,
-    redirect_uri: config.redirectUri,
+    redirect_uri: resolved.config.redirectUri,
   })
-  const result = await forwardTokenRequest(config, params)
+  const result = await forwardTokenRequest(resolved.config, params)
   if (!result.ok) return context.json({error: result.error, detail: result.detail}, 400)
   return context.json(result.tokens)
 })
 
 oauth.post('/:provider/refresh', async (context) => {
-  let config: ProviderConfig
-  try {
-    config = configFor(context.req.param('provider'))
-  } catch {
-    return context.text('Unknown provider', 404)
-  }
+  const resolved = resolveConfig(context, context.req.param('provider'))
+  if ('error' in resolved) return resolved.error
   const {refreshToken} = await context.req.json<{refreshToken?: string}>()
   if (!refreshToken) return context.text('Missing refreshToken', 400)
 
   const params = new URLSearchParams({grant_type: 'refresh_token', refresh_token: refreshToken})
-  const result = await forwardTokenRequest(config, params)
+  const result = await forwardTokenRequest(resolved.config, params)
   if (!result.ok) return context.json({error: result.error, detail: result.detail}, 400)
   return context.json(result.tokens)
 })

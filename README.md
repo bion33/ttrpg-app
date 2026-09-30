@@ -106,3 +106,23 @@ connect. Do this once in the [Entra admin center](https://entra.microsoft.com) â
    - `Files.ReadWrite.AppFolder`
    - `offline_access` (refresh token)
    - `openid` (sign-in)
+
+### Connecting Google Drive (Google Cloud OAuth client)
+
+Like OneDrive, Google Drive uses OAuth, so an app instance needs a one-time setup before
+it can connect. Do this once in the [Google Cloud Console](https://console.cloud.google.com).
+
+1. **Create a project** (or reuse one)
+2. In **APIs & Services > Library**, find Google Drive API and enable it.
+3. **OAuth consent screen.**
+   - User type: **External**
+   - Add the scope `.../auth/drive.appdata`
+4. **Credentials > Create credentials > OAuth client ID.**
+   - Application type: **Web application**
+   - **Authorized redirect URIs**: `http://localhost:8080/oauth/google/callback.html` (dev)
+   - No "Authorized JavaScript origins" needed
+5. **Copy the secret** from the created client and put it in `./server/.env`
+   **Copy the client ID** from the created client and put them in:
+   - `./.env`
+   - `./server/.env`
+6. **Publish the app**: in Audience, set publishing status to in production
