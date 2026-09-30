@@ -18,6 +18,7 @@ const store = createStore('ttrpg-app-storage', 'connection')
 
 const SYNC_STATE_KEY = 'syncState'
 const ACTIVE_PROVIDER_KEY = 'activeProvider'
+const AUTOSAVE_KEY = 'autosaveEnabled'
 const NEXTCLOUD_KEY = 'nextcloudConnection'
 const ONEDRIVE_KEY = 'onedriveConnection'
 const GOOGLEDRIVE_KEY = 'googleDriveConnection'
@@ -30,6 +31,16 @@ export async function loadSyncState(): Promise<SyncState> {
 /** Persists the sync state after a successful save or load. */
 export async function saveSyncState(state: SyncState): Promise<void> {
     await set(SYNC_STATE_KEY, state, store)
+}
+
+/** Whether autosave and autoload are enabled on this device; defaults to true when never set. */
+export async function loadAutosaveEnabled(): Promise<boolean> {
+    return (await get<boolean>(AUTOSAVE_KEY, store)) ?? true
+}
+
+/** Persists the autosave/autoload preference for this device. */
+export async function saveAutosaveEnabled(enabled: boolean): Promise<void> {
+    await set(AUTOSAVE_KEY, enabled, store)
 }
 
 /** The id of the provider the user last selected, or null when none has been chosen. */

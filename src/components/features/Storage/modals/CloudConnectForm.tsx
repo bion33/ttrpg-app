@@ -1,4 +1,5 @@
 import {type ReactNode, useState} from 'react'
+import AutosaveToggle from './AutosaveToggle.tsx'
 
 /**
  * Props for the shared cloud connect view: whether a connection exists, the connected label, the provider-specific
@@ -12,6 +13,8 @@ interface CloudConnectFormProps {
     onConnect: () => Promise<void>
     onDisconnect: () => Promise<void>
     onClose: () => void
+    autosaveEnabled: boolean
+    onAutosaveChange: (enabled: boolean) => void
 }
 
 /**
@@ -21,6 +24,7 @@ interface CloudConnectFormProps {
  */
 function CloudConnectForm({
     connected, connectedLabel, disclosure, connectErrorFallback, onConnect, onDisconnect, onClose,
+    autosaveEnabled, onAutosaveChange,
 }: CloudConnectFormProps) {
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -29,6 +33,7 @@ function CloudConnectForm({
         return (
             <div className="modal__body">
                 <p className="modal__prompt">Connected to {connectedLabel}.</p>
+                <AutosaveToggle enabled={autosaveEnabled} onChange={onAutosaveChange}/>
                 <div className="modal__actions">
                     <button
                         type="button"

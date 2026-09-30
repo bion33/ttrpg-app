@@ -4,7 +4,16 @@ import type {NextcloudConnection} from './nextcloudProvider.ts'
 import type {OneDriveConnection} from './onedriveProvider.ts'
 import type {GoogleDriveConnection} from './googleDriveProvider.ts'
 import type {CloudConnections} from './syncActions.ts'
-import {canLoad, canSave, chooseRemoteRevision, isProbeable, resolveTarget, saveIntent} from './syncActions.ts'
+import {
+    autoloadIntent,
+    autosaveIntent,
+    canLoad,
+    canSave,
+    chooseRemoteRevision,
+    isProbeable,
+    resolveTarget,
+    saveIntent,
+} from './syncActions.ts'
 
 const ALL_STATUSES: SyncStatus[] = ['upToDate', 'localAhead', 'remoteAhead', 'diverged', 'noRemote', 'remoteMissing']
 
@@ -104,5 +113,53 @@ describe('saveIntent for a probeable provider', () => {
     it.each(ALL_STATUSES)('routes %s correctly', (status) => {
         const expected = status === 'remoteAhead' || status === 'diverged' ? 'conflict' : 'write'
         expect(saveIntent(status, true)).toBe(expected)
+    })
+})
+
+describe('autosaveIntent', () => {
+    it('is idle when disabled, regardless of status', () => {
+        for (const status of ALL_STATUSES) {
+            expect(autosaveIntent({status, probeable: true, enabled: false, dirty: true})).toBe('idle')
+        }
+    })
+
+    it('is idle for a non-probeable provider (the file provider)', () => {
+        for (const status of ALL_STATUSES) {
+            expect(autosaveIntent({status, probeable: false, enabled: true, dirty: true})).toBe('idle')
+        }
+    })
+
+    it('is idle when the library is not dirty', () => {
+        for (const status of ALL_STATUSES) {
+            expect(autosaveIntent({status, probeable: true, enabled: true, dirty: false})).toBe('idle')
+        }
+    })
+
+    it.each(ALL_STATUSES)('routes %s when enabled, probeable, and dirty', (status) => {
+        const expected = status === 'diverged'
+            ? 'conflict'
+            : status === 'localAhead' || status === 'noRemote' || status === 'remoteMissing'
+                ? 'write'
+                : 'idle'
+        expect(autosaveIntent({status, probeable: true, enabled: true, dirty: true})).toBe(expected)
+    })
+})
+
+describe('autoloadIntent', () => {
+    it('is idle when disabled, regardless of status', () => {
+        for (const status of ALL_STATUSES) {
+            expect(autoloadIntent({status, probeable: true, enabled: false})).toBe('idle')
+        }
+    })
+
+    it('is idle for a non-probeable provider (the file provider)', () => {
+        for (const status of ALL_STATUSES) {
+            expect(autoloadIntent({status, probeable: false, enabled: true})).toBe('idle')
+        }
+    })
+
+    it.each(ALL_STATUSES)('routes %s when enabled and probeable', (status) => {
+        const expected = status === 'remoteAhead' ? 'load' : status === 'diverged' ? 'conflict' : 'idle'
+        expect(autoloadIntent({status, probeable: true, enabled: true})).toBe(expected)
     })
 })

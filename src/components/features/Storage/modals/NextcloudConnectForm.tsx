@@ -1,15 +1,18 @@
 import {type SyntheticEvent, useState} from 'react'
 import type {NextcloudConnection} from '../../../../lib/storage/nextcloudProvider.ts'
+import AutosaveToggle from './AutosaveToggle.tsx'
 
 /**
- * Props for the Nextcloud connect form: the current connection (null when disconnected), and the connect/disconnect
- * actions from `useStorage`.
+ * Props for the Nextcloud connect form: the current connection (null when disconnected), the connect/disconnect actions
+ * from `useStorage`, and the device-local autosave preference shown once connected.
  */
 interface NextcloudConnectFormProps {
     connection: NextcloudConnection | null
     onConnect: (connection: NextcloudConnection) => Promise<void>
     onDisconnect: () => Promise<void>
     onClose: () => void
+    autosaveEnabled: boolean
+    onAutosaveChange: (enabled: boolean) => void
 }
 
 // Builds the display label for a connection ("host / path"), falling back to the raw URL if it cannot be parsed.
@@ -25,7 +28,9 @@ function buildLabel(baseUrl: string, path: string): string {
  * The Nextcloud connection form inside the storage settings modal: collects the instance URL, username, app password,
  * and file path (each with guidance on where to find it), or shows the connected target with a Disconnect button.
  */
-function NextcloudConnectForm({connection, onConnect, onDisconnect, onClose}: NextcloudConnectFormProps) {
+function NextcloudConnectForm({
+    connection, onConnect, onDisconnect, onClose, autosaveEnabled, onAutosaveChange,
+}: NextcloudConnectFormProps) {
     const [baseUrl, setBaseUrl] = useState('')
     const [username, setUsername] = useState('')
     const [appPassword, setAppPassword] = useState('')
@@ -37,6 +42,7 @@ function NextcloudConnectForm({connection, onConnect, onDisconnect, onClose}: Ne
         return (
             <div className="modal__body">
                 <p className="modal__prompt">Connected to {connection.label}.</p>
+                <AutosaveToggle enabled={autosaveEnabled} onChange={onAutosaveChange}/>
                 <div className="modal__actions">
                     <button
                         type="button"

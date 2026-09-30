@@ -10,24 +10,29 @@ interface OneDriveConnectFormProps {
     onConnect: () => Promise<void>
     onDisconnect: () => Promise<void>
     onClose: () => void
+    autosaveEnabled: boolean
+    onAutosaveChange: (enabled: boolean) => void
 }
 
 /**
  * The OneDrive connection view inside the storage settings modal: the shared cloud connect view with OneDrive's label
  * and disclosure copy.
  */
-function OneDriveConnectForm({connection, onConnect, onDisconnect, onClose}: OneDriveConnectFormProps) {
+function OneDriveConnectForm({
+    connection, onConnect, onDisconnect, onClose, autosaveEnabled, onAutosaveChange,
+}: OneDriveConnectFormProps) {
     return (
         <CloudConnectForm
             connected={connection !== null}
             connectedLabel="OneDrive"
             connectErrorFallback="Could not connect to OneDrive."
+            autosaveEnabled={autosaveEnabled}
+            onAutosaveChange={onAutosaveChange}
             disclosure={
                 <>
                     You'll sign in with your Microsoft account in a popup window. This app never sees or stores which
                     account you choose. A sign-in token is kept <strong>in this browser only</strong> (cleared with site
-                    data), and the access it grants is limited to this app's own OneDrive folder — it cannot read the
-                    rest of your drive.
+                    data), and the access it grants does not allow to read / write to the rest of your drive.
                 </>
             }
             onConnect={onConnect}

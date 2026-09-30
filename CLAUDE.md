@@ -351,9 +351,13 @@ providers land in later phases behind the same seams.
   (`getProvider`/`isProviderAvailable`) now registers `{file, nextcloud, onedrive, googleDrive}`,
   so Google Drive stops showing as "coming soon". `syncActions.ts` — the **pure**
   provider-dependent decisions (`isProbeable`, `resolveTarget`, `chooseRemoteRevision`,
-  `canSave`/`canLoad`, `saveIntent`), unit-tested over every `(status, probeable)`
-  combination so the hook and the controls can never disagree about enablement or the
-  save guard. `resolveTarget(provider, connections)` takes a `CloudConnections` bag
+  `canSave`/`canLoad`, `saveIntent`, and the phase-6 `autosaveIntent`/`autoloadIntent`),
+  unit-tested over every `(status, probeable, …)` combination so the hook and the controls
+  can never disagree about enablement, the save guard, or when autosave/autoload fire.
+  `autosaveIntent` yields `write`/`conflict`/`idle` and `autoloadIntent` yields
+  `load`/`conflict`/`idle`; both are cloud-only (idle for the non-probeable file provider),
+  never act while disabled, and route a `diverged` status to the conflict flow rather than
+  clobbering. `resolveTarget(provider, connections)` takes a `CloudConnections` bag
   (`{nextcloud, oneDrive, googleDrive}`) — additive as providers are added, not a per-provider
   parameter — and owns the fixed snapshot filename (`SNAPSHOT_FILENAME = 'ttrpg-app.json'`),
   passed to both cloud providers as `target.locator`. `connectionStore.ts` — device-local
@@ -361,7 +365,9 @@ providers land in later phases behind the same seams.
   the active provider id, the `NextcloudConnection`
   (`load`/`save`/`clearNextcloudConnection`), the `OneDriveConnection`
   (`load`/`save`/`clearOneDriveConnection`), and the `GoogleDriveConnection`
-  (`load`/`save`/`clearGoogleDriveConnection`, storing the resolved `fileId`) in
+  (`load`/`save`/`clearGoogleDriveConnection`, storing the resolved `fileId`), and the
+  device-local **autosave preference** (`load`/`saveAutosaveEnabled`, default true — one global
+  toggle governing both autosave and autoload, not synced since it is per device) in
   **IndexedDB** (via **`idb-keyval`**), kept out of the snapshot. `observableStorage.ts` — `notifyingStorage<Value>()`, the
   jotai `atomWithStorage` storage **every persisted atom uses** (field nodes, binders,
   pages, active page, location, page scale): it is the default JSON localStorage storage
@@ -402,6 +408,23 @@ providers land in later phases behind the same seams.
   OneDrive refresh token (or a resolved Google file id) is saved through the one persister
   (Nextcloud ignores the extra argument). After applying a load it calls the `StorageRemountContext`
   `remount()` so atoms re-read storage. Exports that context.
+  **Autosave/autoload (phase 6).** For a cloud provider with the device-local autosave preference
+  on, the hook saves and catches up **hands-off**: a persisted-atom write schedules a longer
+  (`AUTOSAVE_DEBOUNCE_MS = 2000`) debounce that runs `autosaveIntent` and, on `write`, saves through
+  the same `save()` path (so a `diverged` remote still routes to the conflict modal, never a silent
+  overwrite); the remote probe path (`refreshRemote`, on mount/focus/post-save/post-load) runs
+  `autoloadIntent` and catches a cleanly-ahead remote up through `load()`, guarded by an
+  `autoloadInFlight` ref against overlap. `performSave` guards re-entrancy with a `savingRef` so a
+  debounced autosave and a manual save can never both write. **Durability** — every edit is written
+  to `localStorage` synchronously, so only the *remote* copy can ever lag one debounce window; the
+  small **`useAutosaveFlush`** hook (`src/hooks/`) closes that window by flushing the pending
+  autosave on `visibilitychange`→hidden and window `blur` (both page-alive, a normal uncapped fetch),
+  and on `beforeunload` (when there is unsaved work) it dispatches the save and shows the native
+  confirmation prompt, whose dwell time lets the already-issued request land. No service worker / no
+  `keepalive`; a service-worker Background Sync is the future path for completing an upload after the
+  page is truly gone. The hook also exposes `autosaveEnabled`/`setAutosaveEnabled` (persisted
+  device-local) and a one-shot `promptSettings`/`dismissSettingsPrompt` — set once after mount when
+  no provider was ever configured, so a first-time user is shown storage settings.
 - **UI (`features/Storage/`).** `StorageProvider` (mounted once in `AppContent`, above the
   library/binder switch) holds the single `useStorage()` instance and exposes it through
   `storageContext.ts`'s `StorageContext`/`useStorageContext()`, so navigation does not
@@ -432,6 +455,11 @@ providers land in later phases behind the same seams.
   button calling `onConnect`, or the connected state with a Disconnect button), each
   supplying only its label and disclosure copy (OneDrive → Microsoft sign-in, app's own
   OneDrive folder; Google Drive → Google sign-in, app's own hidden Drive app-data folder).
+  Every connected cloud view (all three) shows the shared `modals/AutosaveToggle` — the one
+  device-local "Autosave & autoload" checkbox, its `autosaveEnabled`/`onAutosaveChange` threaded
+  from `useStorage` through `StorageSettingsModal`. `StorageControls` opens the settings modal
+  automatically when `promptSettings` is set (a never-configured device), deriving the modal's
+  open state from `settingsOpen || promptSettings` and dismissing the prompt on close.
   `modals/ConflictModal` (shared `Modal`) offers keep
   this device / take the other on a divergent load or a save-time conflict.
 
@@ -543,8 +571,10 @@ location and pushes a history entry, and `useNavigationHistory()` — called onc
 `AppContent` — seeds and applies Back/Forward via `popstate`. `useStorage()` owns
 the storage orchestration (see the Storage feature above) and exports
 `StorageRemountContext`; `useCloudConnection(ports, actions)` owns the connect/
-disconnect/mount-hydrate lifecycle shared by every cloud provider (also with the Storage
-feature). (The whole-library persistence pure helpers live under
+disconnect/mount-hydrate lifecycle shared by every cloud provider; `useAutosaveFlush(ports)`
+owns the `visibilitychange`/`blur`/`beforeunload` listeners that flush a pending autosave
+before the page goes inactive (all with the Storage feature). (The whole-library persistence
+pure helpers live under
 `src/lib/storage/`, `src/lib/snapshot.ts`, and `src/migrations/`, also documented
 with the Storage feature.)
 

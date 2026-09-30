@@ -84,6 +84,31 @@
     color: var(--color-text);
 }
 
+/* The autosave/autoload checkbox in a connected cloud provider's view. */
+.storage-connect__toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.storage-connect__toggle input {
+    margin-top: 0.2rem;
+}
+
+.storage-connect__toggle span {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    font-family: var(--font-serif);
+    color: var(--color-ink);
+}
+
+.storage-connect__toggle small {
+    font-size: 0.8rem;
+    color: var(--color-text);
+}
+
 /* A readable failure message shown when a connect attempt fails; darker ink and real bold set it apart. */
 .storage-connect__error {
     margin: 0;

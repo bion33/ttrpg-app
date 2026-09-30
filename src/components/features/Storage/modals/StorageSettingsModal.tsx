@@ -9,6 +9,7 @@ import {isProviderAvailable} from '../../../../lib/storage/providers.ts'
 import NextcloudConnectForm from './NextcloudConnectForm.tsx'
 import OneDriveConnectForm from './OneDriveConnectForm.tsx'
 import GoogleDriveConnectForm from './GoogleDriveConnectForm.tsx'
+import AutosaveToggle from './AutosaveToggle.tsx'
 import './StorageSettingsModal.css'
 
 /** The providers offered in settings, in display order; availability is read from the registry. */
@@ -35,6 +36,8 @@ interface StorageSettingsModalProps {
     googleDriveConnection: GoogleDriveConnection | null
     onConnectGoogleDrive: () => Promise<void>
     onDisconnectGoogleDrive: () => Promise<void>
+    autosaveEnabled: boolean
+    onAutosaveChange: (enabled: boolean) => void
 }
 
 // The providers that open their own setup view instead of being selected inline from the list.
@@ -50,8 +53,12 @@ function StorageSettingsModal({
     provider, onSelect, onClose, nextcloudConnection, onConnectNextcloud, onDisconnectNextcloud,
     oneDriveConnection, onConnectOneDrive, onDisconnectOneDrive,
     googleDriveConnection, onConnectGoogleDrive, onDisconnectGoogleDrive,
+    autosaveEnabled, onAutosaveChange,
 }: StorageSettingsModalProps) {
     const [setupProvider, setSetupProvider] = useState<'nextcloud' | 'onedrive' | 'googleDrive' | null>(null)
+
+    // Autosave governs any connected cloud provider, so the toggle belongs in the provider list too once one is connected.
+    const cloudConnected = nextcloudConnection !== null || oneDriveConnection !== null || googleDriveConnection !== null
 
     // A cloud provider opens its own setup view; every other provider is selected inline from the list.
     const chooseProvider = (id: ProviderId) => {
@@ -75,6 +82,8 @@ function StorageSettingsModal({
                             onConnect={onConnectNextcloud}
                             onDisconnect={onDisconnectNextcloud}
                             onClose={onClose}
+                            autosaveEnabled={autosaveEnabled}
+                            onAutosaveChange={onAutosaveChange}
                         />
                     )}
                     {setupProvider === 'onedrive' && (
@@ -83,6 +92,8 @@ function StorageSettingsModal({
                             onConnect={onConnectOneDrive}
                             onDisconnect={onDisconnectOneDrive}
                             onClose={onClose}
+                            autosaveEnabled={autosaveEnabled}
+                            onAutosaveChange={onAutosaveChange}
                         />
                     )}
                     {setupProvider === 'googleDrive' && (
@@ -91,6 +102,8 @@ function StorageSettingsModal({
                             onConnect={onConnectGoogleDrive}
                             onDisconnect={onDisconnectGoogleDrive}
                             onClose={onClose}
+                            autosaveEnabled={autosaveEnabled}
+                            onAutosaveChange={onAutosaveChange}
                         />
                     )}
                 </div>
@@ -125,6 +138,7 @@ function StorageSettingsModal({
                         )
                     })}
                 </ul>
+                {cloudConnected && <AutosaveToggle enabled={autosaveEnabled} onChange={onAutosaveChange}/>}
                 <div className="modal__actions">
                     <button type="button" className="modal__btn modal__btn--primary" onClick={onClose}>Done</button>
                 </div>

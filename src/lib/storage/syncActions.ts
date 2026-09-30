@@ -88,3 +88,35 @@ export function saveIntent(status: SyncStatus, probeable: boolean): 'write' | 'c
     if (probeable && (status === 'remoteAhead' || status === 'diverged')) return 'conflict'
     return 'write'
 }
+
+/**
+ * What an automatic save should do at a status: 'write' when the remote is safe to overwrite from this device,
+ * 'conflict' when local and remote have diverged (route to the conflict modal, never clobber), else 'idle'. Enabled and
+ * probeable must both hold, and a clean (not dirty) library is always idle.
+ */
+export function autosaveIntent(input: {
+    status: SyncStatus
+    probeable: boolean
+    enabled: boolean
+    dirty: boolean
+}): 'write' | 'conflict' | 'idle' {
+    if (!input.enabled || !input.probeable || !input.dirty) return 'idle'
+    if (input.status === 'diverged') return 'conflict'
+    if (input.status === 'localAhead' || input.status === 'noRemote' || input.status === 'remoteMissing') return 'write'
+    return 'idle'
+}
+
+/**
+ * What automatic catch-up should do at a status: 'load' when the remote is cleanly ahead of a non-dirty local base,
+ * 'conflict' when local edits sit on a stale base (diverged), else 'idle'. Enabled and probeable must both hold.
+ */
+export function autoloadIntent(input: {
+    status: SyncStatus
+    probeable: boolean
+    enabled: boolean
+}): 'load' | 'conflict' | 'idle' {
+    if (!input.enabled || !input.probeable) return 'idle'
+    if (input.status === 'remoteAhead') return 'load'
+    if (input.status === 'diverged') return 'conflict'
+    return 'idle'
+}
