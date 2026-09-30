@@ -1,7 +1,7 @@
-import type {LibrarySnapshot} from '../snapshot.ts'
+import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {StorageProvider, StorageTarget} from './StorageProvider.ts'
 import {parseSnapshot, serialiseSnapshot} from './fileProvider.ts'
-import {createOAuthTokenClient} from './oauthTokenClient.ts'
+import {createOAuthTokenClient} from '@lib/storage/oauth/oauthTokenClient.ts'
 import {describeHttpFailure} from './httpError.ts'
 
 /**
@@ -69,7 +69,7 @@ async function createFile(fileName: string, snapshot: LibrarySnapshot): Promise<
             body,
         }))
     if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
-    const {id} = await response.json() as {id: string}
+    const {id} = await response.json() as { id: string }
     rememberFileId(id)
     return id
 }
@@ -85,7 +85,7 @@ async function lookupFileId(fileName: string): Promise<string | null> {
     const response = await withAccessToken((token) =>
         fetch(`${DRIVE_API}/files?${query.toString()}`, {headers: {authorization: `Bearer ${token}`}}))
     if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
-    const {files} = await response.json() as {files: {id: string}[]}
+    const {files} = await response.json() as { files: { id: string }[] }
     const found = files[0]?.id ?? null
     if (found) rememberFileId(found)
     return found
@@ -101,7 +101,7 @@ interface FileIdResult {
 // with `snapshot` when it does not exist and `create` is set. `created` is true only when this call wrote a new file.
 async function ensureFileId(
     fileName: string,
-    options: {create: false} | {create: true; snapshot: LibrarySnapshot},
+    options: { create: false } | { create: true; snapshot: LibrarySnapshot },
 ): Promise<FileIdResult> {
     const storedId = tokenClient.getConnection()?.fileId
     if (storedId) return {fileId: storedId, created: false}

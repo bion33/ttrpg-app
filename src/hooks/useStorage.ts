@@ -1,11 +1,11 @@
 import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useState} from 'react'
 import {toast} from 'sonner'
 import {useDebouncedCallback} from 'use-debounce'
-import type {LibrarySnapshot} from '../lib/snapshot.ts'
-import {applySnapshot, createSnapshot, snapshotHash} from '../lib/snapshot.ts'
-import type {ProviderId} from '../lib/storage/StorageProvider.ts'
-import {getProvider} from '../lib/storage/providers.ts'
-import {evaluateSync, type SyncStatus} from '../lib/storage/sync.ts'
+import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
+import {applySnapshot, createSnapshot, snapshotHash} from '@lib/storage/snapshot.ts'
+import type {ProviderId} from '@lib/storage/providers/StorageProvider.ts'
+import {getProvider} from '@lib/storage/providers/providers.ts'
+import {evaluateSync, type SyncStatus} from '@lib/storage/sync/sync.ts'
 import {
     autoloadIntent,
     autosaveIntent,
@@ -13,9 +13,9 @@ import {
     isProbeable,
     resolveTarget,
     saveIntent,
-} from '../lib/storage/syncActions.ts'
-import {subscribeToStorageWrites} from '../lib/storage/observableStorage.ts'
-import type {SyncState} from '../lib/storage/connectionStore.ts'
+} from '@lib/storage/sync/syncActions.ts'
+import {subscribeToStorageWrites} from '@lib/storage/observableStorage.ts'
+import type {SyncState} from '@lib/storage/connectionStore.ts'
 import {
     clearGoogleDriveConnection,
     clearNextcloudConnection,
@@ -32,20 +32,27 @@ import {
     saveNextcloudConnection,
     saveOneDriveConnection,
     saveSyncState,
-} from '../lib/storage/connectionStore.ts'
-import {adoptConnection as adoptNextcloud, type NextcloudConnection} from '../lib/storage/nextcloudProvider.ts'
-import {adoptConnection as adoptOneDrive, type OneDriveConnection} from '../lib/storage/onedriveProvider.ts'
-import {adoptConnection as adoptGoogleDrive, type GoogleDriveConnection} from '../lib/storage/googleDriveProvider.ts'
-import {exchangeCode, runGoogleAuth, runMicrosoftAuth} from '../lib/storage/oauthClient.ts'
-import {useCloudConnection, type CloudConnectionPorts} from './useCloudConnection.ts'
+} from '@lib/storage/connectionStore.ts'
+import {
+    adoptConnection as adoptNextcloud,
+    type NextcloudConnection
+} from '@lib/storage/providers/nextcloudProvider.ts'
+import {adoptConnection as adoptOneDrive, type OneDriveConnection} from '@lib/storage/providers/onedriveProvider.ts'
+import {
+    adoptConnection as adoptGoogleDrive,
+    type GoogleDriveConnection
+} from '@lib/storage/providers/googleDriveProvider.ts'
+import {exchangeCode, runGoogleAuth, runMicrosoftAuth} from '@lib/storage/oauth/oauthClient.ts'
+import {type CloudConnectionPorts, useCloudConnection} from './useCloudConnection.ts'
 import {useAutosaveFlush} from './useAutosaveFlush.ts'
-import {newId} from '../lib/newId.ts'
+import {newId} from '@lib/ids/newId.ts'
 
 /**
  * The callback that swaps the app's jotai store so `atomWithStorage` atoms re-read the bulk-rewritten localStorage
  * after a load; provided by the app root and defaulting to a no-op outside it.
  */
-export const StorageRemountContext = createContext<() => void>(() => {})
+export const StorageRemountContext = createContext<() => void>(() => {
+})
 
 /** A pending conflict: the incoming snapshot, and whether it was raised while loading or while saving. */
 export interface ConflictPrompt {
@@ -64,24 +71,36 @@ export interface UseStorage {
     status: SyncStatus
     dirty: boolean
     provider: ProviderId
-    save(): Promise<void>
-    load(): Promise<void>
     conflict: ConflictPrompt | null
-    resolveConflict(choice: 'keepLocal' | 'takeOther'): Promise<void>
-    setProvider(id: ProviderId): void
     nextcloudConnection: NextcloudConnection | null
-    connectNextcloud(connection: NextcloudConnection): Promise<void>
-    disconnectNextcloud(): Promise<void>
     oneDriveConnection: OneDriveConnection | null
-    connectOneDrive(): Promise<void>
-    disconnectOneDrive(): Promise<void>
     googleDriveConnection: GoogleDriveConnection | null
-    connectGoogleDrive(): Promise<void>
-    disconnectGoogleDrive(): Promise<void>
     saving: boolean
     autosaveEnabled: boolean
-    setAutosaveEnabled(enabled: boolean): Promise<void>
     promptSettings: boolean
+
+    save(): Promise<void>
+
+    load(): Promise<void>
+
+    resolveConflict(choice: 'keepLocal' | 'takeOther'): Promise<void>
+
+    setProvider(id: ProviderId): void
+
+    connectNextcloud(connection: NextcloudConnection): Promise<void>
+
+    disconnectNextcloud(): Promise<void>
+
+    connectOneDrive(): Promise<void>
+
+    disconnectOneDrive(): Promise<void>
+
+    connectGoogleDrive(): Promise<void>
+
+    disconnectGoogleDrive(): Promise<void>
+
+    setAutosaveEnabled(enabled: boolean): Promise<void>
+
     dismissSettingsPrompt(): void
 }
 
@@ -156,7 +175,8 @@ export function useStorage(): UseStorage {
     const autoloadInFlight = useRef(false)
     // Holds the latest load(), updated in an effect below, so autoload (fired from the probe path) invokes the current
     // load without load having to be defined before the probe.
-    const loadRef = useRef<() => Promise<void>>(async () => {})
+    const loadRef = useRef<() => Promise<void>>(async () => {
+    })
 
     // Mirrors the saving flag into a ref alongside the state, so programmatic writes can guard re-entrancy synchronously.
     const setSavingFlag = useCallback((value: boolean) => {

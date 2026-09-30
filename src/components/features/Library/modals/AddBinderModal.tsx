@@ -1,5 +1,5 @@
-import Modal from '../../../ui/Modal/Modal'
-import {useNameForm} from '../../../../hooks/useNameForm.ts'
+import Modal from '@ui/Modal/Modal'
+import {useNameForm} from '@hooks/useNameForm.ts'
 
 /**
  * Props for the add-binder dialogue: it reports the chosen name, or a cancellation.

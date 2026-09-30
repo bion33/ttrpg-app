@@ -1,4 +1,4 @@
-import PaperPage from '../../ui/PaperPage/PaperPage'
+import PaperPage from '@ui/PaperPage/PaperPage'
 
 /**
  * Props for the empty page: an optional title, shown in place of the default heading.

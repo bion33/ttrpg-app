@@ -9,6 +9,6 @@ export interface BinderTab {
  * real pages inside it. Takes the binder's persisted page list (already parsed from storage) and projects each page to
  * its label and hue.
  */
-export function binderTabs(pages: readonly {label: string; hue: number}[]): BinderTab[] {
+export function binderTabs(pages: readonly { label: string; hue: number }[]): BinderTab[] {
     return pages.map((page) => ({label: page.label, hue: page.hue}))
 }

@@ -1,11 +1,11 @@
 import {useState} from 'react'
 import {ArrowLeft} from 'lucide-react'
-import Modal from '../../../ui/Modal/Modal'
-import type {ProviderId} from '../../../../lib/storage/StorageProvider.ts'
-import type {NextcloudConnection} from '../../../../lib/storage/nextcloudProvider.ts'
-import type {OneDriveConnection} from '../../../../lib/storage/onedriveProvider.ts'
-import type {GoogleDriveConnection} from '../../../../lib/storage/googleDriveProvider.ts'
-import {isProviderAvailable} from '../../../../lib/storage/providers.ts'
+import Modal from '@ui/Modal/Modal'
+import type {ProviderId} from '@lib/storage/providers/StorageProvider.ts'
+import type {NextcloudConnection} from '@lib/storage/providers/nextcloudProvider.ts'
+import type {OneDriveConnection} from '@lib/storage/providers/onedriveProvider.ts'
+import type {GoogleDriveConnection} from '@lib/storage/providers/googleDriveProvider.ts'
+import {isProviderAvailable} from '@lib/storage/providers/providers.ts'
 import NextcloudConnectForm from './NextcloudConnectForm.tsx'
 import OneDriveConnectForm from './OneDriveConnectForm.tsx'
 import GoogleDriveConnectForm from './GoogleDriveConnectForm.tsx'
@@ -13,7 +13,7 @@ import AutosaveToggle from './AutosaveToggle.tsx'
 import './StorageSettingsModal.css'
 
 /** The providers offered in settings, in display order; availability is read from the registry. */
-const PROVIDER_OPTIONS: {id: ProviderId; label: string; description: string}[] = [
+const PROVIDER_OPTIONS: { id: ProviderId; label: string; description: string }[] = [
     {id: 'file', label: 'File (import / export)', description: 'Save and load a JSON file you choose each time.'},
     {id: 'nextcloud', label: 'Nextcloud', description: 'Sync to a Nextcloud server.'},
     {id: 'onedrive', label: 'OneDrive', description: 'Sync to your Microsoft OneDrive.'},
@@ -50,11 +50,21 @@ const SETUP_TITLES: Record<'nextcloud' | 'onedrive' | 'googleDrive', string> = {
  * body with its setup form, with a Back button returning to the list.
  */
 function StorageSettingsModal({
-    provider, onSelect, onClose, nextcloudConnection, onConnectNextcloud, onDisconnectNextcloud,
-    oneDriveConnection, onConnectOneDrive, onDisconnectOneDrive,
-    googleDriveConnection, onConnectGoogleDrive, onDisconnectGoogleDrive,
-    autosaveEnabled, onAutosaveChange,
-}: StorageSettingsModalProps) {
+                                  provider,
+                                  onSelect,
+                                  onClose,
+                                  nextcloudConnection,
+                                  onConnectNextcloud,
+                                  onDisconnectNextcloud,
+                                  oneDriveConnection,
+                                  onConnectOneDrive,
+                                  onDisconnectOneDrive,
+                                  googleDriveConnection,
+                                  onConnectGoogleDrive,
+                                  onDisconnectGoogleDrive,
+                                  autosaveEnabled,
+                                  onAutosaveChange,
+                              }: StorageSettingsModalProps) {
     const [setupProvider, setSetupProvider] = useState<'nextcloud' | 'onedrive' | 'googleDrive' | null>(null)
 
     // Autosave governs any connected cloud provider, so the toggle belongs in the provider list too once one is connected.

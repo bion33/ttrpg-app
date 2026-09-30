@@ -1,8 +1,8 @@
 import {describe, expect, it} from 'vitest'
 import type {SyncStatus} from './sync.ts'
-import type {NextcloudConnection} from './nextcloudProvider.ts'
-import type {OneDriveConnection} from './onedriveProvider.ts'
-import type {GoogleDriveConnection} from './googleDriveProvider.ts'
+import type {NextcloudConnection} from '@lib/storage/providers/nextcloudProvider.ts'
+import type {OneDriveConnection} from '@lib/storage/providers/onedriveProvider.ts'
+import type {GoogleDriveConnection} from '@lib/storage/providers/googleDriveProvider.ts'
 import type {CloudConnections} from './syncActions.ts'
 import {
     autoloadIntent,

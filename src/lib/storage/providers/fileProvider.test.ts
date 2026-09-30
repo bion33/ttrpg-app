@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import type {LibrarySnapshot} from '../snapshot.ts'
+import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import {parseSnapshot, serialiseSnapshot} from './fileProvider.ts'
 
 const snapshot: LibrarySnapshot = {
@@ -19,7 +19,11 @@ describe('serialiseSnapshot / parseSnapshot', () => {
     })
 
     it('throws when a required field is missing', () => {
-        expect(() => parseSnapshot(JSON.stringify({version: 1, revision: 'r', savedAt: 'now'}))).toThrow(/valid library/)
+        expect(() => parseSnapshot(JSON.stringify({
+            version: 1,
+            revision: 'r',
+            savedAt: 'now'
+        }))).toThrow(/valid library/)
     })
 
     it('throws when an entry value is not a string', () => {

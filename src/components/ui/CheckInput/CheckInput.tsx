@@ -1,6 +1,6 @@
-import FieldForeignObject from '../FieldForeignObject/FieldForeignObject'
+import FieldForeignObject from '@ui/FieldForeignObject/FieldForeignObject'
 import './CheckInput.css'
-import type {CheckFieldDefinition} from "../../../types/CheckFieldDefinition.ts";
+import type {CheckFieldDefinition} from "@type/CheckFieldDefinition.ts";
 
 /**
  * The checked mark is drawn as a native SVG shape (circle, diamond, or star) in

@@ -20,7 +20,11 @@ export type InputNode<T extends FieldValue = FieldValue> = {
 /**
  * A computed field: read-only, derived from other atoms, never persisted.
  */
-export type DerivedNode<T extends FieldValue = FieldValue> = { readOnly: true; definition: FieldDefinition; atom: Atom<T> }
+export type DerivedNode<T extends FieldValue = FieldValue> = {
+    readOnly: true;
+    definition: FieldDefinition;
+    atom: Atom<T>
+}
 
 /**
  * Any overlay field: writable or computed. The writable case is a union of the concrete value types (a

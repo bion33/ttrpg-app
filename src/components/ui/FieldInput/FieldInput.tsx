@@ -1,14 +1,14 @@
 import type {WritableAtom} from 'jotai'
 import {atom, useAtom, useAtomValue} from 'jotai'
-import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
-import type {FieldNode, FieldValue} from '../../../types/FieldNode.ts'
-import type {NumericFieldDefinition} from '../../../types/NumericFieldDefinition.ts'
-import AutoFitInput from '../AutoFitInput/AutoFitInput'
-import CheckInput from '../CheckInput/CheckInput'
-import NumericInput from '../NumericInput/NumericInput'
+import type {FieldDefinition} from '@type/FieldDefinition.ts'
+import type {FieldNode, FieldValue} from '@type/FieldNode.ts'
+import type {NumericFieldDefinition} from '@type/NumericFieldDefinition.ts'
+import AutoFitInput from '@ui/AutoFitInput/AutoFitInput'
+import CheckInput from '@ui/CheckInput/CheckInput'
+import NumericInput from '@ui/NumericInput/NumericInput'
 import './FieldInput.css'
-import AutoFitTextarea from '../AutoFitTextarea/AutoFitTextarea'
-import type {CheckFieldDefinition} from "../../../types/CheckFieldDefinition.ts";
+import AutoFitTextarea from '@ui/AutoFitTextarea/AutoFitTextarea'
+import type {CheckFieldDefinition} from "@type/CheckFieldDefinition.ts";
 
 // ---- INTERNAL CONSTANTS ----
 
@@ -66,7 +66,8 @@ function control(
 ) {
     switch (field.type) {
         case 'number':
-            return <NumericInput field={field as NumericFieldDefinition} value={value as number | null} onChange={onChange} readOnly={readOnly}/>
+            return <NumericInput field={field as NumericFieldDefinition} value={value as number | null}
+                                 onChange={onChange} readOnly={readOnly}/>
         case 'text':
             return <AutoFitInput field={field} value={value as string} onChange={onChange}/>
         case 'textarea':

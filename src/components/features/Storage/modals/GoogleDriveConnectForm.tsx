@@ -1,4 +1,4 @@
-import type {GoogleDriveConnection} from '../../../../lib/storage/googleDriveProvider.ts'
+import type {GoogleDriveConnection} from '@lib/storage/providers/googleDriveProvider.ts'
 import CloudConnectForm from './CloudConnectForm.tsx'
 
 /**
@@ -19,8 +19,8 @@ interface GoogleDriveConnectFormProps {
  * label and disclosure copy.
  */
 function GoogleDriveConnectForm({
-    connection, onConnect, onDisconnect, onClose, autosaveEnabled, onAutosaveChange,
-}: GoogleDriveConnectFormProps) {
+                                    connection, onConnect, onDisconnect, onClose, autosaveEnabled, onAutosaveChange,
+                                }: GoogleDriveConnectFormProps) {
     return (
         <CloudConnectForm
             connected={connection !== null}

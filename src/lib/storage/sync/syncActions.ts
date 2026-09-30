@@ -1,9 +1,9 @@
-import type {ProviderId, StorageTarget} from './StorageProvider.ts'
+import type {ProviderId, StorageTarget} from '@lib/storage/providers/StorageProvider.ts'
 import type {SyncStatus} from './sync.ts'
-import type {NextcloudConnection} from './nextcloudProvider.ts'
-import {webdavUrl} from './nextcloudProvider.ts'
-import type {OneDriveConnection} from './onedriveProvider.ts'
-import type {GoogleDriveConnection} from './googleDriveProvider.ts'
+import type {NextcloudConnection} from '@lib/storage/providers/nextcloudProvider.ts'
+import {webdavUrl} from '@lib/storage/providers/nextcloudProvider.ts'
+import type {OneDriveConnection} from '@lib/storage/providers/onedriveProvider.ts'
+import type {GoogleDriveConnection} from '@lib/storage/providers/googleDriveProvider.ts'
 
 // The file provider's target: its locator is ignored (the user picks a file each save/load).
 const FILE_TARGET: StorageTarget = {provider: 'file', locator: '', label: 'File'}

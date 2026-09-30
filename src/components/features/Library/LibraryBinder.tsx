@@ -1,10 +1,10 @@
 import type {CSSProperties, MouseEvent} from 'react'
 import {Pencil, Plus, Trash2} from 'lucide-react'
 import './Library.css'
-import '../Binder/tabs/Tabs.css'
-import IconButton from '../../ui/IconButton/IconButton'
-import {bookJitter} from './logic/bookJitter.ts'
-import {binderSpineDark, binderSpineLight, tabColor} from '../../../lib/hueColors.ts'
+import '@features/Binder/tabs/Tabs.css'
+import IconButton from '@ui/IconButton/IconButton'
+import {bookJitter} from './logic/bookJitter/bookJitter.ts'
+import {binderSpineDark, binderSpineLight, tabColor} from '@lib/colors/hueColors.ts'
 
 /**
  * Props for one library binder cover: its spine hue and label, the seed for its stable paper mess, the decorative page

@@ -1,4 +1,4 @@
-import Modal from '../../../ui/Modal/Modal'
+import Modal from '@ui/Modal/Modal'
 
 /**
  * Props for the conflict dialogue: the incoming file's save time, and the two resolutions — keep this device's current

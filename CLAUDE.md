@@ -70,7 +70,7 @@ The whole sheet is one `<svg viewBox="0 0 816 1055.867">`. Inside it:
 Key idea: **every field is a node** carrying both its layout (`definition`) and
 the jotai atom holding its value. Position and state are one object.
 
-### Field node model (`src/types/`, `src/lib/fieldNodes.ts`)
+### Field node model (`src/type/`, `src/lib/fields/fieldNodes.ts`)
 
 - `FieldDefinition` — layout for one field: `id`, `x/y/width/height` (viewBox
   units, **not pixels**), `type` (`text | textarea | number | check`), and
@@ -133,7 +133,7 @@ the jotai atom holding its value. Position and state are one object.
     builders in `spells.ts`, the damage-grid builder in `traits.ts`. Only
     builders/constants shared by more than one section belong in a common
     `generators.ts`/`constants.ts` module.
-  - `logic/formulas.ts` — **pure** D&D 5e rules math (no atoms/React/storage),
+  - `logic/formulas/formulas.ts` — **pure** D&D 5e rules math (no atoms/React/storage),
     unit-tested in `formulas.test.ts`. Atoms wire these into derived fields.
   - `CharacterSheet.tsx` — takes a `storagePrefix` prop, memoizes
     `buildSheet(prefix)`, fetches/injects the artwork SVG, and renders the
@@ -149,7 +149,7 @@ Storage feature below); `AppContent` inside the provider wires navigation and
 renders `Library`. The **library**
 holds many **binders**: a `LibraryBinderItem` is serialisable metadata (`id`,
 `label`, `hue`), where `id` is a `crypto.randomUUID()` GUID (minted by
-`src/lib/newId.ts`'s `newId()`, unit-tested in `newId.test.ts`, shared with the
+`src/lib/ids/newId.ts`'s `newId()`, unit-tested in `newId.test.ts`, shared with the
 binder's page ids) that survives renames and is the **storage-prefix root every
 one of the binder's pages persists under**. The binder list lives in `atomWithStorage('binders', …)`,
 **empty by default**. Which binder is open — and which page within it — is the
@@ -173,10 +173,10 @@ binder tabs** tuck along its right edge — **the real page-tab strip markup
 draws **one tab per real page in the binder, in that page's stored hue and
 label**. Each cover subscribes to that binder's shared `pagesAtom`/`activePageAtom`
 (`Binder/binderAtoms.ts`, below), so the shelf stays reactive to page changes and
-reads no `localStorage` itself, and `logic/binderTabs.ts`'s `binderTabs` (pure,
+reads no `localStorage` itself, and `logic/binderTabs/binderTabs.ts`'s `binderTabs` (pure,
 unit-tested in `binderTabs.test.ts`) projects the persisted page list to each tab's
 label and hue. The stable per-sheet paper
-offset/rotation comes from `logic/bookJitter.ts` (pure, seeded off the binder id,
+offset/rotation comes from `logic/bookJitter/bookJitter.ts` (pure, seeded off the binder id,
 unit-tested in `bookJitter.test.ts`), so a book's mess is consistent across
 renders. When a binder is open the grid gives way to
 the `Binder` bound to that binder's id (`<Binder storagePrefix={id} onExit=…/>`,
@@ -185,7 +185,7 @@ through the `Modal`-based modals in `modals/`, one component per file
 (`AddBinderModal.tsx` takes a name; `EditBinderModal.tsx` renames + recolours the
 spine via the shared `ui/ColorPicker`); deleting reuses the shared
 `ui/ConfirmModal`, warning all the binder's pages are removed. Default spine hues
-reuse the shared `src/lib/tabHue.ts`. Adding is driven by a **ghost binder** —
+reuse the shared `src/lib/colors/tabHue.ts`. Adding is driven by a **ghost binder** —
 the same `LibraryBinder` markup faded to a low opacity (`.library__binder--ghost`, the
 `ghost` variant), with a plus icon in the portrait in place of a letter and the
 name "Add binder". It sits in the grid's last cell after the existing covers and
@@ -204,7 +204,7 @@ tab-strip components live together in a `tabs/` subfolder (`Tabs`,
 `TabControls`), with the tab modals in a nested `tabs/modals/` (`AddTabModal`,
 `EditTabModal`); they are feature-specific, so they live in the feature folder,
 not in `ui/` (tab deletion reuses the shared `ui/ConfirmModal`). The pure
-per-index tab-hue function lives in `src/lib/tabHue.ts` (shared by `Binder` and
+per-index tab-hue function lives in `src/lib/colors/tabHue.ts` (shared by `Binder` and
 `Library`, unit-tested in `tabHue.test.ts`). Page-view zoom is owned by the
 `usePageScale` hook (`src/hooks/`), not `Binder` itself.
 
@@ -237,7 +237,7 @@ but is slated for removal from that list later.
 Adding a page is driven from `TabControls` (below), which opens `AddTabModal`
 (`tabs/modals/AddTabModal.tsx`) — a proper modal (not `window.prompt`) asking for a
 **name** and a **type**. On submit `Binder.createPage` mints the id via
-`src/lib/newId.ts`'s `newId()` (the shared GUID helper, unit-tested in
+`src/lib/ids/newId.ts`'s `newId()` (the shared GUID helper, unit-tested in
 `newId.test.ts`) — an opaque id decoupled from the name so it survives renames;
 that id is also the character sheet's `storagePrefix`, and the new page becomes
 active.
@@ -276,7 +276,13 @@ and hydrated back, so the sync layer is fully decoupled from the field-node syst
 Phase 1 ships the pure core plus the **file provider** only (export/import); cloud
 providers land in later phases behind the same seams.
 
-- **Snapshot (`src/lib/snapshot.ts`).** `LibrarySnapshot` (`version`,
+The `src/lib/storage/` group is itself organised by concern: `providers/` (the
+provider registry, types, per-provider implementations, and their shared
+`httpError`), `oauth/` (the shared OAuth/token machinery — `oauthClient`,
+`oauthTokenClient`, `pkce`), `sync/` (`sync`, `syncActions`), plus `snapshot`,
+`connectionStore`, and `observableStorage` at the group root.
+
+- **Snapshot (`src/lib/storage/snapshot.ts`).** `LibrarySnapshot` (`version`,
   `revision` GUID, `savedAt`, and `entries`: every `localStorage` key → value) with
   `createSnapshot`/`applySnapshot` (replace, not merge; migrates then clears then
   writes) over an injected `StorageLike`, and `snapshotHash` (a **`hash-sum`** of the
@@ -468,7 +474,11 @@ providers land in later phases behind the same seams.
 A standalone Node/Hono api project (its own Yarn 4 install and `yarn.lock`,
 **not** part of the app's install — different runtime and deps: Hono + tsx),
 exposing the same-origin `/api/*` backend later storage phases extend with
-relay/OAuth routes. Phase 2 shipped a CORS lock and `GET /api/health`
+relay/OAuth routes. `server/src/` is grouped by concern: `index.ts` (the entry
+that mounts the sub-apps) and `env.ts` (the shared required-env accessor) at the
+root, the Hono sub-apps under `routes/` (`nextcloud.ts`, `oauth.ts`), and the SSRF
+guard under `security/` (`ssrf.ts`); each colocated with its `*.test.ts`.
+Phase 2 shipped a CORS lock and `GET /api/health`
 (returns `ok`); **phase 3** adds the Nextcloud WebDAV relay: `nextcloud.ts` (a
 `Hono` sub-app mounted at `/api/nextcloud`) forwards one WebDAV request per call —
 reading `x-nc-url`, `x-nc-method`, `authorization`, `depth` — rejecting a missing
@@ -527,7 +537,7 @@ name-field state and trim/guard submit via the `useNameForm` hook (`src/hooks/`)
 `ColorPicker` is the shared hue picker used by the binder and tab edit modals: a
 hue slider, preset swatches, and a live-preview swatch. Props are `hue`,
 `onChange`, `presets` (the preset hues), and `preview` (a hue → CSS-colour
-function). The preview functions come from `src/lib/hueColors.ts` (the same
+function). The preview functions come from `src/lib/colors/hueColors.ts` (the same
 functions the components use), so the binder spine's and paper tab's tones stay
 distinct **and** the preview never drifts from what the component renders. Its
 picker styling lives in `ColorPicker.css`.
@@ -546,18 +556,19 @@ stacking via the surrounding container so the pill can sit above neighbours (e.g
 
 ### Shared helpers (`src/lib`, `src/hooks`)
 
-Framework-agnostic pure helpers live in `src/lib` (colocated `*.test.ts`):
-`fieldNodes.ts` (the field-node factory), `parseNumericField.ts`
-(`parseNumericField(raw)` → `number | null`, the one place raw field strings are
-parsed to numbers), `tabHue.ts` (the per-index tab/binder hue), `newId.ts`
-(`newId()`, the one `crypto.randomUUID()` GUID helper for both binder and page
-ids), `hueColors.ts` (the hue → CSS-colour functions for the binder spine and
+Framework-agnostic pure helpers live in `src/lib`, **grouped by concern into
+subfolders**, each module colocated with its `*.test.ts`: `fields/fieldNodes.ts`
+(the field-node factory), `colors/tabHue.ts` (the per-index tab/binder hue),
+`colors/hueColors.ts` (the hue → CSS-colour functions for the binder spine and
 paper tabs — `binderSpineLight`/`binderSpineDark`/`binderSpineColor` and
 `tabColor` — the **single source of truth** shared between the modal previews and
 the components, which consume them as inline CSS custom properties so the colours
-never drift from the CSS), and `navigation.ts` (the pure `Location` type — which
+never drift from the CSS), `ids/newId.ts`
+(`newId()`, the one `crypto.randomUUID()` GUID helper for both binder and page
+ids), and `navigation/navigation.ts` (the pure `Location` type — which
 binder is open and which page is active — with
-`libraryLocation`/`isLibrary`/`sameLocation`). Shared React hooks live in
+`libraryLocation`/`isLibrary`/`sameLocation`). The `storage/` subfolder is the
+whole-library persistence group (below). Shared React hooks live in
 `src/hooks`: `useAutoFitFontSize(ref, value, maxFontSize, axis)` (the
 shrink-to-fit loop behind `AutoFitInput`/`AutoFitTextarea`, owning
 `DEFAULT_FONT_SIZE`/`MIN_FONT_SIZE`), `usePageScale()` (the persisted
@@ -575,7 +586,7 @@ disconnect/mount-hydrate lifecycle shared by every cloud provider; `useAutosaveF
 owns the `visibilitychange`/`blur`/`beforeunload` listeners that flush a pending autosave
 before the page goes inactive (all with the Storage feature). (The whole-library persistence
 pure helpers live under
-`src/lib/storage/`, `src/lib/snapshot.ts`, and `src/migrations/`, also documented
+`src/lib/storage/` (which now also holds `snapshot.ts`) and `src/migrations/`, also documented
 with the Storage feature.)
 
 ## Conventions
@@ -607,7 +618,7 @@ All code documentation is concise and purpose-driven.
 
 Any logic separable from layout must be separated from it, written in a
 functional style (pure functions — values in, values out; no side effects), and
-unit tested. `logic/formulas.ts` + `formulas.test.ts` is the model: rules math
+unit tested. `logic/formulas/formulas.ts` + `formulas.test.ts` is the model: rules math
 lives apart from field definitions, and layout wires the pure functions in via
 `derivedNode`.
 
@@ -621,7 +632,7 @@ utility classes also live there: `.corner-cluster` (a fixed vertical control sta
 callers add only the corner insets) and `.no-print` (chrome hidden under
 `@media print`) — prefer them over per-file copies. Hue-derived colours are **not**
 CSS literals: the components set them as inline custom properties computed by
-`src/lib/hueColors.ts`, the same source the modal previews use (see above).
+`src/lib/colors/hueColors.ts`, the same source the modal previews use (see above).
 
 ### File & directory naming
 
@@ -631,6 +642,13 @@ CSS literals: the components set them as inline custom properties computed by
 - **Folders not named after a component** (groupings): plural camelCase
   (`sections/`, `logic/` — treat an established name like `logic` as its own
   plural).
+- **`lib/` and `logic/` are organised into subfolders**, not a flat pile of files.
+  In `logic/` each module gets its own folder holding it and its colocated test
+  (`logic/formulas/formulas.ts` + `formulas.test.ts`). In `lib/` modules are
+  grouped by concern (`colors/`, `fields/`, `ids/`, `navigation/`, `storage/` — and
+  `storage/` is further split into `providers/`, `oauth/`, `sync/`). A concern
+  folder may hold one or several modules; put a new pure helper in the matching
+  concern folder (or a new one) rather than at the `lib/` root.
 
 ### Naming: no unapproved abbreviations
 
@@ -662,11 +680,18 @@ same change so it stays approved going forward.
   field id. Within a section builder, cross-field logic reads fields by reference
   off the typed tree (e.g. `abilities.wisdom.skills.perception.bonus.atom`), not by
   id lookup.
-- Keep rules math in `logic/formulas.ts` pure and tested; wire it via
+- Keep rules math in `logic/formulas/formulas.ts` pure and tested; wire it via
   `derivedNode`.
 - TS is strict-ish: `noUnusedLocals`/`noUnusedParameters`, `verbatimModuleSyntax`
   (use `import type` for types), and `.ts`/`.tsx` extensions are included in
-  relative imports.
+  imports.
+- **Path aliases** (defined once in `tsconfig.app.json` `paths` and mirrored in
+  `vite.config.ts` `resolve.alias`) shorten cross-directory imports: `@ui/*` →
+  `src/components/ui`, `@features/*` → `src/components/features`, `@hooks/*` →
+  `src/hooks`, `@lib/*` → `src/lib`, `@type/*` → `src/type` (singular `@type`,
+  since TypeScript reserves the `@types/` namespace). Prefer an alias over a
+  `../../…` chain that climbs out of the current directory; keep same-directory
+  imports relative (`./Foo.css`). Adding a new alias means updating **both** files.
 - In `src/lib/` and `logic/`, declare named functions with the `function`
   keyword, not `const` arrow lambdas (arrows are fine for inline callbacks). UI
   components elsewhere keep their existing arrow/`function` style.

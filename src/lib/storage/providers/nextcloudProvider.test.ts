@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
-import type {LibrarySnapshot} from '../snapshot.ts'
-import {adoptConnection, nextcloudProvider, webdavParentUrls, webdavUrl} from './nextcloudProvider.ts'
+import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {NextcloudConnection} from './nextcloudProvider.ts'
+import {adoptConnection, nextcloudProvider, webdavParentUrls, webdavUrl} from './nextcloudProvider.ts'
 import {serialiseSnapshot} from './fileProvider.ts'
 
 const connection: NextcloudConnection = {

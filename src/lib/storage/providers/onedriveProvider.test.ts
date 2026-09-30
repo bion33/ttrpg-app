@@ -1,7 +1,7 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
-import type {LibrarySnapshot} from '../snapshot.ts'
-import {adoptConnection, contentUrl, onedriveProvider} from './onedriveProvider.ts'
+import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {OneDriveConnection} from './onedriveProvider.ts'
+import {adoptConnection, contentUrl, onedriveProvider} from './onedriveProvider.ts'
 import {serialiseSnapshot} from './fileProvider.ts'
 
 const connection: OneDriveConnection = {refreshToken: 'refresh-0', label: 'OneDrive'}

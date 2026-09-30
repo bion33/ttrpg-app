@@ -1,10 +1,9 @@
-import {useCallback} from 'react'
-import {useEffect} from 'react'
+import {useCallback, useEffect} from 'react'
 import {useAtomValue, useStore} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
-import {notifyingStorage} from '../lib/storage/observableStorage.ts'
-import type {Location} from '../lib/navigation.ts'
-import {libraryLocation, sameLocation} from '../lib/navigation.ts'
+import {notifyingStorage} from '@lib/storage/observableStorage.ts'
+import type {Location} from '@lib/navigation/navigation.ts'
+import {libraryLocation, sameLocation} from '@lib/navigation/navigation.ts'
 
 /** The location currently shown, persisted so a reload reopens the same binder and page. */
 const locationAtom = atomWithStorage<Location>('location', libraryLocation(), notifyingStorage<Location>())

@@ -1,7 +1,7 @@
-import type {LibrarySnapshot} from '../snapshot.ts'
+import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {StorageProvider, StorageTarget} from './StorageProvider.ts'
 import {parseSnapshot, serialiseSnapshot} from './fileProvider.ts'
-import {createOAuthTokenClient} from './oauthTokenClient.ts'
+import {createOAuthTokenClient} from '@lib/storage/oauth/oauthTokenClient.ts'
 import {describeHttpFailure} from './httpError.ts'
 
 /**

@@ -1,4 +1,4 @@
-import type {LibrarySnapshot} from '../snapshot.ts'
+import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {StorageProvider, StorageTarget} from './StorageProvider.ts'
 
 // The default filename offered when saving, and the accept filter when opening.
@@ -45,6 +45,7 @@ function isPickerCancel(error: unknown): boolean {
 // The minimal File System Access API surface used here; present only on Chromium, so the glue feature-detects it.
 interface WritableFile {
     write(data: string): Promise<void>
+
     close(): Promise<void>
 }
 
@@ -131,7 +132,8 @@ function readViaInput(): Promise<string | null> {
  */
 export const fileProvider: StorageProvider = {
     id: 'file',
-    async connect() {},
+    async connect() {
+    },
     isConnected() {
         return true
     },

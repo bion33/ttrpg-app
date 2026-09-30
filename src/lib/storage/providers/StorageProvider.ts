@@ -1,4 +1,4 @@
-import type {LibrarySnapshot} from '../snapshot.ts'
+import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 
 /** The set of storage backends a target can name; phase 1 ships only the file provider. */
 export type ProviderId = 'file' | 'nextcloud' | 'onedrive' | 'googleDrive'
@@ -19,9 +19,14 @@ export interface StorageTarget {
  */
 export interface StorageProvider {
     readonly id: ProviderId
+
     connect(): Promise<void>
+
     isConnected(): boolean
+
     save(target: StorageTarget, snapshot: LibrarySnapshot): Promise<void>
+
     load(target: StorageTarget): Promise<LibrarySnapshot | null>
+
     readRevision(target: StorageTarget): Promise<string | null>
 }

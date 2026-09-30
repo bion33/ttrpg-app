@@ -1,7 +1,7 @@
 import {useEffect, useMemo, useRef, useState} from 'react'
 import './CharacterSheet.css'
-import FieldInput from '../../ui/FieldInput/FieldInput'
-import PaperPage from '../../ui/PaperPage/PaperPage'
+import FieldInput from '@ui/FieldInput/FieldInput'
+import PaperPage from '@ui/PaperPage/PaperPage'
 import {buildSheet} from './layout/sheet.ts'
 
 const SVG_URL = '/character-sheet/character-sheet.svg'

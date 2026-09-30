@@ -23,8 +23,11 @@ export interface OAuthTokenClientConfig {
  */
 export interface OAuthTokenClient<Connection extends OAuthConnection> {
     adopt(connection: Connection | null, onChange?: (connection: Connection) => void): void
+
     getConnection(): Connection | null
+
     setConnection(connection: Connection): void
+
     withAccessToken(request: (token: string) => Promise<Response>): Promise<Response>
 }
 
@@ -40,7 +43,7 @@ export function createOAuthTokenClient<Connection extends OAuthConnection>(
     // Invoked with a changed connection so the caller can persist a rotated token or other connection updates.
     let onConnectionChange: ((connection: Connection) => void) | null = null
     // The cached access token and its absolute expiry (ms epoch); dropped whenever the connection changes.
-    let accessToken: {value: string; expiresAt: number} | null = null
+    let accessToken: { value: string; expiresAt: number } | null = null
 
     // Sets the in-memory connection (or clears it) and the optional change callback; drops any cached access token.
     function adopt(connection: Connection | null, onChange?: (connection: Connection) => void): void {
@@ -69,7 +72,7 @@ export function createOAuthTokenClient<Connection extends OAuthConnection>(
             body: JSON.stringify({refreshToken: active.refreshToken}),
         })
         if (!response.ok) throw new Error(config.expiredMessage)
-        const tokens = await response.json() as {access_token: string; refresh_token?: string; expires_in?: number}
+        const tokens = await response.json() as { access_token: string; refresh_token?: string; expires_in?: number }
         // Expire ~60s early so a token never lapses mid-request.
         accessToken = {value: tokens.access_token, expiresAt: Date.now() + ((tokens.expires_in ?? 3600) - 60) * 1000}
         if (tokens.refresh_token && active) setConnection({...active, refreshToken: tokens.refresh_token})

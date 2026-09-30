@@ -1,6 +1,6 @@
-import type {FieldNode} from '../../../../../types/FieldNode.ts'
-import type {SheetFactory} from '../nodes.ts'
-import type {CheckFieldDefinition} from "../../../../../types/CheckFieldDefinition.ts";
+import type {FieldNode} from '@type/FieldNode.ts'
+import type {SheetFactory} from '@features/CharacterSheet/layout/nodes.ts'
+import type {CheckFieldDefinition} from "@type/CheckFieldDefinition.ts";
 
 // ---- INTERNAL CONSTANTS ----
 

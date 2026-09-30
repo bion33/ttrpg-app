@@ -1,4 +1,4 @@
-import Modal from '../Modal/Modal'
+import Modal from '@ui/Modal/Modal'
 
 /**
  * Props for the confirm dialog: its heading, the message to show, the confirm button's label and variant, and the

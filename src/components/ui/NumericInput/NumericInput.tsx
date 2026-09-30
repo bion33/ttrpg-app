@@ -1,6 +1,6 @@
-import type {NumericFieldDefinition} from '../../../types/NumericFieldDefinition.ts'
-import {formatModifier} from '../../features/CharacterSheet/logic/formulas.ts'
-import FieldForeignObject from '../FieldForeignObject/FieldForeignObject'
+import type {NumericFieldDefinition} from '@type/NumericFieldDefinition.ts'
+import {formatModifier} from '@features/CharacterSheet/logic/formulas/formulas.ts'
+import FieldForeignObject from '@ui/FieldForeignObject/FieldForeignObject'
 import './NumericInput.css'
 
 /**

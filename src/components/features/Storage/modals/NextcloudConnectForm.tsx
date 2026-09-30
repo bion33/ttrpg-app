@@ -1,5 +1,5 @@
 import {type SyntheticEvent, useState} from 'react'
-import type {NextcloudConnection} from '../../../../lib/storage/nextcloudProvider.ts'
+import type {NextcloudConnection} from '@lib/storage/providers/nextcloudProvider.ts'
 import AutosaveToggle from './AutosaveToggle.tsx'
 
 /**
@@ -29,8 +29,8 @@ function buildLabel(baseUrl: string, path: string): string {
  * and file path (each with guidance on where to find it), or shows the connected target with a Disconnect button.
  */
 function NextcloudConnectForm({
-    connection, onConnect, onDisconnect, onClose, autosaveEnabled, onAutosaveChange,
-}: NextcloudConnectFormProps) {
+                                  connection, onConnect, onDisconnect, onClose, autosaveEnabled, onAutosaveChange,
+                              }: NextcloudConnectFormProps) {
     const [baseUrl, setBaseUrl] = useState('')
     const [username, setUsername] = useState('')
     const [appPassword, setAppPassword] = useState('')
@@ -93,7 +93,8 @@ function NextcloudConnectForm({
                     value={baseUrl}
                     onChange={(event) => setBaseUrl(event.target.value)}
                 />
-                <small className="storage-connect__hint">The address you open Nextcloud at, e.g. https://cloud.example.com</small>
+                <small className="storage-connect__hint">The address you open Nextcloud at, e.g.
+                    https://cloud.example.com</small>
             </label>
 
             <label className="modal__field">
@@ -106,18 +107,21 @@ function NextcloudConnectForm({
                 <span>App password</span>
                 <input type="password" value={appPassword} onChange={(event) => setAppPassword(event.target.value)}/>
                 <small className="storage-connect__hint">
-                    In Nextcloud click on Account &gt; Personal Settings &gt; Security, and scroll down to create a new app password. Do <strong>not</strong> use your account password.
+                    In Nextcloud click on Account &gt; Personal Settings &gt; Security, and scroll down to create a new
+                    app password. Do <strong>not</strong> use your account password.
                 </small>
             </label>
 
             <label className="modal__field">
                 <span>File path</span>
                 <input type="text" value={path} onChange={(event) => setPath(event.target.value)}/>
-                <small className="storage-connect__hint">Path to a file inside your Nextcloud Files. It's created if it doesn't exist.</small>
+                <small className="storage-connect__hint">Path to a file inside your Nextcloud Files. It's created if it
+                    doesn't exist.</small>
             </label>
 
             <p className="modal__prompt">
-                Your instance URL, app password, and character data pass through this app's relay server on every save and load.
+                Your instance URL, app password, and character data pass through this app's relay server on every save
+                and load.
             </p>
 
             {error && <p className="storage-connect__error">{error}</p>}

@@ -1,4 +1,4 @@
-import {createFieldFactory, derivedNode} from '../../../../lib/fieldNodes.ts'
+import {createFieldFactory, derivedNode} from '@lib/fields/fieldNodes.ts'
 
 /**
  * The node builders one character sheet is assembled from, all bound to a single storage-key prefix so every field

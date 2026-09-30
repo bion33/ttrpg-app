@@ -1,5 +1,5 @@
 import Library from './components/features/Library/Library.tsx'
-import {StorageProvider} from './components/features/Storage/StorageProvider.tsx'
+import {StorageProvider} from '@features/Storage/StorageProvider.tsx'
 import {useNavigationHistory} from './hooks/useNavigation.ts'
 
 /**

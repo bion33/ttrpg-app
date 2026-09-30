@@ -1,7 +1,7 @@
 import {describe, expect, it} from 'vitest'
 import type {StorageLike} from './snapshot.ts'
 import {applySnapshot, createSnapshot, snapshotHash} from './snapshot.ts'
-import {CURRENT_VERSION} from '../migrations/migrations.ts'
+import {CURRENT_VERSION} from '../../migrations/migrations.ts'
 
 /** A minimal in-memory Storage used to exercise the snapshot layer without a real localStorage. */
 function fakeStorage(initial: Record<string, string> = {}): StorageLike {

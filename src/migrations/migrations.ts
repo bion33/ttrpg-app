@@ -1,4 +1,4 @@
-import type {LibrarySnapshot} from '../lib/snapshot.ts'
+import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import {v2} from './v2.ts'
 
 /**
@@ -7,6 +7,7 @@ import {v2} from './v2.ts'
  */
 export interface Migration {
     to: number
+
     migrate(entries: Record<string, string>): Record<string, string>
 }
 

@@ -1,8 +1,8 @@
 import type {Getter} from 'jotai'
-import type {DerivedNode, InputNode} from '../../../../../types/FieldNode.ts'
-import type {NumericFieldDefinition} from '../../../../../types/NumericFieldDefinition.ts'
-import {abilityModifier, passivePerception, skillBonus} from '../../logic/formulas.ts'
-import type {SheetFactory} from '../nodes.ts'
+import type {DerivedNode, InputNode} from '@type/FieldNode.ts'
+import type {NumericFieldDefinition} from '@type/NumericFieldDefinition.ts'
+import {abilityModifier, passivePerception, skillBonus} from '@features/CharacterSheet/logic/formulas/formulas.ts'
+import type {SheetFactory} from '@features/CharacterSheet/layout/nodes.ts'
 
 // ---- INTERNAL CONSTANTS ----
 

@@ -1,4 +1,4 @@
-import type {LibrarySnapshot} from '../snapshot.ts'
+import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {StorageProvider, StorageTarget} from './StorageProvider.ts'
 import {parseSnapshot, serialiseSnapshot} from './fileProvider.ts'
 import {describeHttpFailure} from './httpError.ts'

@@ -5,7 +5,7 @@
  */
 import {Hono} from 'hono'
 import type {Context} from 'hono'
-import {env} from './env.ts'
+import {env} from '../env.ts'
 
 /** The token-endpoint configuration for one OAuth provider, resolved lazily from environment variables. */
 interface ProviderConfig {

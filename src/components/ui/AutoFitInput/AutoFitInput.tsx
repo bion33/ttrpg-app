@@ -1,7 +1,7 @@
 import {useRef} from 'react'
-import type {FieldDefinition} from '../../../types/FieldDefinition.ts'
-import {DEFAULT_FONT_SIZE, useAutoFitFontSize} from '../../../hooks/useAutoFitFontSize.ts'
-import FieldForeignObject from '../FieldForeignObject/FieldForeignObject'
+import type {FieldDefinition} from '@type/FieldDefinition.ts'
+import {DEFAULT_FONT_SIZE, useAutoFitFontSize} from '@hooks/useAutoFitFontSize.ts'
+import FieldForeignObject from '@ui/FieldForeignObject/FieldForeignObject'
 
 /**
  * Text input whose font size auto-fits its value to the field width.

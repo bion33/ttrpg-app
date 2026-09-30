@@ -4,7 +4,7 @@
  * forwards.
  */
 import {Hono} from 'hono'
-import {RelayNotConfiguredError, assertAllowedTarget} from './ssrf.ts'
+import {RelayNotConfiguredError, assertAllowedTarget} from '../security/ssrf.ts'
 
 const ALLOWED_METHODS = new Set(['GET', 'PUT', 'PROPFIND', 'MKCOL', 'DELETE', 'MOVE'])
 

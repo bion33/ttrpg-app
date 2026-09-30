@@ -1,6 +1,6 @@
 import {useCallback, useState} from 'react'
-import type {ProviderId} from '../lib/storage/StorageProvider.ts'
-import {getProvider} from '../lib/storage/providers.ts'
+import type {ProviderId} from '@lib/storage/providers/StorageProvider.ts'
+import {getProvider} from '@lib/storage/providers/providers.ts'
 
 /**
  * The per-provider persistence and adoption ports a cloud connection is driven through: the provider id, the provider's
@@ -8,9 +8,13 @@ import {getProvider} from '../lib/storage/providers.ts'
  */
 export interface CloudConnectionPorts<Connection> {
     providerId: ProviderId
+
     adopt(connection: Connection | null, onChange?: (connection: Connection) => void): void
+
     persist(connection: Connection): Promise<void>
+
     clear(): Promise<void>
+
     load(): Promise<Connection | null>
 }
 
@@ -20,15 +24,20 @@ export interface CloudConnectionPorts<Connection> {
  */
 export interface CloudConnectionActions {
     activateProvider(id: ProviderId): Promise<void>
+
     resetSyncBase(): Promise<void>
+
     clearProbe(): void
 }
 
 /** A cloud connection's state and lifecycle, shared by every cloud provider so connect/disconnect exist once. */
 export interface CloudConnection<Connection> {
     connection: Connection | null
+
     connect(connection: Connection): Promise<void>
+
     disconnect(): Promise<void>
+
     hydrate(): Promise<void>
 }
 

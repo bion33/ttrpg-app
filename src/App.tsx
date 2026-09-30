@@ -1,5 +1,5 @@
 import {useCallback, useState} from 'react'
-import {Provider, createStore} from 'jotai'
+import {createStore, Provider} from 'jotai'
 import {Toaster} from 'sonner'
 import AppContent from './AppContent.tsx'
 import {StorageRemountContext} from './hooks/useStorage.ts'

@@ -1,7 +1,7 @@
 import {afterEach, describe, expect, it, vi} from 'vitest'
-import type {LibrarySnapshot} from '../snapshot.ts'
-import {adoptConnection, googleDriveProvider} from './googleDriveProvider.ts'
+import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {GoogleDriveConnection} from './googleDriveProvider.ts'
+import {adoptConnection, googleDriveProvider} from './googleDriveProvider.ts'
 import {serialiseSnapshot} from './fileProvider.ts'
 
 const connection: GoogleDriveConnection = {refreshToken: 'refresh-0', label: 'Google Drive'}

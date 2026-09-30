@@ -1,4 +1,4 @@
-import type {OneDriveConnection} from '../../../../lib/storage/onedriveProvider.ts'
+import type {OneDriveConnection} from '@lib/storage/providers/onedriveProvider.ts'
 import CloudConnectForm from './CloudConnectForm.tsx'
 
 /**
@@ -19,8 +19,8 @@ interface OneDriveConnectFormProps {
  * and disclosure copy.
  */
 function OneDriveConnectForm({
-    connection, onConnect, onDisconnect, onClose, autosaveEnabled, onAutosaveChange,
-}: OneDriveConnectFormProps) {
+                                 connection, onConnect, onDisconnect, onClose, autosaveEnabled, onAutosaveChange,
+                             }: OneDriveConnectFormProps) {
     return (
         <CloudConnectForm
             connected={connection !== null}

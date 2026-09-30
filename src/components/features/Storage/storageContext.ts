@@ -1,5 +1,5 @@
 import {createContext, useContext} from 'react'
-import type {UseStorage} from '../../../hooks/useStorage.ts'
+import type {UseStorage} from '@hooks/useStorage.ts'
 
 /** The shared storage orchestration, provided by `StorageProvider` and `null` outside it. */
 export const StorageContext = createContext<UseStorage | null>(null)

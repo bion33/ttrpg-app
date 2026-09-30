@@ -1,5 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import type {LibrarySnapshot} from '../lib/snapshot.ts'
+import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {Migration} from './migrations.ts'
 import {CURRENT_VERSION, migrateSnapshot, runMigrations} from './migrations.ts'
 

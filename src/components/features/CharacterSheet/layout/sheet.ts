@@ -1,5 +1,5 @@
-import {collectNodes} from '../../../../lib/fieldNodes.ts'
-import type {FieldNode} from '../../../../types/FieldNode.ts'
+import {collectNodes} from '@lib/fields/fieldNodes.ts'
+import type {FieldNode} from '@type/FieldNode.ts'
 import {createSheetFactory} from './nodes.ts'
 import {buildHeader} from './sections/header.ts'
 import {buildAbilities} from './sections/abilities.ts'

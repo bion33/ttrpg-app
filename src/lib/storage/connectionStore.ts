@@ -1,8 +1,8 @@
 import {createStore, del, get, set} from 'idb-keyval'
-import type {ProviderId} from './StorageProvider.ts'
-import type {NextcloudConnection} from './nextcloudProvider.ts'
-import type {OneDriveConnection} from './onedriveProvider.ts'
-import type {GoogleDriveConnection} from './googleDriveProvider.ts'
+import type {ProviderId} from './providers/StorageProvider.ts'
+import type {NextcloudConnection} from './providers/nextcloudProvider.ts'
+import type {OneDriveConnection} from './providers/onedriveProvider.ts'
+import type {GoogleDriveConnection} from './providers/googleDriveProvider.ts'
 
 /**
  * Device-local sync state for the active target: the revision the local library descends from and its hash at that

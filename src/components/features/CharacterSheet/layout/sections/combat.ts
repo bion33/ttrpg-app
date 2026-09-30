@@ -1,6 +1,6 @@
 import type {Getter} from 'jotai'
-import {halfSpeed} from '../../logic/formulas.ts'
-import type {SheetFactory} from '../nodes.ts'
+import {halfSpeed} from '@features/CharacterSheet/logic/formulas/formulas.ts'
+import type {SheetFactory} from '@features/CharacterSheet/layout/nodes.ts'
 
 /**
  * Builds the combat fields (armor class, speeds, hit points, conditions), the hit-dice block, and the death saves.
@@ -97,10 +97,42 @@ export function buildCombat({inputNode, checkNode, computedInputNode}: SheetFact
 
     const hitDice = {
         class1: inputNode({id: 'hitDiceClass1', x: 562, y: 210, width: 14, height: 20, type: 'number', fontSize: 12}),
-        totalClass1: inputNode({id: 'hitDiceTotalClass1', x: 578, y: 202, width: 26, height: 18, type: 'number', fontSize: 16}),
-        totalClass2: inputNode({id: 'hitDiceTotalClass2', x: 602, y: 202, width: 26, height: 18, type: 'number', fontSize: 16}),
-        usedClass1: inputNode({id: 'hitDiceUsedClass1', x: 578, y: 222, width: 26, height: 18, type: 'number', fontSize: 16}),
-        usedClass2: inputNode({id: 'hitDiceUsedClass2', x: 602, y: 222, width: 26, height: 18, type: 'number', fontSize: 16}),
+        totalClass1: inputNode({
+            id: 'hitDiceTotalClass1',
+            x: 578,
+            y: 202,
+            width: 26,
+            height: 18,
+            type: 'number',
+            fontSize: 16
+        }),
+        totalClass2: inputNode({
+            id: 'hitDiceTotalClass2',
+            x: 602,
+            y: 202,
+            width: 26,
+            height: 18,
+            type: 'number',
+            fontSize: 16
+        }),
+        usedClass1: inputNode({
+            id: 'hitDiceUsedClass1',
+            x: 578,
+            y: 222,
+            width: 26,
+            height: 18,
+            type: 'number',
+            fontSize: 16
+        }),
+        usedClass2: inputNode({
+            id: 'hitDiceUsedClass2',
+            x: 602,
+            y: 222,
+            width: 26,
+            height: 18,
+            type: 'number',
+            fontSize: 16
+        }),
         class2: inputNode({id: 'hitDiceClass2', x: 635, y: 210, width: 14, height: 20, type: 'number', fontSize: 12}),
     }
 

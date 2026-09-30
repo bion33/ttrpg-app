@@ -43,7 +43,7 @@ function isCallbackMessage(event: MessageEvent, messageSource: string): event is
  * Runs an interactive OAuth sign-in: opens a popup to the provider's authorize URL and resolves with the returned auth
  * code, validating the CSRF state and message origin; rejects on error, a closed popup, or timeout.
  */
-export async function runOAuth(config: OAuthClientConfig): Promise<{code: string; verifier: string}> {
+export async function runOAuth(config: OAuthClientConfig): Promise<{ code: string; verifier: string }> {
     const verifier = createCodeVerifier()
     const state = createState()
     // Open the popup synchronously so the user gesture is not lost, then point it at the URL once the challenge is ready.
@@ -132,11 +132,11 @@ async function describeExchangeFailure(response: Response): Promise<string> {
 // `detail` is usually itself JSON ({error, error_description}), so unwrap that when present.
 async function readErrorDetail(response: Response): Promise<string | null> {
     try {
-        const body = await response.json() as {error?: string; detail?: string}
+        const body = await response.json() as { error?: string; detail?: string }
         const detail = body.detail ?? body.error
         if (!detail) return null
         try {
-            const parsed = JSON.parse(detail) as {error_description?: string; error?: string}
+            const parsed = JSON.parse(detail) as { error_description?: string; error?: string }
             return parsed.error_description ?? parsed.error ?? detail
         } catch {
             return detail

@@ -1,8 +1,8 @@
 import {useState} from 'react'
-import Modal from '../../../ui/Modal/Modal'
-import ColorPicker from '../../../ui/ColorPicker/ColorPicker'
-import {useNameForm} from '../../../../hooks/useNameForm.ts'
-import {binderSpineColor} from '../../../../lib/hueColors.ts'
+import Modal from '@ui/Modal/Modal'
+import ColorPicker from '@ui/ColorPicker/ColorPicker'
+import {useNameForm} from '@hooks/useNameForm.ts'
+import {binderSpineColor} from '@lib/colors/hueColors.ts'
 
 // Preset hues offered as quick swatches for a binder spine, spaced around the wheel.
 const PRESET_HUES = [8, 38, 90, 150, 200, 260, 320]

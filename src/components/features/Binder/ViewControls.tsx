@@ -1,5 +1,5 @@
 import {Minus, Plus} from 'lucide-react'
-import IconButton from '../../ui/IconButton/IconButton'
+import IconButton from '@ui/IconButton/IconButton'
 import './ViewControls.css'
 
 /**

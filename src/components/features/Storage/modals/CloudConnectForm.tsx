@@ -23,9 +23,16 @@ interface CloudConnectFormProps {
  * connect interactively (no form fields), so they differ only in their label and disclosure copy.
  */
 function CloudConnectForm({
-    connected, connectedLabel, disclosure, connectErrorFallback, onConnect, onDisconnect, onClose,
-    autosaveEnabled, onAutosaveChange,
-}: CloudConnectFormProps) {
+                              connected,
+                              connectedLabel,
+                              disclosure,
+                              connectErrorFallback,
+                              onConnect,
+                              onDisconnect,
+                              onClose,
+                              autosaveEnabled,
+                              onAutosaveChange,
+                          }: CloudConnectFormProps) {
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
@@ -71,7 +78,8 @@ function CloudConnectForm({
             {error && <p className="storage-connect__error">{error}</p>}
 
             <div className="modal__actions">
-                <button type="button" className="modal__btn modal__btn--primary" disabled={busy} onClick={() => void connect()}>
+                <button type="button" className="modal__btn modal__btn--primary" disabled={busy}
+                        onClick={() => void connect()}>
                     {busy ? 'Connecting…' : 'Connect'}
                 </button>
             </div>

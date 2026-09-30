@@ -1,4 +1,19 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
+import {get} from 'idb-keyval'
+import {
+    clearGoogleDriveConnection,
+    clearNextcloudConnection,
+    clearOneDriveConnection,
+    loadGoogleDriveConnection,
+    loadNextcloudConnection,
+    loadOneDriveConnection,
+    saveGoogleDriveConnection,
+    saveNextcloudConnection,
+    saveOneDriveConnection,
+} from './connectionStore.ts'
+import type {NextcloudConnection} from './providers/nextcloudProvider.ts'
+import type {OneDriveConnection} from './providers/onedriveProvider.ts'
+import type {GoogleDriveConnection} from './providers/googleDriveProvider.ts'
 
 // Back idb-keyval with an in-memory map so the store is testable without a real IndexedDB.
 vi.mock('idb-keyval', () => {
@@ -15,22 +30,6 @@ vi.mock('idb-keyval', () => {
         __data: data,
     }
 })
-
-import {get} from 'idb-keyval'
-import {
-    clearGoogleDriveConnection,
-    clearNextcloudConnection,
-    clearOneDriveConnection,
-    loadGoogleDriveConnection,
-    loadNextcloudConnection,
-    loadOneDriveConnection,
-    saveGoogleDriveConnection,
-    saveNextcloudConnection,
-    saveOneDriveConnection,
-} from './connectionStore.ts'
-import type {NextcloudConnection} from './nextcloudProvider.ts'
-import type {OneDriveConnection} from './onedriveProvider.ts'
-import type {GoogleDriveConnection} from './googleDriveProvider.ts'
 
 const connection: NextcloudConnection = {
     baseUrl: 'https://cloud.example.com',

@@ -6,6 +6,7 @@ import {useEffect, useRef} from 'react'
  */
 export interface AutosaveFlushPorts {
     hasPendingWrite(): boolean
+
     flush(): void
 }
 

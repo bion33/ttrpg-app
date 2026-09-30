@@ -1,10 +1,10 @@
 import type {Atom, Getter} from 'jotai'
 import {atom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
-import {notifyingStorage} from './storage/observableStorage.ts'
-import type {FieldDefinition} from '../types/FieldDefinition.ts'
-import type {DerivedNode, FieldNode, FieldValue, InputNode, NodeTree} from '../types/FieldNode.ts'
-import type {CheckFieldDefinition} from "../types/CheckFieldDefinition.ts";
+import {notifyingStorage} from '@lib/storage/observableStorage.ts'
+import type {FieldDefinition} from '@type/FieldDefinition.ts'
+import type {DerivedNode, FieldNode, FieldValue, InputNode, NodeTree} from '@type/FieldNode.ts'
+import type {CheckFieldDefinition} from "@type/CheckFieldDefinition.ts";
 
 /**
  * A generic system for overlaying form fields on artwork, backed by jotai atoms.

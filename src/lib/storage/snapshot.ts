@@ -1,5 +1,5 @@
 import hashSum from 'hash-sum'
-import {CURRENT_VERSION, migrateSnapshot} from '../migrations/migrations.ts'
+import {CURRENT_VERSION, migrateSnapshot} from '../../migrations/migrations.ts'
 
 /**
  * A whole-library snapshot: every localStorage entry plus the version it conforms to, a revision GUID identifying this
@@ -17,10 +17,15 @@ export interface LibrarySnapshot {
  */
 export interface StorageLike {
     readonly length: number
+
     key(index: number): string | null
+
     getItem(key: string): string | null
+
     setItem(key: string, value: string): void
+
     removeItem(key: string): void
+
     clear(): void
 }
 

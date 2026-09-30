@@ -1,6 +1,6 @@
 import type {WritableAtom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
-import {notifyingStorage} from '../../../lib/storage/observableStorage.ts'
+import {notifyingStorage} from '@lib/storage/observableStorage.ts'
 import type {TabItem} from './tabs/Tabs.tsx'
 import type {PageType} from './pageTypes.ts'
 
@@ -8,7 +8,7 @@ import type {PageType} from './pageTypes.ts'
  * A navigable page persisted to storage: tab metadata, its `type` (which component renders it), and the storage prefix
  * a character sheet's fields persist under (within its binder's namespace).
  */
-export type Page = TabItem & {type: PageType; storagePrefix: string}
+export type Page = TabItem & { type: PageType; storagePrefix: string }
 
 // ---- INTERNAL STATE ----
 

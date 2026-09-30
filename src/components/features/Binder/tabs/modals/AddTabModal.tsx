@@ -1,7 +1,7 @@
 import {useState} from 'react'
-import Modal from '../../../../ui/Modal/Modal'
-import {PAGE_TYPES, type PageType} from '../../pageTypes.ts'
-import {useNameForm} from '../../../../../hooks/useNameForm.ts'
+import Modal from '@ui/Modal/Modal'
+import {PAGE_TYPES, type PageType} from '@features/Binder/pageTypes.ts'
+import {useNameForm} from '@hooks/useNameForm.ts'
 
 /**
  * Props for the add-tab dialogue: it reports the chosen name and type, or a cancellation.

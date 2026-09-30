@@ -1,7 +1,7 @@
 import type {CSSProperties, PointerEvent} from 'react'
 import {useEffect, useRef, useState} from 'react'
 import './Tabs.css'
-import {tabColor} from '../../../../lib/hueColors.ts'
+import {tabColor} from '@lib/colors/hueColors.ts'
 
 /**
  * One selectable tab: its stable key and the label shown on the rotated paper tab.
