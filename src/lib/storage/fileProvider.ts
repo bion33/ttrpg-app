@@ -37,6 +37,11 @@ function isSnapshot(value: unknown): value is LibrarySnapshot {
     return Object.values(candidate.entries as Record<string, unknown>).every((entry) => typeof entry === 'string')
 }
 
+// True when the error is the user dismissing a native file picker (a cancel), not a real failure to surface.
+function isPickerCancel(error: unknown): boolean {
+    return error instanceof DOMException && error.name === 'AbortError'
+}
+
 // The minimal File System Access API surface used here; present only on Chromium, so the glue feature-detects it.
 interface WritableFile {
     write(data: string): Promise<void>
@@ -60,6 +65,8 @@ interface FileSystemWindow {
 async function writeFile(text: string): Promise<void> {
     const picker = window as unknown as FileSystemWindow
     if (picker.showSaveFilePicker) {
+        // A dismissed picker throws AbortError, which propagates so the caller can tell cancel from a real failure and
+        // never record a save that did not happen; a genuine failure propagates the same way.
         const handle = await picker.showSaveFilePicker({
             suggestedName: DEFAULT_FILENAME,
             types: [{description: 'Library export', accept: {'application/json': ['.json']}}],
@@ -89,9 +96,10 @@ async function readFile(): Promise<string | null> {
         let handles: OpenFileHandle[]
         try {
             handles = await picker.showOpenFilePicker({types: [{accept: {'application/json': ['.json']}}]})
-        } catch {
-            // The user dismissed the picker.
-            return null
+        } catch (error) {
+            // A dismissed picker means nothing to load; any other failure propagates so the caller can surface it.
+            if (isPickerCancel(error)) return null
+            throw error
         }
         return (await handles[0].getFile()).text()
     }
