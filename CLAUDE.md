@@ -46,8 +46,8 @@ on top of the printed fields. Field values persist to `localStorage`; a few
 fields (e.g. ability modifiers) are computed from others.
 
 Stack: React 19 + TypeScript, Vite, [jotai](https://jotai.org) for state,
-Vitest for tests, ESLint. Package manager: **yarn** (yarn 1.x, see
-`packageManager` in `package.json`).
+Vitest for tests, ESLint. Package manager: **yarn** (Yarn 4 / Berry, see
+`packageManager` in `package.json`; run it via corepack, e.g. `npx corepack@latest yarn …`).
 
 ## Commands
 
