@@ -1,5 +1,5 @@
 /* Coloured paper binder tabs sitting flush against the right edge of the page (the page reserves the strip's
-   2.125rem width). Each tab picks a hue from --tab-hue (its index) so the strip cycles through the muted binder-tab
+   1.7rem width). Each tab picks a hue from --tab-hue (its index) so the strip cycles through the muted binder-tab
    palette; the active tab is lifted with a drop shadow to read as the pulled-out, attached tab. */
 
 .tabs {
@@ -14,17 +14,17 @@
     /* --hue (degrees) is set per tab from tabHue(index) in Tabs.tsx; the fallback keeps it defined. */
     --hue: 0;
     position: relative;
-    width: 2.125rem;
-    min-height: 6rem;
-    /* Every tab overlaps the page's right border by 0.125rem so their right edges stay aligned; only the active
+    width: 1.7rem;
+    min-height: 4.8rem;
+    /* Every tab overlaps the page's right border by 0.1rem so their right edges stay aligned; only the active
        tab sits above the page (via z-index), covering the border into a gap — inactive tabs stay tucked behind it. */
-    left: -0.125rem;
+    left: -0.1rem;
     /* Pull each tab up so its top slips under the previous tab's bottom (z-index set per tab). */
-    margin-top: -0.625rem;
+    margin-top: -0.5rem;
     padding: 0;
     border: 1px solid rgba(0, 0, 0, 0.22);
     border-left: none;
-    border-radius: 0 0.5rem 0.5rem 0;
+    border-radius: 0 0.4rem 0.4rem 0;
     /* --tab-color (the base paper-tab colour) is set per tab from tabColor(hue); the fallback keeps it defined. */
     background: var(--tab-color, hsl(var(--hue) 55% 82%));
     color: hsl(var(--hue) 45% 22%);
@@ -63,9 +63,9 @@
     /* vertical-rl + 180° rotation reads bottom-to-top (text rotated 90° counter-clockwise). */
     writing-mode: vertical-lr;
     transform: rotate(180deg);
-    padding: 2rem .4rem;
+    padding: 1.6rem .32rem;
     font-family: 'Mongolian Baiti', serif;
-    font-size: 1rem;
+    font-size: 0.8rem;
     text-transform: uppercase;
     white-space: nowrap;
     user-select: none;

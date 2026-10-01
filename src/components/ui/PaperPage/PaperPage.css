@@ -1,6 +1,6 @@
 .paper-page {
-    /* Occupy an A4 footprint (210:297) so the page reads as a full sheet, like the character sheet does. */
-    width: 100%;
+    /* Occupy an A4 footprint (210:297) so the page reads as a full sheet, like the character sheet does. The width is
+       the physical A4 width, set inline from the shared paper constant (see PaperPage.tsx); the ratio gives the height. */
     aspect-ratio: 210 / 297;
     box-sizing: border-box;
     /* Stack content top-down and let a child (e.g. the editor) grow to fill the sheet. */

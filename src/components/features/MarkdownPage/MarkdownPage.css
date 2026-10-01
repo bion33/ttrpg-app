@@ -3,11 +3,11 @@
     position: relative;
     font-family: var(--font-serif);
     color: var(--color-text);
-    /* The physical A4 page width, the A4 page margins (shared by the editor column's padding and the pagination break
-       math), and the gap between stacked sheets. The width is a real-world size (mm) so the on-screen sheet matches the
-       printed page exactly — same characters per line and lines per page — and the editor is true WYSIWYG; the binder's
-       zoom transform scales it up for reading without changing the layout the break math measures. */
-    --md-sheet-width: 210mm;
+    /* The A4 page margins (shared by the editor column's padding and the pagination break math) and the gap between
+       stacked sheets. The physical A4 page width (--md-sheet-width) is set inline from the shared paper constant (see
+       MarkdownEditor.tsx), the same source the binder's zoom math uses, so the on-screen sheet matches the printed page
+       exactly — same characters per line and lines per page — and the editor is true WYSIWYG; the binder's zoom
+       transform scales it up for reading without changing the layout the break math measures. */
     --md-sheet-pad-y: 4rem;
     --md-sheet-pad-x: 4.5rem;
     --md-sheet-gap: 2rem;
@@ -35,8 +35,15 @@
     aspect-ratio: 210 / 297;
     box-sizing: border-box;
     background: #fff;
-    /* All sheets share the active tab's hue so the stack reads as one binder (the first fuses with the active tab). */
-    border: 1px solid hsl(var(--active-hue, 38) 45% 40%);
+}
+
+/* The hued border and shadow shared by every A4 sheet — the stacked backdrop sheets and the loading sheet shown before
+   the editor mounts — defined once so the two can't drift. The border is the shared --sheet-border-color
+   (tabBorderColor(active tab hue), set in Binder.tsx), the same colour the wrapping .page border uses, so the stack
+   reads as the active tab (the first sheet fuses with it). */
+.md-sheet,
+.markdown-page__loading-sheet {
+    border: 1px solid var(--sheet-border-color);
     box-shadow: 0 6px 22px rgba(0, 0, 0, 0.22);
 }
 
@@ -67,11 +74,6 @@
 .md-page-spacer {
     user-select: none;
     pointer-events: none;
-}
-
-/* The loading placeholder shown while the editor chunk loads. */
-.markdown-page__loading {
-    padding: 4rem 4.5rem;
 }
 
 /* Print maps each sheet to a real printed page via CSS fragmentation rather than the on-screen spacers/backdrop: drop

@@ -1,6 +1,4 @@
-# Markdown
-
-- Implement A4 pages and allow inserting pagebreaks (instead of the current infinitely growing page)
+- Spinners for loading
 
 # Sheets
 

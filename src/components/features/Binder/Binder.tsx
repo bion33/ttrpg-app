@@ -14,7 +14,9 @@ import type {Page} from './binderAtoms.ts'
 import {activePageAtom, pagesAtom} from './binderAtoms.ts'
 import {newId} from '@lib/ids/newId.ts'
 import {tabHue} from '@lib/colors/tabHue.ts'
+import {tabBorderColor} from '@lib/colors/hueColors.ts'
 import {usePageScale} from '@hooks/usePageScale.ts'
+import {A4_WIDTH_PX} from '@lib/paper/paperSize.ts'
 import CharacterSheet from '@features/CharacterSheet/CharacterSheet'
 import MarkdownPage from '@features/MarkdownPage/MarkdownPage'
 import EmptyPage from '@features/EmptyPage/EmptyPage'
@@ -31,18 +33,29 @@ interface BinderProps {
 
 /**
  * Resolves a page descriptor to its element, each bound to its binder-prefixed storage prefix: a character sheet, a
- * markdown notes page, or the labelled empty page.
+ * markdown notes page, or the labelled empty page. `active` tells a notes page whether it is the shown page (every
+ * visited page stays mounted; the inactive ones are hidden), so its editor can suppress its floating toolbar/handle.
  */
-function renderPage(page: Page, storagePrefix: string): ReactNode {
+function renderPage(page: Page, storagePrefix: string, active: boolean): ReactNode {
     const pagePrefix = `${storagePrefix}:${page.storagePrefix}`
     if (page.type === 'characterSheet') {
         return <CharacterSheet storagePrefix={pagePrefix}/>
     }
-    // Keyed so the uncontrolled editor remounts with the right initial markdown when switching between notes tabs.
     if (page.type === 'markdown') {
-        return <MarkdownPage key={pagePrefix} storagePrefix={pagePrefix}/>
+        return <MarkdownPage storagePrefix={pagePrefix} active={active}/>
     }
     return <EmptyPage title={page.label}/>
+}
+
+/**
+ * The natural (unscaled) on-screen width of a page of the given type, each page component the source of its own width,
+ * so the zoom scales every page to the same fraction of the viewport (and a future differently-sized page just works).
+ */
+function pageNaturalWidth(type: PageType | undefined): number {
+    if (type === 'characterSheet') return CharacterSheet.naturalWidth
+    if (type === 'markdown') return MarkdownPage.naturalWidth
+    // The empty stand-in uses PaperPage, itself a physical A4 sheet.
+    return A4_WIDTH_PX
 }
 
 /**
@@ -55,7 +68,6 @@ function Binder({storagePrefix, onExit}: BinderProps) {
     const navigate = useNavigate()
     const rememberActivePage = useSetAtom(activePageAtom(storagePrefix))
     const activeId = location.pageId
-    const {scale, scaleUp, scaleDown, canScaleUp, canScaleDown, viewReference} = usePageScale()
     const [adding, setAdding] = useState(false)
     // The last tab's element, watched so the back-to-top button appears once it scrolls out of view.
     const [lastTab, setLastTab] = useState<HTMLElement | null>(null)
@@ -63,8 +75,15 @@ function Binder({storagePrefix, onExit}: BinderProps) {
     const [editing, setEditing] = useState<'edit' | 'delete' | null>(null)
     const activeIndex = Math.max(0, pages.findIndex((page) => page.id === activeId))
     const active = pages.length ? pages[activeIndex] : undefined
-    // A markdown page draws its own fixed physical-A4 sheets, so the wrapper and view drop their page chrome for it.
-    const isMarkdown = active?.type === 'markdown'
+    const {scale, scaleUp, scaleDown, canScaleUp, canScaleDown, viewReference} = usePageScale(pageNaturalWidth(active?.type))
+    // The ids of pages visited since this binder opened: each stays mounted (hidden when not active) so switching back
+    // to a tab is instant rather than rebuilding its editor. It is grown during render (the endorsed "adjust state
+    // while rendering" pattern) as each shown page resolves, and lives only for the binder's mount, so leaving the
+    // binder (which remounts it) clears the set.
+    const [visited, setVisited] = useState<Set<string>>(() => new Set())
+    if (active && !visited.has(active.id)) {
+        setVisited(new Set(visited).add(active.id))
+    }
 
     // Persists the shown page as this binder's remembered active page, so reopening it returns here.
     useEffect(() => rememberActivePage(activeId), [activeId, rememberActivePage])
@@ -114,13 +133,19 @@ function Binder({storagePrefix, onExit}: BinderProps) {
     }
 
     return (
-        <div className="app-shell" style={{'--active-hue': active?.hue ?? 0} as CSSProperties}>
-            <div className={`binder-view${isMarkdown ? ' binder-view--bare' : ''}`}
-                 ref={viewReference} style={{transform: `scale(${scale})`}}>
-                {/* Markdown pages draw their own per-sheet paper chrome, so the wrapper drops its border/shadow for them. */}
-                <main className={`page${isMarkdown ? ' page--bare' : ''}`}>
-                    {active ? renderPage(active, storagePrefix) : <EmptyPage/>}
-                </main>
+        <div className="app-shell" style={{'--sheet-border-color': tabBorderColor(active?.hue ?? 0)} as CSSProperties}>
+            <div className="binder-view" ref={viewReference} style={{transform: `scale(${scale})`}}>
+                {/* Every visited page stays mounted; inactive ones are hidden (display:none), so switching tabs within the
+                    binder is instant. Markdown pages draw their own per-sheet paper chrome, so the wrapper drops its
+                    border/shadow for them. An empty binder (no active page) shows the untitled empty page. */}
+                {active ? pages.filter((page) => visited.has(page.id)).map((page) => (
+                    <main key={page.id} hidden={page.id !== active.id}
+                          className={`page${page.type === 'markdown' ? ' page--bare' : ''}`}>
+                        {renderPage(page, storagePrefix, page.id === active.id)}
+                    </main>
+                )) : (
+                    <main className="page"><EmptyPage/></main>
+                )}
                 <Tabs tabs={pages} activeId={active?.id ?? ''}
                       onSelect={(id) => navigate({binderId: storagePrefix, pageId: id})} onReorder={reorderPages}
                       onLastTabChange={setLastTab}/>

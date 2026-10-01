@@ -105,7 +105,7 @@ export interface UseStorage {
 }
 
 // App-view keys that hold no character data, so they do not by themselves make the library "have data".
-const VIEW_ONLY_KEYS = new Set(['location', 'pageScale'])
+const VIEW_ONLY_KEYS = new Set(['location', 'pageWidthFraction'])
 
 // A never-synced sync base, used on mount and whenever a target change invalidates the previous lineage.
 const UNSYNCED: SyncState = {baseRevision: null, baseHash: null}

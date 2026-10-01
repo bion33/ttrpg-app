@@ -153,7 +153,9 @@ with no new persistence plumbing.
   (`@lib/storage/observableStorage.ts`) is what makes edits count toward
   dirty-detection and the snapshot.
 - `MarkdownPage.tsx` — the eager, thin page: binds the markdown atom and
-  `React.lazy`-loads `MarkdownEditor` behind a `<Suspense>`. It owns **no paper chrome**
+  `React.lazy`-loads `MarkdownEditor` behind a `<Suspense>`, forwarding the `active` prop
+  (whether it is the binder's shown page — `Binder` keeps every visited page mounted and
+  hides the inactive ones). It owns **no paper chrome**
   — the editor draws its own stacked A4 sheets (see pagination below), so unlike the
   character sheet it does not wrap in `PaperPage`. Responsibility: atom binding + lazy load.
 - `MarkdownEditor.tsx` — the lazy chunk (the editor is heavy, so it code-splits out
@@ -166,7 +168,10 @@ with no new persistence plumbing.
   `tableExtensions` (see `extensions/table/` below), `Image`, the custom `Callout`, the
   custom `PageBreak`, and the `Pagination` extension (configured with an
   `onPageCountChange` setter). Tiptap reads `content` only on mount
-  and reports edits via `onUpdate`, hence the remount-on-prefix keying in `renderPage`.
+  and reports edits via `onUpdate`; a `setContent` effect re-applies markdown that
+  changes externally (e.g. a storage load). The `active` prop gates the body-portalled
+  `MarkdownToolbar` and the `BlockHandle` — a hidden-but-mounted inactive editor
+  (`display:none`) would otherwise leak its portalled toolbar over the active page.
   It renders the **sheet stack**: a `.md-sheets` box holding a `.md-sheet-backdrop`
   (one `.md-sheet` div per page, count from `Pagination`) behind the overlaid
   `<EditorContent>`. Responsibility: editor configuration + sheet-stack composition.
@@ -261,12 +266,15 @@ with no new persistence plumbing.
   `.md-sheet-backdrop`, `.md-sheet` — each a bordered A4 sheet in the active-hue, stacked
   with `--md-sheet-gap`; the editor column overlays them with the shared `--md-sheet-pad-*`
   A4 margins). The stack is a **fixed physical A4 footprint** — `.md-sheets` is `--md-sheet-width`
-  (`210mm`, a real-world size) wide and centred, so the on-screen sheet matches the printed page
+  wide and centred, so the on-screen sheet matches the printed page
   exactly (same characters per line, same lines per page): the editor is true WYSIWYG and the
-  break math measures the same geometry print uses. The binder's zoom transform scales the page up
-  for reading without changing that layout (`Binder.tsx` gives the view the `.binder-view--bare`
-  modifier for a markdown page, shrinking it to wrap the fixed-width sheet so the tab strip stays
-  flush with the sheet's right edge). Its `@media print` block maps each sheet to a real printed page via CSS
+  break math measures the same geometry print uses. `--md-sheet-width` is **set inline from JS**
+  (`MarkdownEditor.tsx`, `${A4_WIDTH_PX}px` from `@lib/paper/paperSize.ts`) rather than a CSS `210mm`
+  literal, so the sheet width and the zoom math (which also scales by that constant) share one source
+  and cannot drift; `MarkdownPage` exposes that width as `MarkdownPage.naturalWidth` for the zoom.
+  The binder's zoom transform scales the page up
+  for reading without changing that layout (every page's `.binder-view` shrink-wraps its fixed-width
+  sheet so the tab strip stays flush with the sheet's right edge). Its `@media print` block maps each sheet to a real printed page via CSS
   fragmentation (hides the backdrop/spacers, un-pins the overlay, and `break-before: page`
   on `.md-break-before`), printing under the binder's default `@page { margin: 0 }` so the
   `210mm` sheet fills the page width unscaled — the top/side gaps come from the editor column's
@@ -341,12 +349,17 @@ shows just the ghost cover.
 
 `Binder` (`Binder.tsx`) is rendered per-open-binder by `Library` and takes a
 `storagePrefix` (the binder's id) and an `onExit` callback (back to the grid).
-It owns the whole page area: it renders the active page in a `.page` wrapper
-(`Binder.css`, which only carries the drop shadow/border and reserves room for the tabs
-— the page content styles itself; a markdown page gets the `.page--bare` modifier, which
-drops the wrapper's border/shadow since each of its A4 sheets draws its own, and the view gets
-`.binder-view--bare`, which shrinks it to wrap the markdown page's fixed physical-A4 width so the
-tab strip stays flush with the sheet) beside its `Tabs` strip
+It owns the whole page area: it renders each page the user has **visited since the
+binder opened**, each in its own `.page` wrapper (`Binder.css`, which only carries the
+drop shadow/border and reserves room for the tabs — the page content styles itself; a
+markdown page gets the `.page--bare` modifier, which drops the wrapper's border/shadow
+since each of its A4 sheets draws its own. `.binder-view` shrink-wraps its page (every
+page type renders at a fixed physical-sheet width) so the tab strip stays flush with the
+sheet). Only the active page is shown; the others are `hidden` (`display:none`) but stay
+**mounted**, so switching between this binder's tabs is instant rather than rebuilding a
+heavy editor each time — a visited-ids set grown during render (cleared when leaving the
+binder remounts it). An empty binder (no active page) shows the untitled empty page.
+These sit beside the `Tabs` strip
 (`tabs/Tabs.tsx`/`tabs/Tabs.css`), both inside a full-width `.app-shell`. The
 tab-strip components live together in a `tabs/` subfolder (`Tabs`,
 `TabControls`), with the tab modals in a nested `tabs/modals/` (`AddTabModal`,
@@ -354,7 +367,9 @@ tab-strip components live together in a `tabs/` subfolder (`Tabs`,
 not in `ui/` (tab deletion reuses the shared `ui/ConfirmModal`). The pure
 per-index tab-hue function lives in `src/lib/colors/tabHue.ts` (shared by `Binder` and
 `Library`, unit-tested in `tabHue.test.ts`). Page-view zoom is owned by the
-`usePageScale` hook (`src/hooks/`), not `Binder` itself. `Binder` promotes the
+`usePageScale(naturalWidthPx)` hook (`src/hooks/`), not `Binder` itself; `Binder`
+passes it the active page's natural width (resolved by `pageNaturalWidth(type)`,
+which reads each page component's own `naturalWidth`). `Binder` promotes the
 zoomed `.binder-view` to its own compositor layer (`will-change: transform`, via
 the `.binder-view--zooming` class) **only for the ~0.3s of a scale change**,
 toggling the class on the DOM node (not via state): a permanent layer around the
@@ -363,12 +378,13 @@ to the transition.
 
 The page list is **dynamic and persisted**: a `Page` is serialisable tab
 metadata (`id`, `label`, `type`, `storagePrefix`), declared with the per-binder
-atoms in `binderAtoms.ts`, and `renderPage(page, storagePrefix)` (in `Binder.tsx`)
+atoms in `binderAtoms.ts`, and `renderPage(page, storagePrefix, active)` (in `Binder.tsx`)
 resolves it to an element by `type` — `characterSheet` → `CharacterSheet` bound to
 the **binder-prefixed** storage prefix `${storagePrefix}:${page.storagePrefix}`,
-`markdown` → a `MarkdownPage` bound to the same binder-prefixed prefix (and
-**keyed** by it, so the uncontrolled editor remounts with the right content when
-switching between notes tabs), `empty` → an `EmptyPage` titled by its label. Page
+`markdown` → a `MarkdownPage` bound to the same binder-prefixed prefix (passed `active`,
+whether it is the shown page, so a hidden-but-mounted notes tab suppresses its
+body-portalled toolbar/handle; each notes tab keeps its own persistent editor rather than
+one editor remounted per prefix), `empty` → an `EmptyPage` titled by its label. Page
 types live in `pageTypes.ts` (`PageType`, `PAGE_TYPES`). The page list is a **per-binder** atom from
 `binderAtoms.ts`'s `pagesAtom(prefix)` — `atomWithStorage('${prefix}:pages', …)`,
 one **shared, cached instance per prefix** so the binder and the library shelf read
@@ -381,8 +397,13 @@ memory** — `Binder` writes the shown page to it so the library can reopen the
 binder at that page (the library reads the id straight from that shared atom). Page
 navigation (opening a binder, selecting a tab, adding
 or deleting a page) goes through `useNavigate`, so each move is a browser-history
-entry. The view scale
-(`usePageScale`'s `atomWithStorage('pageScale', …)`) is shared across binders.
+entry. The zoom is stored as a **viewport-width fraction**
+(`usePageScale`'s `atomWithStorage('pageWidthFraction', …)`) shared across binders:
+the page occupies that fraction of the viewport regardless of its natural width, so
+zoom feels uniform across page types and syncs identically across devices. The hook
+derives the `scale` (`fraction × viewportWidth / naturalWidthPx`) and clamps the
+fraction to a fit ceiling measured from the scaled wrapper's layout width (the page
+plus its tab-strip/margin chrome), so it never overflows the viewport.
 `EmptyPage`
 (`features/EmptyPage/`) is both the stand-in for an `empty`-type page and the
 page shown when the binder has no active page (`Binder` renders `<EmptyPage/>`
@@ -676,8 +697,13 @@ their atom (and go read-only when their optional `readOnlyAtom` is true); derive
 fields subscribe read-only.
 
 `PaperPage` is the shared white, A4-proportioned document-style page shell (its
-one style, so it never drifts): both `EmptyPage` and the `CharacterSheet`
-loading state wrap their content in it.
+one style, so it never drifts): `EmptyPage`, the `CharacterSheet` loading state,
+and the `MarkdownPage` loading state wrap their content in it. It owns no width of
+its own — the caller passes `width` (its physical page width in CSS px, from
+`@lib/paper/paperSize.ts`, the same source the zoom uses), so it is a fixed sheet
+footprint the binder view can shrink-wrap, and an optional `className` for a
+per-caller look (the markdown loading sheet adds the hued sheet border/shadow —
+shared with `.md-sheet` via one grouped CSS rule so the two can't drift).
 
 `Modal` is the shared dialogue shell: a titled box over a dimmed backdrop that
 closes on a backdrop click or Escape, with callers supplying the body. It also
@@ -717,19 +743,25 @@ Framework-agnostic pure helpers live in `src/lib`, **grouped by concern into
 subfolders**, each module colocated with its `*.test.ts`: `fields/fieldNodes.ts`
 (the field-node factory), `colors/tabHue.ts` (the per-index tab/binder hue),
 `colors/hueColors.ts` (the hue → CSS-colour functions for the binder spine and
-paper tabs — `binderSpineLight`/`binderSpineDark`/`binderSpineColor` and
-`tabColor` — the **single source of truth** shared between the modal previews and
-the components, which consume them as inline CSS custom properties so the colours
-never drift from the CSS), `ids/newId.ts`
+paper tabs — `binderSpineLight`/`binderSpineDark`/`binderSpineColor`, `tabColor`,
+and `tabBorderColor` (the active tab's hued page border) — the **single source of
+truth** shared between the modal previews and the components, which consume them as
+inline CSS custom properties so the colours never drift from the CSS; `Binder` sets
+`tabBorderColor(active tab hue)` as the inherited `--sheet-border-color` that the
+`.page` wrapper and the markdown sheets share), `ids/newId.ts`
 (`newId()`, the one `crypto.randomUUID()` GUID helper for both binder and page
-ids), and `navigation/navigation.ts` (the pure `Location` type — which
+ids), `navigation/navigation.ts` (the pure `Location` type — which
 binder is open and which page is active — with
-`libraryLocation`/`isLibrary`/`sameLocation`). The `storage/` subfolder is the
+`libraryLocation`/`isLibrary`/`sameLocation`), and `paper/paperSize.ts`
+(`millimetresToPixels` and the `A4_WIDTH_PX`/`A5_WIDTH_PX` physical page widths in
+CSS px — the single source for page footprints, used by the page components' widths
+and the zoom math). The `storage/` subfolder is the
 whole-library persistence group (below). Shared React hooks live in
 `src/hooks`: `useAutoFitFontSize(ref, value, maxFontSize, axis)` (the
 shrink-to-fit loop behind `AutoFitInput`/`AutoFitTextarea`, owning
-`DEFAULT_FONT_SIZE`/`MIN_FONT_SIZE`), `usePageScale()` (the persisted
-page-view zoom — scale, step controls, and the viewport-fit `ResizeObserver` —
+`DEFAULT_FONT_SIZE`/`MIN_FONT_SIZE`), `usePageScale(naturalWidthPx)` (the persisted
+page-view zoom as a viewport-width fraction — derives the scale from the page's
+natural width, with step controls and a measured viewport-fit ceiling —
 consumed by `Binder`), `useNameForm(initialName, onSubmit)` (the name-field state,
 mount-focus, and trim/guard submit shared by every add/edit dialogue),
 `useDismissOnOutside(ref, active, onDismiss)` (the outside-pointer-dismiss listener
@@ -757,6 +789,12 @@ All code documentation is concise and purpose-driven.
 - **Document every** type, function, React component, and class — say what it is
   for, not how it works internally. Leave out branching, edge cases, and
   reasoning.
+- **State purpose, not consumers** — a doc comment describes what the thing is
+  for, not who calls it or where its value is used. Those are distinct: the
+  purpose stays true as callers come and go, so naming consumers both dates the
+  comment and leaks another module's concern into it. Write "the active tab's
+  hued page border", not "the border colour `Binder` sets on `.page` and the
+  markdown sheets".
 - **Use `/** */` docblocks** of 120 characters wide for the doc comment on any type, function,
   component, class, or file-overview header — always the multiline form, even
   for a one-line description:
@@ -804,7 +842,7 @@ CSS literals: the components set them as inline custom properties computed by
 - **`lib/` and `logic/` are organised into subfolders**, not a flat pile of files.
   In `logic/` each module gets its own folder holding it and its colocated test
   (`logic/formulas/formulas.ts` + `formulas.test.ts`). In `lib/` modules are
-  grouped by concern (`colors/`, `fields/`, `ids/`, `navigation/`, `storage/` — and
+  grouped by concern (`colors/`, `fields/`, `ids/`, `navigation/`, `paper/`, `storage/` — and
   `storage/` is further split into `providers/`, `oauth/`, `sync/`). A concern
   folder may hold one or several modules; put a new pure helper in the matching
   concern folder (or a new one) rather than at the `lib/` root.

@@ -2,10 +2,14 @@ import {useEffect, useMemo, useRef, useState} from 'react'
 import './CharacterSheet.css'
 import FieldInput from '@ui/FieldInput/FieldInput'
 import PaperPage from '@ui/PaperPage/PaperPage'
+import {A4_WIDTH_PX} from '@lib/paper/paperSize.ts'
 import {buildSheet} from './layout/sheet.ts'
 
 const SVG_URL = '/character-sheet/character-sheet.svg'
 const VIEW_BOX = '0 0 816 1055.867'
+
+// The sheet's natural (unscaled) on-screen width: a physical A4 page, the footprint the binder's zoom scales.
+const naturalWidth = A4_WIDTH_PX
 
 /**
  * Props for a character sheet: the localStorage-key prefix its fields persist under (one namespace per sheet page).
@@ -44,15 +48,15 @@ function CharacterSheet({storagePrefix}: CharacterSheetProps) {
     }, [])
 
     if (loadFailed) return (
-        <PaperPage>
+        <PaperPage width={naturalWidth}>
             <h1>Couldn’t load the character sheet.</h1>
             <p>The character-sheet artwork failed to load. Check your connection and reload the page.</p>
         </PaperPage>
     );
 
     if (!artworkMarkup) return (
-        <PaperPage>
-            <h1>Loading character sheet…</h1>
+        <PaperPage width={naturalWidth}>
+            <p>Loading character sheet…</p>
         </PaperPage>
     );
 
@@ -61,6 +65,7 @@ function CharacterSheet({storagePrefix}: CharacterSheetProps) {
             ref={svgReference}
             className="character-sheet"
             viewBox={VIEW_BOX}
+            style={{width: `${naturalWidth}px`}}
             xmlns="http://www.w3.org/2000/svg"
         >
             <g dangerouslySetInnerHTML={{__html: artworkMarkup}}/>
@@ -70,5 +75,8 @@ function CharacterSheet({storagePrefix}: CharacterSheetProps) {
         </svg>
     )
 }
+
+// Exposed so the binder's zoom can scale the sheet to a fraction of the viewport (a future A5 variant sets its own).
+CharacterSheet.naturalWidth = naturalWidth
 
 export default CharacterSheet

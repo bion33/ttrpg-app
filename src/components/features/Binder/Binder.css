@@ -1,13 +1,6 @@
 /* The active page's content defines its own look; this wrapper only carries the drop shadow and reserves room
    on the right for the tab strip, which sits flush against the page's right edge. */
 
-/* The active tab's hue, set at runtime on .app-shell in Binder.tsx; registered here for a typed default. */
-@property --active-hue {
-    syntax: '<number>';
-    inherits: true;
-    initial-value: 38;
-}
-
 .app-shell {
     position: relative;
     /* ~5% gutters: left of the page and right of the tab strip. */
@@ -16,10 +9,13 @@
 
 /* Wraps the page and tab strip so they scale together (the transform is set in Binder.tsx) while the view controls,
    which sit outside it, stay a fixed size. Anchors the absolutely-positioned tab strip and, scaling from the top
-   centre, keeps the page centred as it grows or shrinks. The scale is clamped in Binder.tsx so it never exceeds the
-   screen width. */
+   centre, keeps the page centred as it grows or shrinks. The scale (a fraction of the viewport width) is derived in
+   usePageScale so the page never exceeds the screen width. Shrinks to wrap its fixed-width page (every page type is a
+   fixed physical-sheet footprint) and stays centred, so the tab strip (anchored to the view's right edge) sits flush. */
 .binder-view {
     position: relative;
+    width: fit-content;
+    margin: 0 auto;
     transform-origin: top center;
     /* Ease the zoom directly on transform (a concrete scale(), not a var) so it composites instead of jittering. */
     transition: transform 0.25s ease-in-out;
@@ -33,24 +29,17 @@
     will-change: transform;
 }
 
-/* A markdown page is a fixed physical A4 footprint (it draws its own sheets), not a container-filling page, so the view
-   shrinks to wrap it and stays centred — keeping the tab strip (anchored to the view's right edge) flush with the sheet. */
-.binder-view--bare {
-    width: fit-content;
-    margin-left: auto;
-    margin-right: auto;
-}
-
 .page {
     position: relative;
     /* Above the inactive tabs (which they tuck under) but below the active tab (which notches the border). */
     z-index: var(--z-page);
     /* Reserve the full tab-strip width on the right so the tabs sit flush against the page edge, not over it, and
        mirror it on the left so the page itself stays centred within the view. */
-    margin-right: 2.125rem;
-    margin-left: 2.125rem;
-    /* Border matches the active tab's border colour (--active-hue set in Binder.tsx) so the two read as one unit. */
-    border: 1px solid hsl(var(--active-hue, 38) 45% 40%);
+    margin-right: 1.7rem;
+    margin-left: 1.7rem;
+    /* The active sheet's hued border (--sheet-border-color, tabBorderColor(active tab hue) set in Binder.tsx), shared
+       with the markdown sheets so every page border reads as the active tab. */
+    border: 1px solid var(--sheet-border-color);
     box-shadow: 0 6px 22px rgba(0, 0, 0, 0.22);
 }
 
@@ -60,7 +49,7 @@
 }
 
 /* A markdown page renders its own stack of bordered A4 sheets, so the wrapper carries no border or shadow of its own
-   (the first sheet takes the active-hue border that fuses with the tab). It still reserves the tab-strip width. */
+   (the first sheet takes the hued border that fuses with the tab). It still reserves the tab-strip width. */
 .page--bare {
     border: none;
     box-shadow: none;

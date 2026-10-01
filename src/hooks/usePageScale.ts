@@ -4,16 +4,20 @@ import {useAtom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
 import {notifyingStorage} from '@lib/storage/observableStorage.ts'
 
-/** How far the page and tab strip are scaled, shared across binders and persisted to storage. */
-const pageScaleAtom = atomWithStorage('pageScale', 1, notifyingStorage<number>())
+/**
+ * How much of the viewport width the page should occupy, shared across binders and persisted. Stored as a fraction of
+ * the viewport (not a raw scale), so the same zoom reads identically on any screen size and syncs across devices.
+ */
+const widthFractionAtom = atomWithStorage('pageWidthFraction', 0.5, notifyingStorage<number>())
 
-// How much each scale step changes the scale, and the smallest scale allowed.
-const SCALE_STEP = 0.25
-const MIN_SCALE = 0.45
+// How much each step changes the width fraction, the smallest fraction allowed, and the margin kept short of the edge.
+const FRACTION_STEP = 0.2
+const MIN_FRACTION = 0.4
+const FIT_MARGIN = 0.98
 
 /**
  * What the page-scale hook returns: the current scale, the step controls with their enabled flags, and the ref to put
- * on the scaled wrapper so its width can be measured.
+ * on the scaled wrapper so its layout width can be measured.
  */
 interface PageScale {
     scale: number
@@ -24,38 +28,67 @@ interface PageScale {
     viewReference: RefObject<HTMLDivElement | null>
 }
 
-/**
- * Owns the persisted page-view scale: step up/down within a floor and a viewport-fit ceiling tracked from the scaled
- * wrapper's layout width, returning the scale, its controls, and the ref to attach to that wrapper.
- */
-export function usePageScale(): PageScale {
-    const [scale, setScale] = useAtom(pageScaleAtom)
-    // The scaled wrapper, measured to keep the page from growing past the screen width.
-    const viewReference = useRef<HTMLDivElement>(null)
-    // The largest scale at which the page still fits the screen width, tracked from the wrapper's unscaled layout
-    // width so it stays fresh as the viewport resizes; held 2% short of the edge to leave a sliver of margin.
-    const [maxScale, setMaxScale] = useState(Infinity)
+// Rounds a fraction to two decimals so repeated steps do not drift into float noise.
+function roundFraction(value: number): number {
+    return Math.round(value * 100) / 100
+}
 
-    // Recomputes the max scale from the wrapper's unscaled layout width whenever that width changes (viewport resize).
+/**
+ * Owns the persisted page-view zoom as a fraction of the viewport width: the page occupies that fraction regardless of
+ * its natural width, so zoom feels uniform across page types (A4 sheet, notes) and screen sizes. Takes the active
+ * page's natural (unscaled) width and returns the resulting scale, its step controls, and the ref for the wrapper.
+ */
+export function usePageScale(naturalWidthPx: number): PageScale {
+    const [widthFraction, setWidthFraction] = useAtom(widthFractionAtom)
+    // The scaled wrapper, measured to keep the page plus its chrome (tab strip, margins) from overflowing the viewport.
+    const viewReference = useRef<HTMLDivElement>(null)
+    // The wrapper's unscaled layout width (the sheet plus its surrounding chrome), tracked so the fit ceiling stays fresh.
+    const [layoutWidth, setLayoutWidth] = useState(naturalWidthPx)
+    // The viewport width the fraction is taken of, tracked so the scale recomputes as the window resizes.
+    const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth)
+
+    // Tracks the wrapper's unscaled layout width (changes only when the page's own layout does, not on viewport resize).
     useEffect(() => {
         const view = viewReference.current
         if (!view) return
-        const update = () => setMaxScale((window.innerWidth / view.offsetWidth) * 0.98)
+        const update = () => setLayoutWidth(view.offsetWidth)
         update()
         const observer = new ResizeObserver(update)
         observer.observe(view)
         return () => observer.disconnect()
     }, [])
 
-    // Enlarges the page and tabs by one step, stopping once they fill the screen width.
+    // Tracks the viewport width, which the chosen fraction is measured against.
+    useEffect(() => {
+        const update = () => setViewportWidth(window.innerWidth)
+        update()
+        window.addEventListener('resize', update)
+        return () => window.removeEventListener('resize', update)
+    }, [])
+
+    // The largest fraction at which the page plus its chrome still fits the viewport width (the sheet is a share of the
+    // measured wrapper, so the bare-sheet fraction is scaled down by the chrome the wrapper adds around it).
+    const maxFraction = layoutWidth > 0 ? (FIT_MARGIN * naturalWidthPx) / layoutWidth : FIT_MARGIN
+    // The applied fraction, clamped to the current page's fit ceiling (the stored value is left untouched for syncing).
+    const fraction = Math.min(widthFraction, maxFraction)
+    const scale = (fraction * viewportWidth) / naturalWidthPx
+
+    // Widens the page by one step, stopping once it (with its chrome) fills the viewport width.
     function scaleUp() {
-        setScale((previous) => Math.min(maxScale, Math.round((previous + SCALE_STEP) * 100) / 100))
+        setWidthFraction((previous) => Math.min(maxFraction, roundFraction(previous + FRACTION_STEP)))
     }
 
-    // Shrinks the page and tabs by one step, down to the minimum scale.
+    // Narrows the page by one step, down to the minimum fraction.
     function scaleDown() {
-        setScale((previous) => Math.max(MIN_SCALE, Math.round((previous - SCALE_STEP) * 100) / 100))
+        setWidthFraction((previous) => Math.max(MIN_FRACTION, roundFraction(previous - FRACTION_STEP)))
     }
 
-    return {scale, scaleUp, scaleDown, canScaleUp: scale < maxScale, canScaleDown: scale > MIN_SCALE, viewReference}
+    return {
+        scale,
+        scaleUp,
+        scaleDown,
+        canScaleUp: widthFraction < maxFraction,
+        canScaleDown: widthFraction > MIN_FRACTION,
+        viewReference,
+    }
 }
