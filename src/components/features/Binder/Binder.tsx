@@ -63,6 +63,8 @@ function Binder({storagePrefix, onExit}: BinderProps) {
     const [editing, setEditing] = useState<'edit' | 'delete' | null>(null)
     const activeIndex = Math.max(0, pages.findIndex((page) => page.id === activeId))
     const active = pages.length ? pages[activeIndex] : undefined
+    // A markdown page draws its own fixed physical-A4 sheets, so the wrapper and view drop their page chrome for it.
+    const isMarkdown = active?.type === 'markdown'
 
     // Persists the shown page as this binder's remembered active page, so reopening it returns here.
     useEffect(() => rememberActivePage(activeId), [activeId, rememberActivePage])
@@ -113,8 +115,12 @@ function Binder({storagePrefix, onExit}: BinderProps) {
 
     return (
         <div className="app-shell" style={{'--active-hue': active?.hue ?? 0} as CSSProperties}>
-            <div className="binder-view" ref={viewReference} style={{transform: `scale(${scale})`}}>
-                <main className="page">{active ? renderPage(active, storagePrefix) : <EmptyPage/>}</main>
+            <div className={`binder-view${isMarkdown ? ' binder-view--bare' : ''}`}
+                 ref={viewReference} style={{transform: `scale(${scale})`}}>
+                {/* Markdown pages draw their own per-sheet paper chrome, so the wrapper drops its border/shadow for them. */}
+                <main className={`page${isMarkdown ? ' page--bare' : ''}`}>
+                    {active ? renderPage(active, storagePrefix) : <EmptyPage/>}
+                </main>
                 <Tabs tabs={pages} activeId={active?.id ?? ''}
                       onSelect={(id) => navigate({binderId: storagePrefix, pageId: id})} onReorder={reorderPages}
                       onLastTabChange={setLastTab}/>

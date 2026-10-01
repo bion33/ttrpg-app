@@ -1,26 +1,105 @@
-/* The editor fills the paper page; it is the positioning context for the floating block handle. */
+/* The editor hosts the stacked sheets; it is the positioning context for the floating block handle. */
 .markdown-page__editor {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
     font-family: var(--font-serif);
     color: var(--color-text);
+    /* The physical A4 page width, the A4 page margins (shared by the editor column's padding and the pagination break
+       math), and the gap between stacked sheets. The width is a real-world size (mm) so the on-screen sheet matches the
+       printed page exactly — same characters per line and lines per page — and the editor is true WYSIWYG; the binder's
+       zoom transform scales it up for reading without changing the layout the break math measures. */
+    --md-sheet-width: 210mm;
+    --md-sheet-pad-y: 4rem;
+    --md-sheet-pad-x: 4.5rem;
+    --md-sheet-gap: 2rem;
 }
 
-/* The content wrapper and its ProseMirror surface grow to fill the sheet, so hovering/clicking the empty
-   space below the last line still lands on the editable area (targets the last block). */
-.markdown-page__content {
+/* Positioning context for the editor overlay and the backdrop sheets, which define its height. Fixed at the physical A4
+   width and centred, so every sheet below it lines up and the whole stack is a real A4 footprint. */
+.md-sheets {
+    position: relative;
+    width: var(--md-sheet-width);
+    margin: 0 auto;
+}
+
+/* One A4 sheet per page, stacked vertically with a gap. In normal flow it defines the editor's height (always at least
+   one sheet); the editable surface overlays it. */
+.md-sheet-backdrop {
     display: flex;
     flex-direction: column;
-    flex: 1;
+    gap: var(--md-sheet-gap);
+    pointer-events: none;
 }
 
-/* The editable surface: no focus outline; fills the remaining page height. */
+.md-sheet {
+    width: 100%;
+    aspect-ratio: 210 / 297;
+    box-sizing: border-box;
+    background: #fff;
+    /* All sheets share the active tab's hue so the stack reads as one binder (the first fuses with the active tab). */
+    border: 1px solid hsl(var(--active-hue, 38) 45% 40%);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.22);
+}
+
+/* The editable surface overlays the backdrop and carries the A4 page margins; it fills the whole stack so clicking any
+   empty space lands on the editor (targets the nearest block). */
+.markdown-page__content {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
 .markdown-page__content .ProseMirror {
     outline: none;
-    flex: 1;
+    box-sizing: border-box;
+    min-height: 100%;
+    padding: var(--md-sheet-pad-y) var(--md-sheet-pad-x);
     line-height: 1.6;
+}
+
+/* A manual page-break node: a thin labelled rule between the finishing and next sheet. */
+.md-page-break {
+    height: 0;
+    margin: 0.5rem 0;
+    border-top: 2px dashed var(--color-border);
+}
+
+/* The pagination spacer filling the rest of a sheet; it is pure layout, never a drop target. */
+.md-page-spacer {
+    user-select: none;
+    pointer-events: none;
+}
+
+/* The loading placeholder shown while the editor chunk loads. */
+.markdown-page__loading {
+    padding: 4rem 4.5rem;
+}
+
+/* Print maps each sheet to a real printed page via CSS fragmentation rather than the on-screen spacers/backdrop: drop
+   the backdrop and spacers, let the content flow in normal position, and force a page break before each break point. */
+@media print {
+    .md-sheet-backdrop,
+    .md-page-spacer {
+        display: none;
+    }
+
+    .markdown-page__content {
+        position: static;
+    }
+
+    /* Each page-breaking block starts a new printed page; its padding-top reproduces the on-screen sheet's top margin
+       on every page but the first (whose top gap is the editor column's own padding-top, and whose side margins — on
+       every page — stay with that column padding, so the 210mm sheet fills the printable width and nothing is scaled).
+       padding, unlike a margin, is not truncated at a forced break, so it survives where a top margin would collapse
+       away. Each page's bottom gap emerges on its own: the forced breaks reserve the same content height the on-screen
+       sheet does, leaving the sheet's bottom padding worth of slack before the page edge. */
+    .md-break-before {
+        break-before: page;
+        padding-top: var(--md-sheet-pad-y);
+    }
+
+    .md-page-break {
+        display: none;
+    }
 }
 
 .markdown-page__content .ProseMirror > * + * {

@@ -33,6 +33,14 @@
     will-change: transform;
 }
 
+/* A markdown page is a fixed physical A4 footprint (it draws its own sheets), not a container-filling page, so the view
+   shrinks to wrap it and stays centred — keeping the tab strip (anchored to the view's right edge) flush with the sheet. */
+.binder-view--bare {
+    width: fit-content;
+    margin-left: auto;
+    margin-right: auto;
+}
+
 .page {
     position: relative;
     /* Above the inactive tabs (which they tuck under) but below the active tab (which notches the border). */
@@ -49,6 +57,13 @@
 /* The page owns the top gap; drop any top margin the content brings so it does not stack on the padding. */
 .page > * {
     margin-top: 0;
+}
+
+/* A markdown page renders its own stack of bordered A4 sheets, so the wrapper carries no border or shadow of its own
+   (the first sheet takes the active-hue border that fuses with the tab). It still reserves the tab-strip width. */
+.page--bare {
+    border: none;
+    box-shadow: none;
 }
 
 /* When printing, show only the page content: drop the margins, tab strip, controls, and the page's own chrome. */

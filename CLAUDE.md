@@ -152,9 +152,10 @@ with no new persistence plumbing.
   mirroring `binderAtoms.ts`'s cached-atom pattern; `notifyingStorage`
   (`@lib/storage/observableStorage.ts`) is what makes edits count toward
   dirty-detection and the snapshot.
-- `MarkdownPage.tsx` — the eager, thin page: binds the markdown atom, wraps the
-  editor in the shared `PaperPage`, and `React.lazy`-loads `MarkdownEditor` behind
-  a `<Suspense>`. Responsibility: atom binding + page layout.
+- `MarkdownPage.tsx` — the eager, thin page: binds the markdown atom and
+  `React.lazy`-loads `MarkdownEditor` behind a `<Suspense>`. It owns **no paper chrome**
+  — the editor draws its own stacked A4 sheets (see pagination below), so unlike the
+  character sheet it does not wrap in `PaperPage`. Responsibility: atom binding + lazy load.
 - `MarkdownEditor.tsx` — the lazy chunk (the editor is heavy, so it code-splits out
   of the main bundle): builds a [Tiptap](https://tiptap.dev) v3 editor via `useEditor`
   and renders `<EditorContent>` with the `MarkdownToolbar` and `BlockHandle`.
@@ -162,14 +163,19 @@ with no new persistence plumbing.
   `codeBlock` disabled — links are intentionally excluded), `Markdown`
   (`@tiptap/markdown`, the bidirectional markdown layer — `content`/`contentType:
   'markdown'` on load and `editor.getMarkdown()` on change), `TaskList`/`TaskItem`, the
-  `tableExtensions` (see `extensions/table/` below), `Image`, and the custom `Callout`. Tiptap reads `content` only on mount
+  `tableExtensions` (see `extensions/table/` below), `Image`, the custom `Callout`, the
+  custom `PageBreak`, and the `Pagination` extension (configured with an
+  `onPageCountChange` setter). Tiptap reads `content` only on mount
   and reports edits via `onUpdate`, hence the remount-on-prefix keying in `renderPage`.
-  Responsibility: editor configuration + composition. Images are by URL/paste only for
+  It renders the **sheet stack**: a `.md-sheets` box holding a `.md-sheet-backdrop`
+  (one `.md-sheet` div per page, count from `Pagination`) behind the overlaid
+  `<EditorContent>`. Responsibility: editor configuration + sheet-stack composition.
+  Images are by URL/paste only for
   now — real upload needs a later storage decision (base64 bloats the snapshot).
 - `MarkdownToolbar.tsx` — the formatting toolbar, all `lucide-react` icons: undo/redo, the
   Headings dropdown, inline marks (bold/italic/underline/strikethrough), the Blocks and Lists
   dropdowns (one `ToolbarDropdown` per non-insert `BLOCK_GROUPS` entry), then the standalone
-  `INSERT_ACTIONS` buttons (divider, table, image). Active/enabled state comes from
+  `INSERT_ACTIONS` buttons (table, image, divider, page break). Active/enabled state comes from
   `useEditorState`. Responsibility: toolbar layout.
 - `ToolbarDropdown.tsx` — one toolbar dropdown grouping a block group's actions; its
   trigger shows the active action's icon (else the group icon) and its menu runs the
@@ -214,19 +220,62 @@ with no new persistence plumbing.
     `lastRowCellPosition`/`lastColumnCellPosition` (the append-at-end targets for the edge buttons).
 - `blocks/insertBlocks.ts` — `BLOCK_ACTIONS`, the **single source of truth** for the
   block types a user can apply/insert (headings 1–6, text/paragraph, quote, the four
-  callout variants, the three list kinds, divider, table, image): each is `{id, label,
+  callout variants, the three list kinds, table, image, divider, page break): each is `{id, label,
   icon, group, isActive(editor), run(editor)}` (`icon` a `lucide-react` component). Two
   projections derive from it: `BLOCK_GROUPS` buckets the dropdown groups — `heading`
   (Headings), `block` (Blocks: text, quote, callouts), `list` (Lists) — each with a
-  default trigger label/icon; `INSERT_ACTIONS` is the flat `insert` group (divider, table,
-  image), rendered as standalone toolbar buttons rather than a dropdown. The block handle's
+  default trigger label/icon; `INSERT_ACTIONS` is the flat `insert` group (table, image,
+  divider, page break), rendered as standalone toolbar buttons rather than a dropdown. The block handle's
   "+" menu renders the flat `BLOCK_ACTIONS`, so toolbar and handle never drift.
 - `extensions/callout.ts` — the custom `Callout` Tiptap `Node` (info/success/warning/
   danger), which round-trips as a Pandoc fenced directive (`:::callout {type=info} …
   :::`) via `createBlockMarkdownSpec` from `@tiptap/core`.
+- `extensions/pageBreak.ts` — the custom `PageBreak` Tiptap `Node`: an atomic block
+  (a thin `.md-page-break` rule) that forces the following content onto a new sheet,
+  round-tripping as a self-closing Pandoc directive (`:::pagebreak`) via
+  `createAtomBlockMarkdownSpec`. Adds a `setPageBreak` command; registered in
+  `BLOCK_ACTIONS` as an insert action, so it reaches the toolbar and block-handle menu.
+- `extensions/pagination/pagination.ts` — the **custom pagination** extension (a
+  full custom implementation; the earlier `tiptap-pagination-plus` attempt was dropped).
+  A single ProseMirror editor flows across the stacked sheets: on each view update (rAF-
+  debounced) and `ResizeObserver` reflow it measures each top-level block's border-box height
+  and vertical margins (kept apart so the break math can collapse adjacent margins), reads
+  the live sheet geometry from the rendered backdrop + the editor column's own margins
+  (so CSS stays the single source of dimensions), computes breaks via the pure
+  `logic/pagination/` math, and applies them as decorations — a spacer **widget** filling
+  the rest of a sheet before each breaking block, plus a `md-break-before` node class for
+  the print path. It reports the sheet count through `onPageCountChange`. A decoration
+  signature guards against re-dispatch loops; measurement uses `offset*` metrics, so the
+  binder zoom (a `transform`) needs no recompute. A single block taller than one sheet
+  cannot be split and overflows its sheet (documented limitation).
+- `logic/pagination/pagination.ts` — the **pure, unit-tested** (`pagination.test.ts`)
+  break math: `computeBreaks(blocks, {contentCapacity, interSheetSkip})` decides where the
+  flow breaks (a manual-break block forces the next block to a new sheet; otherwise a
+  block breaks when its border box would overflow the current sheet) and the spacer height
+  each break needs. It **collapses adjacent block margins** the way CSS flow does (the gap
+  above a block is its top margin maxed against the previous block's bottom margin, not the
+  sum), so the used height — and every spacer — never drifts as the document grows;
+  `pageCount(breaks)` is the sheet count (always ≥ 1). No DOM/atoms/React.
 - `MarkdownPage.css` — themes the ProseMirror surface, toolbar, block handle, and
-  callouts to the parchment/serif tokens (transparent inside `PaperPage`). The toolbar
-  and handle carry `.no-print`, so `index.css`'s print rule hides them.
+  callouts to the parchment/serif tokens; styles the **sheet stack** (`.md-sheets`,
+  `.md-sheet-backdrop`, `.md-sheet` — each a bordered A4 sheet in the active-hue, stacked
+  with `--md-sheet-gap`; the editor column overlays them with the shared `--md-sheet-pad-*`
+  A4 margins). The stack is a **fixed physical A4 footprint** — `.md-sheets` is `--md-sheet-width`
+  (`210mm`, a real-world size) wide and centred, so the on-screen sheet matches the printed page
+  exactly (same characters per line, same lines per page): the editor is true WYSIWYG and the
+  break math measures the same geometry print uses. The binder's zoom transform scales the page up
+  for reading without changing that layout (`Binder.tsx` gives the view the `.binder-view--bare`
+  modifier for a markdown page, shrinking it to wrap the fixed-width sheet so the tab strip stays
+  flush with the sheet's right edge). Its `@media print` block maps each sheet to a real printed page via CSS
+  fragmentation (hides the backdrop/spacers, un-pins the overlay, and `break-before: page`
+  on `.md-break-before`), printing under the binder's default `@page { margin: 0 }` so the
+  `210mm` sheet fills the page width unscaled — the top/side gaps come from the editor column's
+  own padding instead. Since that padding margins only the first printed page, each
+  `.md-break-before` block also carries a `padding-top: var(--md-sheet-pad-y)` to reproduce the
+  top margin on every later page (padding, unlike a margin, is not truncated at a forced break);
+  each page's bottom gap emerges from the breaks reserving the on-screen content height. The
+  toolbar and handle carry `.no-print`, so `index.css`'s print
+  rule hides them.
 
 The toolbar/handle cover Nextcloud's editor as far as Tiptap allows; Nextcloud's math,
 collapsible details, and word-count/help are omitted. `@tiptap/extension-drag-handle`
@@ -293,8 +342,11 @@ shows just the ghost cover.
 `Binder` (`Binder.tsx`) is rendered per-open-binder by `Library` and takes a
 `storagePrefix` (the binder's id) and an `onExit` callback (back to the grid).
 It owns the whole page area: it renders the active page in a `.page` wrapper
-(`Binder.css`, which only carries the drop shadow and reserves room for the tabs
-— the page content styles itself) beside its `Tabs` strip
+(`Binder.css`, which only carries the drop shadow/border and reserves room for the tabs
+— the page content styles itself; a markdown page gets the `.page--bare` modifier, which
+drops the wrapper's border/shadow since each of its A4 sheets draws its own, and the view gets
+`.binder-view--bare`, which shrinks it to wrap the markdown page's fixed physical-A4 width so the
+tab strip stays flush with the sheet) beside its `Tabs` strip
 (`tabs/Tabs.tsx`/`tabs/Tabs.css`), both inside a full-width `.app-shell`. The
 tab-strip components live together in a `tabs/` subfolder (`Tabs`,
 `TabControls`), with the tab modals in a nested `tabs/modals/` (`AddTabModal`,

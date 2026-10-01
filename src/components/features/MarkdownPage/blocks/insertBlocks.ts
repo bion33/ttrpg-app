@@ -1,7 +1,7 @@
 import type {Editor} from '@tiptap/core'
 import {
-    CaseSensitive, CircleCheck, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Image, Info, List,
-    ListOrdered, ListTodo, type LucideIcon, OctagonX, Sheet, SquareSplitVertical, TextQuote, TriangleAlert,
+    ArrowDownFromLine, CaseSensitive, CircleCheck, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Image,
+    Info, List, ListOrdered, ListTodo, type LucideIcon, OctagonX, Sheet, SquareSplitVertical, TextQuote, TriangleAlert,
 } from 'lucide-react'
 import {CALLOUT_TYPES, type CalloutType} from '../extensions/callout.ts'
 
@@ -87,11 +87,6 @@ export const BLOCK_ACTIONS: BlockAction[] = [
         run: (editor) => editor.chain().focus().toggleTaskList().run(),
     },
     {
-        id: 'horizontalRule', label: 'Divider', icon: SquareSplitVertical, group: 'insert',
-        isActive: () => false,
-        run: (editor) => editor.chain().focus().setHorizontalRule().run(),
-    },
-    {
         id: 'table', label: 'Table', icon: Sheet, group: 'insert',
         isActive: (editor) => editor.isActive('table'),
         run: (editor) => editor.chain().focus().insertTable({rows: 3, cols: 3, withHeaderRow: true}).run(),
@@ -103,6 +98,16 @@ export const BLOCK_ACTIONS: BlockAction[] = [
             const url = window.prompt('Image URL')?.trim()
             if (url) editor.chain().focus().setImage({src: url}).run()
         },
+    },
+    {
+        id: 'horizontalRule', label: 'Divider', icon: SquareSplitVertical, group: 'insert',
+        isActive: () => false,
+        run: (editor) => editor.chain().focus().setHorizontalRule().run(),
+    },
+    {
+        id: 'pageBreak', label: 'Page break', icon: ArrowDownFromLine, group: 'insert',
+        isActive: (editor) => editor.isActive('pageBreak'),
+        run: (editor) => editor.chain().focus().setPageBreak().run(),
     },
 ]
 

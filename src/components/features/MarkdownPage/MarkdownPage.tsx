@@ -1,6 +1,5 @@
 import {Suspense, lazy, useMemo} from 'react'
 import {useAtom} from 'jotai'
-import PaperPage from '@ui/PaperPage/PaperPage'
 import {markdownAtom} from './markdownAtoms.ts'
 
 // The Tiptap editor and its styles load as their own chunk rather than in the main bundle.
@@ -14,18 +13,17 @@ interface MarkdownPageProps {
 }
 
 /**
- * A general-purpose WYSIWYG markdown ("Notes") page: binds its markdown to the page's atom and lays it out on paper.
+ * A general-purpose WYSIWYG markdown ("Notes") page: binds its markdown to the page's atom; the editor lays the content
+ * out across stacked A4 sheets (see the pagination extension), so this page owns no paper chrome of its own.
  */
 function MarkdownPage({storagePrefix}: MarkdownPageProps) {
     const atom = useMemo(() => markdownAtom(storagePrefix), [storagePrefix])
     const [markdown, setMarkdown] = useAtom(atom)
 
     return (
-        <PaperPage>
-            <Suspense fallback={<p>Loading editor…</p>}>
-                <MarkdownEditor markdown={markdown} onChange={setMarkdown}/>
-            </Suspense>
-        </PaperPage>
+        <Suspense fallback={<p className="markdown-page__loading">Loading editor…</p>}>
+            <MarkdownEditor markdown={markdown} onChange={setMarkdown}/>
+        </Suspense>
     )
 }
 
