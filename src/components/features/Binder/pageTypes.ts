@@ -4,10 +4,9 @@
 export type PageType = 'characterSheet' | 'markdown' | 'empty'
 
 /**
- * The selectable page types and their human labels, in menu order.
+ * The page types a user can add, with their human labels, in menu order (the `empty` type is a default-only stand-in).
  */
 export const PAGE_TYPES: { value: PageType; label: string }[] = [
     {value: 'characterSheet', label: 'Character sheet'},
     {value: 'markdown', label: 'Notes'},
-    {value: 'empty', label: 'Empty'},
 ]

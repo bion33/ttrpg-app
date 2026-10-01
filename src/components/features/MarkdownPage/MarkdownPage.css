@@ -46,7 +46,7 @@
     margin: 0;
     padding-left: 1rem;
     border-left: 3px solid var(--color-border);
-    color: #555;
+    color: var(--color-text);
 }
 
 .markdown-page__content ul,
@@ -70,15 +70,21 @@
     margin-top: 0.15rem;
 }
 
-/* Tables: bordered cells with a tinted header row. */
+/* Tables: a framed grid with a tinted header row. The outer frame is the table's own top/left border and the last
+   cells' right/bottom borders, so every line is drawn exactly once — no border-collapse edge resolution to differ
+   between browsers or drop in print. */
 .markdown-page__content table {
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     width: 100%;
+    border-top: 1px solid var(--color-border);
+    border-left: 1px solid var(--color-border);
 }
 
 .markdown-page__content th,
 .markdown-page__content td {
-    border: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
     padding: 0.35rem 0.6rem;
     text-align: left;
     vertical-align: middle;
@@ -94,6 +100,9 @@
 .markdown-page__content th {
     background: var(--color-paper);
     font-weight: 600;
+    /* Print the header tint (browsers drop background colours on paper by default). */
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
 }
 
 .markdown-page__content img {
@@ -107,7 +116,8 @@
     margin: 1.5rem 0;
 }
 
-/* Callouts: a tinted, left-accented block per kind. */
+/* Callouts: a tinted, left-accented block per kind. The accent/tint hexes are a deliberate, theme-independent
+   semantic palette (blue/green/amber/red) so callouts pop against the parchment; they are not the app's danger token. */
 .markdown-page__content .callout {
     --callout-accent: #3b82f6;
     --callout-tint: #eff6ff;
@@ -210,18 +220,18 @@
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    background: #efe8d5;
+    background: var(--color-button-face);
     border-color: var(--color-border);
 }
 
 .markdown-toolbar__btn--menu:hover:not(:disabled) {
-    background: #e6dcc2;
+    background: var(--color-button-face-hover);
 }
 
 /* Active marker mirrors the inline marks (light shift + outline, ink text), not a dark fill, so a highlighted
    dropdown never turns light-on-white on hover. */
 .markdown-toolbar__btn--menu.is-active {
-    background: #e6dcc2;
+    background: var(--color-button-face-hover);
     border-color: var(--color-border);
 }
 
@@ -229,7 +239,7 @@
     z-index: var(--z-controls);
     min-width: 10rem;
     padding: 0.25rem;
-    background: #fdfaf3;
+    background: var(--color-surface-raised);
     border: 1px solid var(--color-border);
     border-radius: 0.5rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -286,7 +296,7 @@
     border: none;
     border-radius: 0.25rem;
     background: transparent;
-    color: #999;
+    color: var(--color-muted);
     font-size: 1rem;
     line-height: 1;
     cursor: grab;
@@ -311,7 +321,7 @@
     margin: 0;
     padding: 0.25rem;
     list-style: none;
-    background: #fff;
+    background: var(--color-surface-raised);
     border: 1px solid var(--color-border);
     border-radius: 0.5rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -336,7 +346,7 @@
 
 /* A destructive menu item (delete row/column/table), reusing the shared dropdown item styling. */
 .markdown-toolbar__menu-item--danger {
-    color: #dc2626;
+    color: var(--color-danger);
 }
 
 /* ---- Table editing node views (Nextcloud-style edge buttons and per-column/row "…" menus) ---- */
@@ -416,8 +426,8 @@
     justify-content: center;
     border: 1px dashed var(--color-border);
     border-radius: 0.35rem;
-    background: #fdfaf3;
-    color: #777;
+    background: var(--color-surface-raised);
+    color: var(--color-muted);
     cursor: pointer;
     opacity: 0;
     transition: opacity 0.15s;

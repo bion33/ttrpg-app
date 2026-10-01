@@ -47,6 +47,17 @@
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
 }
 
+/* Print the coloured tabs as part of the sheet, but without their labels or the active tab's drop shadow. */
+@media print {
+    .tabs__label {
+        display: none;
+    }
+
+    .tabs__tab--active {
+        box-shadow: none;
+    }
+}
+
 .tabs__label {
     display: block;
     /* vertical-rl + 180° rotation reads bottom-to-top (text rotated 90° counter-clockwise). */

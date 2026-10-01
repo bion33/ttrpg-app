@@ -1,11 +1,19 @@
 import type {Node as ProseMirrorNode} from '@tiptap/pm/model'
 
 /**
+ * The caret position just inside a cell that starts at `cellPosition` — the target for a cell-scoped table command.
+ */
+export function cellInnerPosition(cellPosition: number): number {
+    // cellPosition is before the cell; +1 enters the cell, +1 its first paragraph.
+    return cellPosition + 2
+}
+
+/**
  * The caret position just inside the first cell of a row at `rowPosition`, used to target a row-level table command.
  */
 export function firstCellInnerPosition(rowPosition: number): number {
-    // rowPosition is before the row; +1 enters the row, +1 the first cell, +1 that cell's first paragraph.
-    return rowPosition + 3
+    // rowPosition is before the row; +1 enters the row, reaching the first cell's start.
+    return cellInnerPosition(rowPosition + 1)
 }
 
 /**
@@ -35,8 +43,7 @@ function lastCellInnerPosition(row: ProseMirrorNode, rowPosition: number): numbe
         lastCellStart = offset
         offset += cell.nodeSize
     })
-    // +1 enters the last cell, +1 its first paragraph.
-    return lastCellStart + 2
+    return cellInnerPosition(lastCellStart)
 }
 
 /**

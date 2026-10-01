@@ -6,7 +6,7 @@ import {Paragraph} from '@tiptap/extension-paragraph'
 import {Text} from '@tiptap/extension-text'
 import type {Node as ProseMirrorNode} from '@tiptap/pm/model'
 import {
-    firstCellInnerPosition, isLastCellInRow, lastColumnCellPosition, lastRowCellPosition,
+    cellInnerPosition, firstCellInnerPosition, isLastCellInRow, lastColumnCellPosition, lastRowCellPosition,
 } from './tablePositions.ts'
 
 const schema = getSchema([Document, Paragraph, Text, Table, TableRow, TableHeader, TableCell])
@@ -27,6 +27,14 @@ function tableDoc(columns: number, dataRows: number): ProseMirrorNode {
 }
 
 describe('cell positions', () => {
+    it('cellInnerPosition lands inside a cell given its start position', () => {
+        const doc = tableDoc(2, 1)
+        // The header row starts at 1; its first cell starts at 2.
+        const resolved = doc.resolve(cellInnerPosition(2))
+        expect(resolved.parent.type.name).toBe('paragraph')
+        expect(resolved.node(-1).type.name).toBe('tableHeader')
+    })
+
     it('firstCellInnerPosition lands inside the first cell of the row', () => {
         const doc = tableDoc(2, 1)
         // The table starts at 0; its first row (header) starts at position 1.

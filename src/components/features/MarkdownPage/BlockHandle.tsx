@@ -4,6 +4,12 @@ import DragHandle from '@tiptap/extension-drag-handle-react'
 import {useDismissOnOutside} from '@hooks/useDismissOnOutside.ts'
 import {BLOCK_ACTIONS, type BlockAction} from './blocks/insertBlocks.ts'
 
+// Stable identity so the React DragHandle's effect does not tear down and re-register the plugin on every render
+// (which resets the handle's position and drops its lock). placement 'left' centres the handle on the block;
+// 'fixed' anchors it to the zoomed `.binder-view` (its containing block), the case floating-ui compensates scale
+// for — 'absolute' drifts under page zoom.
+const COMPUTE_POSITION_CONFIG = {placement: 'left', strategy: 'fixed'} as const
+
 /**
  * Props for the block handle: the editor whose blocks it acts on.
  */
@@ -20,7 +26,16 @@ function BlockHandle({editor}: BlockHandleProps) {
     // The document position of the block currently under the handle, used to target the "+" menu's insert.
     const hoveredPosition = useRef<number | null>(null)
     const containerReference = useRef<HTMLDivElement>(null)
-    const closeMenu = useCallback(() => setMenuOpen(false), [])
+
+    // Pins the handle in place and visible while the menu is open, so the extension's hover tracking cannot
+    // reposition or hide it (and close the menu) as the pointer moves toward the menu. The drag-handle plugin
+    // reads this `lockDragHandle` transaction meta; the React component registers only the plugin, so the
+    // extension's lock commands are unavailable and the meta is dispatched directly.
+    const setMenu = useCallback((open: boolean) => {
+        editor.view.dispatch(editor.state.tr.setMeta('lockDragHandle', open))
+        setMenuOpen(open)
+    }, [editor])
+    const closeMenu = useCallback(() => setMenu(false), [setMenu])
     useDismissOnOutside(containerReference, menuOpen, closeMenu)
 
     // Moves the cursor into the hovered block, then applies the action there.
@@ -29,19 +44,18 @@ function BlockHandle({editor}: BlockHandleProps) {
             editor.chain().focus().setTextSelection(hoveredPosition.current + 1).run()
         }
         action.run(editor)
-        setMenuOpen(false)
+        closeMenu()
     }
 
     return (
         <DragHandle
             editor={editor}
             className="block-handle no-print"
-            // placement 'left' centres the handle on the block; 'fixed' anchors it to the zoomed `.binder-view`
-            // (its containing block), the case floating-ui compensates scale for — 'absolute' drifts under page zoom.
-            computePositionConfig={{placement: 'left', strategy: 'fixed'}}
+            computePositionConfig={COMPUTE_POSITION_CONFIG}
             onNodeChange={({pos}) => {
                 hoveredPosition.current = pos
-                setMenuOpen(false)
+                // A locked handle suppresses hover changes, so this only reaches an open menu defensively.
+                if (menuOpen) closeMenu()
             }}
         >
             <div className="block-handle__cluster" ref={containerReference}>
@@ -50,7 +64,7 @@ function BlockHandle({editor}: BlockHandleProps) {
                     className="block-handle__btn"
                     title="Insert block"
                     onMouseDown={(event) => event.stopPropagation()}
-                    onClick={() => setMenuOpen((open) => !open)}
+                    onClick={() => setMenu(!menuOpen)}
                 >+
                 </button>
                 <span className="block-handle__grip" title="Drag to move">⠿</span>

@@ -6,6 +6,12 @@
     --color-ink: #2c1f14;
     --color-text: #333;
     --color-border: #b7a97f;
+    --color-surface-raised: #fdfaf3; /* raised surfaces: dialogs, popover menus, icon buttons at rest */
+    --color-primary: hsl(38 45% 50%); /* primary-action fill: the primary modal button and the tooltip pill */
+    --color-button-face: #efe8d5; /* parchment button face */
+    --color-button-face-hover: #e6dcc2; /* its hover / active state */
+    --color-muted: #777; /* muted affordance icons (drag grip, table edge buttons) */
+    --color-danger: hsl(0 55% 45%); /* destructive-action indicator, matching the dialog/icon danger buttons */
 
     /* Stacking scale for the layered page, controls, and modals. */
     --z-page: 10;
@@ -27,6 +33,59 @@ body {
     gap: 0.75rem;
 }
 
+/* A hover/focus tooltip pill shared by icon buttons and the markdown toolbar: set the text via a data-tooltip
+   attribute and pick a side with a --left/--right/--top modifier. The brownish face and white text match the
+   action buttons. */
+.has-tooltip {
+    position: relative;
+}
+
+.has-tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    z-index: var(--z-controls);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    background: var(--color-primary);
+    color: #fff;
+    font-family: var(--font-serif);
+    font-size: 0.9375rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.has-tooltip--left::after,
+.has-tooltip--right::after {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.has-tooltip--left::after {
+    right: calc(100% + 0.5rem);
+}
+
+.has-tooltip--right::after {
+    left: calc(100% + 0.5rem);
+}
+
+.has-tooltip--top::after {
+    bottom: calc(100% + 0.5rem);
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.has-tooltip:hover::after,
+.has-tooltip:focus-visible::after {
+    opacity: 1;
+}
+
+/* A disabled button reads as inactive: no tooltip on hover. */
+.has-tooltip:disabled:hover::after {
+    opacity: 0;
+}
+
 /* Sonner's success toast: tint just the checkmark icon green, leaving the rest of the toast at its default styling. */
 [data-sonner-toast][data-type='success'] [data-icon] {
     color: #2e7d32;
@@ -34,7 +93,8 @@ body {
 
 /* On-screen chrome hidden when printing, so only the page content prints. */
 @media print {
+    /* !important so the utility beats a component's own higher-ordered display rule (e.g. .markdown-toolbar). */
     .no-print {
-        display: none;
+        display: none !important;
     }
 }

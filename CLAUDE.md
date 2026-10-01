@@ -302,7 +302,12 @@ tab-strip components live together in a `tabs/` subfolder (`Tabs`,
 not in `ui/` (tab deletion reuses the shared `ui/ConfirmModal`). The pure
 per-index tab-hue function lives in `src/lib/colors/tabHue.ts` (shared by `Binder` and
 `Library`, unit-tested in `tabHue.test.ts`). Page-view zoom is owned by the
-`usePageScale` hook (`src/hooks/`), not `Binder` itself.
+`usePageScale` hook (`src/hooks/`), not `Binder` itself. `Binder` promotes the
+zoomed `.binder-view` to its own compositor layer (`will-change: transform`, via
+the `.binder-view--zooming` class) **only for the ~0.3s of a scale change**,
+toggling the class on the DOM node (not via state): a permanent layer around the
+editable markdown surface blanks out after inactivity, so the promotion is scoped
+to the transition.
 
 The page list is **dynamic and persisted**: a `Page` is serialisable tab
 metadata (`id`, `label`, `type`, `storagePrefix`), declared with the per-binder
@@ -329,8 +334,8 @@ entry. The view scale
 `EmptyPage`
 (`features/EmptyPage/`) is both the stand-in for an `empty`-type page and the
 page shown when the binder has no active page (`Binder` renders `<EmptyPage/>`
-untitled in that case). The `empty` type is offered in the add-page menu for now
-but is slated for removal from that list later.
+untitled in that case). The `empty` type is default-only — it is not offered in
+the add-page menu (`PAGE_TYPES`), only used as the stand-in described above.
 
 Adding a page is driven from `TabControls` (below), which opens `AddTabModal`
 (`tabs/modals/AddTabModal.tsx`) — a proper modal (not `window.prompt`) asking for a

@@ -14,13 +14,13 @@ interface MarkdownToolbarProps {
 
 // The inline marks, kept here (not in insertBlocks) since the block-insert menu does not apply marks.
 const MARKS: {id: string; icon: ReactNode; name: string; run: (editor: Editor) => void}[] = [
-    {id: 'bold', icon: <Bold size={16} strokeWidth={2.75}/>, name: 'bold',
+    {id: 'bold', icon: <Bold size={16} strokeWidth={2.75}/>, name: 'Bold',
         run: (editor) => editor.chain().focus().toggleBold().run()},
-    {id: 'italic', icon: <Italic size={16}/>, name: 'italic',
+    {id: 'italic', icon: <Italic size={16}/>, name: 'Italic',
         run: (editor) => editor.chain().focus().toggleItalic().run()},
-    {id: 'underline', icon: <Underline size={16}/>, name: 'underline',
+    {id: 'underline', icon: <Underline size={16}/>, name: 'Underlined',
         run: (editor) => editor.chain().focus().toggleUnderline().run()},
-    {id: 'strike', icon: <Strikethrough size={16}/>, name: 'strike',
+    {id: 'strike', icon: <Strikethrough size={16}/>, name: 'Strikethrough',
         run: (editor) => editor.chain().focus().toggleStrike().run()},
 ]
 
@@ -38,7 +38,7 @@ function MarkdownToolbar({editor}: MarkdownToolbarProps) {
         selector: ({editor}) => ({
             canUndo: editor.can().undo(),
             canRedo: editor.can().redo(),
-            marks: MARKS.map((mark) => editor.isActive(mark.name)),
+            marks: MARKS.map((mark) => editor.isActive(mark.id)),
             blocks: Object.fromEntries(BLOCK_ACTIONS.map((action) => [action.id, action.isActive(editor)])),
         }),
     })
@@ -53,10 +53,12 @@ function MarkdownToolbar({editor}: MarkdownToolbarProps) {
 
     return (
         <div className="markdown-toolbar no-print">
-            <button type="button" className="markdown-toolbar__btn markdown-toolbar__btn--history" title="Undo"
+            <button type="button" aria-label="Undo" data-tooltip="Undo"
+                    className="markdown-toolbar__btn markdown-toolbar__btn--history has-tooltip has-tooltip--top"
                     disabled={!state.canUndo} onClick={() => editor.chain().focus().undo().run()}>↶
             </button>
-            <button type="button" className="markdown-toolbar__btn markdown-toolbar__btn--history" title="Redo"
+            <button type="button" aria-label="Redo" data-tooltip="Redo"
+                    className="markdown-toolbar__btn markdown-toolbar__btn--history has-tooltip has-tooltip--top"
                     disabled={!state.canRedo} onClick={() => editor.chain().focus().redo().run()}>↷
             </button>
             <span className="markdown-toolbar__sep"/>
@@ -65,8 +67,8 @@ function MarkdownToolbar({editor}: MarkdownToolbarProps) {
             <span className="markdown-toolbar__sep"/>
 
             {MARKS.map((mark, index) => (
-                <button key={mark.id} type="button" title={mark.name}
-                        className={'markdown-toolbar__btn markdown-toolbar__btn--icon' +
+                <button key={mark.id} type="button" aria-label={mark.name} data-tooltip={mark.name}
+                        className={'markdown-toolbar__btn markdown-toolbar__btn--icon has-tooltip has-tooltip--top' +
                             (state.marks[index] ? ' is-active' : '')}
                         onClick={() => mark.run(editor)}>{mark.icon}
                 </button>
@@ -79,8 +81,8 @@ function MarkdownToolbar({editor}: MarkdownToolbarProps) {
             {INSERT_ACTIONS.map((action) => {
                 const ActionIcon = action.icon
                 return (
-                    <button key={action.id} type="button" title={action.label}
-                            className={'markdown-toolbar__btn markdown-toolbar__btn--icon' +
+                    <button key={action.id} type="button" aria-label={action.label} data-tooltip={action.label}
+                            className={'markdown-toolbar__btn markdown-toolbar__btn--icon has-tooltip has-tooltip--top' +
                                 (state.blocks[action.id] ? ' is-active' : '')}
                             onClick={() => action.run(editor)}><ActionIcon size={16}/>
                     </button>

@@ -1,3 +1,4 @@
+import {useEffect} from 'react'
 import {createPortal} from 'react-dom'
 import {EditorContent, useEditor} from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -12,7 +13,8 @@ import MarkdownToolbar from './MarkdownToolbar.tsx'
 import BlockHandle from './BlockHandle.tsx'
 
 /**
- * Props for the markdown editor: its initial markdown (read on mount only) and a change handler for each edit.
+ * Props for the markdown editor: the markdown to show (read on mount, and re-applied if it changes externally, e.g. a
+ * storage load) and a change handler for each edit.
  */
 interface MarkdownEditorProps {
     markdown: string
@@ -38,6 +40,13 @@ function MarkdownEditor({markdown, onChange}: MarkdownEditorProps) {
         contentType: 'markdown',
         onUpdate: ({editor}) => onChange(editor.getMarkdown()),
     })
+
+    // Re-apply markdown that changed outside the editor (e.g. a storage load swaps the atom's value); the equality
+    // guard skips the editor's own edits, which already match, so this never fights the user's typing.
+    useEffect(() => {
+        if (!editor || editor.getMarkdown() === markdown) return
+        editor.commands.setContent(markdown, {contentType: 'markdown', emitUpdate: false})
+    }, [editor, markdown])
 
     if (!editor) return null
 

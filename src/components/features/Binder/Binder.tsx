@@ -61,21 +61,22 @@ function Binder({storagePrefix, onExit}: BinderProps) {
     const [lastTab, setLastTab] = useState<HTMLElement | null>(null)
     // Which edit dialogue is open for the active tab, if any.
     const [editing, setEditing] = useState<'edit' | 'delete' | null>(null)
-    // True only while a zoom transition runs, so the view is promoted to its own compositor layer just for the zoom.
-    const [zooming, setZooming] = useState(false)
     const activeIndex = Math.max(0, pages.findIndex((page) => page.id === activeId))
     const active = pages.length ? pages[activeIndex] : undefined
 
     // Persists the shown page as this binder's remembered active page, so reopening it returns here.
     useEffect(() => rememberActivePage(activeId), [activeId, rememberActivePage])
 
-    // Promote the view layer only for the duration of a zoom (a little past the 0.25s transition), then drop it: a
-    // permanent compositor layer around the editable markdown surface blanks out after inactivity until an interaction.
+    // Promote the view to its own compositor layer only for the duration of a zoom (a little past the 0.25s transition),
+    // then drop it — a permanent layer around the editable markdown surface blanks out after inactivity. Toggled as a
+    // class on the DOM node, since it is a transient compositor hint, not render-driving data.
     useEffect(() => {
-        setZooming(true)
-        const timer = window.setTimeout(() => setZooming(false), 300)
+        const view = viewReference.current
+        if (!view) return
+        view.classList.add('binder-view--zooming')
+        const timer = window.setTimeout(() => view.classList.remove('binder-view--zooming'), 300)
         return () => window.clearTimeout(timer)
-    }, [scale])
+    }, [scale, viewReference])
 
     // Appends a new page of the chosen type; its GUID id doubles as the character-sheet storage prefix.
     function createPage(name: string, type: PageType) {
@@ -112,8 +113,7 @@ function Binder({storagePrefix, onExit}: BinderProps) {
 
     return (
         <div className="app-shell" style={{'--active-hue': active?.hue ?? 0} as CSSProperties}>
-            <div className="binder-view" ref={viewReference}
-                 style={{transform: `scale(${scale})`, willChange: zooming ? 'transform' : 'auto'}}>
+            <div className="binder-view" ref={viewReference} style={{transform: `scale(${scale})`}}>
                 <main className="page">{active ? renderPage(active, storagePrefix) : <EmptyPage/>}</main>
                 <Tabs tabs={pages} activeId={active?.id ?? ''}
                       onSelect={(id) => navigate({binderId: storagePrefix, pageId: id})} onReorder={reorderPages}

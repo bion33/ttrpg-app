@@ -26,8 +26,8 @@ function ToolbarDropdown({editor, label, icon: GroupIcon, actions, activeStates}
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-                <button type="button" title={label}
-                        className={'markdown-toolbar__btn markdown-toolbar__btn--menu' +
+                <button type="button" aria-label={label} data-tooltip={label}
+                        className={'markdown-toolbar__btn markdown-toolbar__btn--menu has-tooltip has-tooltip--top' +
                             (activeIndex >= 0 ? ' is-active' : '')}><TriggerIcon size={16}/> <span aria-hidden="true">▾</span>
                 </button>
             </DropdownMenu.Trigger>

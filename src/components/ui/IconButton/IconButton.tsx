@@ -38,12 +38,12 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconB
         <button
             type="button"
             ref={ref}
-            className={`icon-button icon-button--label-${labelSide}${
+            className={`icon-button has-tooltip has-tooltip--${labelSide}${
                 variant === 'danger' ? ' icon-button--danger' : ''
             }${size === 'large' ? ' icon-button--large' : ''}${
                 size === 'small' ? ' icon-button--small' : ''
             }${className ? ` ${className}` : ''}`}
-            data-label={label}
+            data-tooltip={label}
             aria-label={label}
             disabled={disabled}
             onClick={onClick}
