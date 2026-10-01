@@ -2,6 +2,7 @@ import {useEffect, useMemo, useRef, useState} from 'react'
 import './CharacterSheet.css'
 import FieldInput from '@ui/FieldInput/FieldInput'
 import PaperPage from '@ui/PaperPage/PaperPage'
+import LoadingSpinner from '@ui/LoadingSpinner/LoadingSpinner'
 import {A4_WIDTH_PX} from '@lib/paper/paperSize.ts'
 import {buildSheet} from './layout/sheet.ts'
 
@@ -56,7 +57,7 @@ function CharacterSheet({storagePrefix}: CharacterSheetProps) {
 
     if (!artworkMarkup) return (
         <PaperPage width={naturalWidth}>
-            <p>Loading character sheet…</p>
+            <LoadingSpinner/>
         </PaperPage>
     );
 

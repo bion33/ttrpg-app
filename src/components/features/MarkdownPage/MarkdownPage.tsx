@@ -3,6 +3,7 @@ import {useAtom} from 'jotai'
 import {A4_WIDTH_PX} from '@lib/paper/paperSize.ts'
 import {markdownAtom} from './markdownAtoms.ts'
 import PaperPage from "@ui/PaperPage/PaperPage.tsx";
+import LoadingSpinner from '@ui/LoadingSpinner/LoadingSpinner.tsx'
 
 // The Tiptap editor and its styles load as their own chunk rather than in the main bundle.
 const MarkdownEditor = lazy(() => import('./MarkdownEditor.tsx'))
@@ -37,7 +38,7 @@ function MarkdownPage({storagePrefix, active}: MarkdownPageProps) {
 
     const loading = (
         <PaperPage width={naturalWidth} className="markdown-page__loading-sheet">
-            <p>Loading markdown…</p>
+            <LoadingSpinner/>
         </PaperPage>
     )
     if (!mountEditor) return loading

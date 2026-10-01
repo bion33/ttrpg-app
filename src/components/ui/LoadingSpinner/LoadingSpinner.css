@@ -1,0 +1,24 @@
+.loading-spinner {
+    /* Grow into the sheet's content box and centre the icon both ways. */
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-spinner__icon {
+    width: 3rem;
+    height: 3rem;
+    color: var(--color-parchment);
+    /* A 1s hold, then a 0.4s 180° flip, repeating. Two flips span the 2.8s cycle so it ends at 360° (≡ 0°) and the
+       loop never jumps back. */
+    animation: loading-spinner-flip 2.8s ease-in-out infinite;
+}
+
+@keyframes loading-spinner-flip {
+    0% { transform: rotate(0deg); }
+    35.714% { transform: rotate(0deg); }
+    50% { transform: rotate(180deg); }
+    85.714% { transform: rotate(180deg); }
+    100% { transform: rotate(360deg); }
+}
