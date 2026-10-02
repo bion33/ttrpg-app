@@ -1,5 +1,5 @@
 import {useEffect, useMemo, useRef, useState} from 'react'
-import './CharacterSheet.css'
+import './CharacterPage.css'
 import FieldInput from '@ui/FieldInput/FieldInput'
 import PaperPage from '@ui/PaperPage/PaperPage'
 import LoadingSpinner from '@ui/LoadingSpinner/LoadingSpinner'
@@ -23,14 +23,14 @@ const naturalWidth = A4_WIDTH_PX
 /**
  * Props for a character sheet: the localStorage-key prefix its fields persist under (one namespace per sheet page).
  */
-interface CharacterSheetProps {
+interface CharacterPageProps {
     storagePrefix: string
 }
 
 /**
  * Fetches and injects the artwork SVG and renders the overlay fields, built under this sheet's own storage prefix.
  */
-function CharacterSheet({storagePrefix}: CharacterSheetProps) {
+function CharacterPage({storagePrefix}: CharacterPageProps) {
     const [artworkMarkup, setArtworkMarkup] = useState<string | null>(null)
     const [loadFailed, setLoadFailed] = useState(false)
     const svgReference = useRef<SVGSVGElement>(null)
@@ -72,7 +72,7 @@ function CharacterSheet({storagePrefix}: CharacterSheetProps) {
     return (
         <svg
             ref={svgReference}
-            className="character-sheet"
+            className="character-page"
             viewBox={VIEW_BOX}
             style={{width: `${naturalWidth}px`}}
             xmlns="http://www.w3.org/2000/svg"
@@ -86,6 +86,6 @@ function CharacterSheet({storagePrefix}: CharacterSheetProps) {
 }
 
 // Exposed so the binder's zoom can scale the sheet to a fraction of the viewport (a future A5 variant sets its own).
-CharacterSheet.naturalWidth = naturalWidth
+CharacterPage.naturalWidth = naturalWidth
 
-export default CharacterSheet
+export default CharacterPage

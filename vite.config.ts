@@ -13,6 +13,7 @@ export default defineConfig({
     alias: {
       '@ui': resolveSrc('./src/components/ui'),
       '@features': resolveSrc('./src/components/features'),
+      '@pages': resolveSrc('./src/components/features/pages'),
       '@hooks': resolveSrc('./src/hooks'),
       '@lib': resolveSrc('./src/lib'),
       '@type': resolveSrc('./src/type'),

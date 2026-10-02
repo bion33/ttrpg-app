@@ -23,7 +23,7 @@
     font-display: swap;
 }
 
-.character-sheet {
+.character-page {
     display: block;
     /* Width is set inline from the shared A4 paper constant (see CharacterSheet.tsx) so the sheet is a fixed footprint. */
     height: auto;

@@ -110,7 +110,7 @@ the jotai atom holding its value. Position and state are one object.
 - `collectNodes(tree)` flattens a `NodeTree` (nodes nested in arrays / records)
   into a flat render list.
 
-### CharacterSheet feature (`src/components/features/CharacterSheet/`)
+### CharacterPage feature (`src/components/features/pages/CharacterPage/`)
 
 - `layout/` — the **single source of truth** for the sheet's fields. The sheet
   is built **per instance** from a storage prefix (so multiple sheet pages get
@@ -135,11 +135,11 @@ the jotai atom holding its value. Position and state are one object.
     `generators.ts`/`constants.ts` module.
   - `logic/formulas/formulas.ts` — **pure** D&D 5e rules math (no atoms/React/storage),
     unit-tested in `formulas.test.ts`. Atoms wire these into derived fields.
-  - `CharacterSheet.tsx` — takes a `storagePrefix` prop, memoizes
+  - `CharacterPage.tsx` — the `CharacterPage` component: takes a `storagePrefix` prop, memoizes
     `buildSheet(prefix)`, fetches/injects the artwork SVG, and renders the
     resulting `fields`.
 
-### MarkdownPage feature (`src/components/features/MarkdownPage/`)
+### MarkdownPage feature (`src/components/features/pages/MarkdownPage/`)
 
 The `markdown` ("Notes") page type: a general-purpose WYSIWYG markdown editor a
 user can add as many times as they like per binder — the catch-all, unstructured
@@ -397,7 +397,7 @@ per-index tab-hue function lives in `src/lib/colors/tabHue.ts` (shared by `Binde
 The page list is **dynamic and persisted**: a `Page` is serialisable tab
 metadata (`id`, `label`, `type`, `storagePrefix`), declared with the per-binder
 atoms in `binderAtoms.ts`, and `renderPage(page, storagePrefix, active)` (in `Binder.tsx`)
-resolves it to an element by `type` — `characterSheet` → `CharacterSheet` bound to
+resolves it to an element by `type` — `characterSheet` → `CharacterPage` bound to
 the **binder-prefixed** storage prefix (`pagePrefix(storagePrefix, page.storagePrefix)`,
 the one `binderAtoms.ts` helper for the `${binderPrefix}:${pageId}` join every page-
 seeding site shares),
@@ -425,7 +425,7 @@ derives the `scale` (`fraction × viewportWidth / naturalWidthPx`) and clamps th
 fraction to a fit ceiling measured from the scaled wrapper's layout width (the page
 plus its tab-strip/margin chrome), so it never overflows the viewport.
 `EmptyPage`
-(`features/EmptyPage/`) is both the stand-in for an `empty`-type page and the
+(`features/pages/EmptyPage/`) is both the stand-in for an `empty`-type page and the
 page shown when the binder has no active page (`Binder` renders `<EmptyPage/>`
 untitled in that case). The `empty` type is default-only — it is not offered in
 the add-page menu (`PAGE_TYPES`), only used as the stand-in described above.
@@ -803,7 +803,7 @@ their atom (and go read-only when their optional `readOnlyAtom` is true); derive
 fields subscribe read-only.
 
 `PaperPage` is the shared white, A4-proportioned document-style page shell (its
-one style, so it never drifts): `EmptyPage`, the `CharacterSheet` loading state,
+one style, so it never drifts): `EmptyPage`, the `CharacterPage` loading state,
 and the `MarkdownPage` loading state wrap their content in it. It owns no width of
 its own — the caller passes `width` (its physical page width in CSS px, from
 `@lib/paper/paperSize.ts`, the same source the zoom uses), so it is a fixed sheet
@@ -994,7 +994,9 @@ same change so it stays approved going forward.
   imports.
 - **Path aliases** (defined once in `tsconfig.app.json` `paths` and mirrored in
   `vite.config.ts` `resolve.alias`) shorten cross-directory imports: `@ui/*` →
-  `src/components/ui`, `@features/*` → `src/components/features`, `@hooks/*` →
+  `src/components/ui`, `@features/*` → `src/components/features`, `@pages/*` →
+  `src/components/features/pages` (the page features — `CharacterPage`, `MarkdownPage`,
+  `EmptyPage`), `@hooks/*` →
   `src/hooks`, `@lib/*` → `src/lib`, `@type/*` → `src/type` (singular `@type`,
   since TypeScript reserves the `@types/` namespace). Prefer an alias over a
   `../../…` chain that climbs out of the current directory; keep same-directory

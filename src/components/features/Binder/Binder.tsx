@@ -16,9 +16,9 @@ import {newId} from '@lib/ids/newId.ts'
 import {tabHue} from '@lib/colors/tabHue.ts'
 import {tabBorderColor} from '@lib/colors/hueColors.ts'
 import {A4_WIDTH_PX} from '@lib/paper/paperSize.ts'
-import CharacterSheet from '@features/CharacterSheet/CharacterSheet'
-import MarkdownPage from '@features/MarkdownPage/MarkdownPage'
-import EmptyPage from '@features/EmptyPage/EmptyPage'
+import CharacterPage from '@pages/CharacterPage/CharacterPage'
+import MarkdownPage from '@pages/MarkdownPage/MarkdownPage'
+import EmptyPage from '@pages/EmptyPage/EmptyPage'
 import StorageControls from '@features/Storage/StorageControls.tsx'
 import {seedMarkdownContent} from '@features/Templates/templateAtoms.ts'
 
@@ -39,7 +39,7 @@ interface BinderProps {
 function renderPage(page: Page, storagePrefix: string, active: boolean): ReactNode {
     const prefix = pagePrefix(storagePrefix, page.storagePrefix)
     if (page.type === 'characterSheet') {
-        return <CharacterSheet storagePrefix={prefix}/>
+        return <CharacterPage storagePrefix={prefix}/>
     }
     if (page.type === 'markdown') {
         return <MarkdownPage storagePrefix={prefix} active={active}/>
@@ -52,7 +52,7 @@ function renderPage(page: Page, storagePrefix: string, active: boolean): ReactNo
  * so the zoom scales every page to the same fraction of the viewport (and a future differently-sized page just works).
  */
 function pageNaturalWidth(type: PageType | undefined): number {
-    if (type === 'characterSheet') return CharacterSheet.naturalWidth
+    if (type === 'characterSheet') return CharacterPage.naturalWidth
     if (type === 'markdown') return MarkdownPage.naturalWidth
     // The empty stand-in uses PaperPage, itself a physical A4 sheet.
     return A4_WIDTH_PX

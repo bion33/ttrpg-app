@@ -20,6 +20,7 @@
     "paths": {
       "@ui/*": ["./src/components/ui/*"],
       "@features/*": ["./src/components/features/*"],
+      "@pages/*": ["./src/components/features/pages/*"],
       "@hooks/*": ["./src/hooks/*"],
       "@lib/*": ["./src/lib/*"],
       "@type/*": ["./src/type/*"]
