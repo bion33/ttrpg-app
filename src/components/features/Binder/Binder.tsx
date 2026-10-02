@@ -17,6 +17,8 @@ import {tabHue} from '@lib/colors/tabHue.ts'
 import {tabBorderColor} from '@lib/colors/hueColors.ts'
 import {A4_WIDTH_PX} from '@lib/paper/paperSize.ts'
 import CharacterPage from '@pages/CharacterPage/CharacterPage'
+import CharacterInfoPage from '@pages/CharacterInfoPage/CharacterInfoPage'
+import EquipmentPage from '@pages/EquipmentPage/EquipmentPage'
 import MarkdownPage from '@pages/MarkdownPage/MarkdownPage'
 import EmptyPage from '@pages/EmptyPage/EmptyPage'
 import StorageControls from '@features/Storage/StorageControls.tsx'
@@ -41,6 +43,12 @@ function renderPage(page: Page, storagePrefix: string, active: boolean): ReactNo
     if (page.type === 'characterSheet') {
         return <CharacterPage storagePrefix={prefix}/>
     }
+    if (page.type === 'characterInfo') {
+        return <CharacterInfoPage storagePrefix={prefix}/>
+    }
+    if (page.type === 'equipment') {
+        return <EquipmentPage storagePrefix={prefix}/>
+    }
     if (page.type === 'markdown') {
         return <MarkdownPage storagePrefix={prefix} active={active}/>
     }
@@ -53,6 +61,8 @@ function renderPage(page: Page, storagePrefix: string, active: boolean): ReactNo
  */
 function pageNaturalWidth(type: PageType | undefined): number {
     if (type === 'characterSheet') return CharacterPage.naturalWidth
+    if (type === 'characterInfo') return CharacterInfoPage.naturalWidth
+    if (type === 'equipment') return EquipmentPage.naturalWidth
     if (type === 'markdown') return MarkdownPage.naturalWidth
     // The empty stand-in uses PaperPage, itself a physical A4 sheet.
     return A4_WIDTH_PX

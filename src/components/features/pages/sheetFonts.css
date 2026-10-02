@@ -1,5 +1,6 @@
-/* Fonts referenced by the artwork SVG (and the overlaid form controls), bundled so the sheet renders
-   identically without relying on host-installed fonts. "Times-Roman" maps to metric-compatible Liberation Serif. */
+/* Fonts referenced by the traced character-sheet artwork SVGs (and the overlaid form controls), bundled so the sheets
+   render identically without relying on host-installed fonts. "Times-Roman" maps to metric-compatible Liberation Serif.
+   Shared by every traced-sheet page (CharacterPage, CharacterInfoPage). */
 @font-face {
     font-family: 'Mongolian Baiti';
     /*noinspection CssUnknownTarget*/
@@ -21,13 +22,4 @@
     /*noinspection CssUnknownTarget*/
     src: url('/fonts/LiberationSerif-Bold.woff2') format('woff2');
     font-display: swap;
-}
-
-.character-page {
-    display: block;
-    /* Width is set inline from the shared A4 paper constant (see CharacterSheet.tsx) so the sheet is a fixed footprint. */
-    height: auto;
-    margin: 0 auto;
-    /* The artwork's own page colour, so the symmetric vertical padding reads as part of the same white sheet. */
-    background: #ffffff;
 }
