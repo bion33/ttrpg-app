@@ -156,10 +156,16 @@ The shared surface **every traced-artwork sheet page renders through** — the
 single implementation of the fetch-and-inject-SVG + A4-padding + overlay-fields
 pattern, extracted so adding a new traced sheet is just a layout plus a thin
 wrapper. `TracedSheetPage.tsx` takes `svgUrl`, the artwork's own `artworkWidth`/
-`artworkHeight`, the `fields` render list, and the load-error copy; it fetches
+`artworkHeight`, the `fields` render list, an optional `fieldOverlays` map, and the
+load-error copy; it fetches
 and injects the artwork, symmetrically pads its viewBox to a true A4 footprint,
 and overlays the `fields` as `FieldInput`s in the artwork's coordinate space,
-showing a `PaperPage` loading/error state meanwhile. It exports
+showing a `PaperPage` loading/error state meanwhile. `fieldOverlays` keys SVG
+decoration by field id, painting it directly **above that field** (so later fields
+still paint over it) in the same coordinate space — e.g. `CharacterInfoPage`
+re-paints the artwork's grey deity name plate with an SVG `<use href="#…">` above
+the portrait field, so the circular portrait does not cover it yet the deity
+name/info inputs still sit on the plate. It exports
 `TRACED_SHEET_NATURAL_WIDTH` (the A4 width each page re-exposes as its
 `naturalWidth` for the zoom) and owns `TracedSheetPage.css` (the `.traced-sheet-page`
 sheet styling) and the `sheetFonts.css` import (the traced-sheet `@font-face`
@@ -191,7 +197,10 @@ the tree in `layout/sheet.ts`), the same way `CharacterPage`'s sections work.
     details.
   - `layout/sections/companion.ts` — `buildCompanion(factory)`: a **placeholder**
     section with no fields yet.
-  - `CharacterInfoPage.tsx` — the component (same shape as `CharacterPage.tsx`).
+  - `CharacterInfoPage.tsx` — the component (same shape as `CharacterPage.tsx`); it also
+    passes `TracedSheetPage` a `fieldOverlays` entry keyed to the deity portrait that re-paints
+    the artwork's grey deity name plate (`<use href="#…">`) directly above the portrait, so the
+    circular portrait does not cover the plate while the deity name/info inputs still sit on it.
 
 Wired into `PAGE_TYPES` (`Binder/pageTypes.ts`) as the `characterInfo` type
 ("Character info"), so it appears in the add-page modal and `Binder`'s

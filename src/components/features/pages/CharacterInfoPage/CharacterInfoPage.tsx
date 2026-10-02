@@ -1,12 +1,17 @@
 import {useMemo} from 'react'
 import TracedSheetPage, {TRACED_SHEET_NATURAL_WIDTH} from '@pages/TracedSheetPage/TracedSheetPage'
 import {buildInfoSheet} from './layout/sheet.ts'
+import {DEITY_PORTRAIT_FIELD_ID} from './layout/sections/allies.ts'
 
 const SVG_URL = '/character-sheet/character-info.svg'
 
 // The traced artwork's own extent in viewBox units; its ratio is slightly shorter than A4.
 const ARTWORK_WIDTH = 815.96265
 const ARTWORK_HEIGHT = 1055.9626
+
+// The artwork id of the grey deity name plate, re-painted directly above the portrait field so the circular portrait
+// does not cover it, while the deity name/info inputs (later fields) still paint over the plate.
+const DEITY_NAME_PLATE_ID = 'path68'
 
 /**
  * Props for a character-info sheet: the localStorage-key prefix its fields persist under (one namespace per sheet page).
@@ -27,6 +32,7 @@ function CharacterInfoPage({storagePrefix}: CharacterInfoPageProps) {
             artworkWidth={ARTWORK_WIDTH}
             artworkHeight={ARTWORK_HEIGHT}
             fields={fields}
+            fieldOverlays={{[DEITY_PORTRAIT_FIELD_ID]: <use href={`#${DEITY_NAME_PLATE_ID}`} pointerEvents="none"/>}}
             errorHeading="Couldn’t load the character info sheet."
             errorBody="The character-info artwork failed to load. Check your connection and reload the page."
         />

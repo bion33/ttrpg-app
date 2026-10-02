@@ -28,16 +28,16 @@
     min-height: 0;
 }
 
-/* The image fills the content area, letter-boxed to keep its aspect ratio. */
+/* The image fills the content area, cropping the overflow to keep its aspect ratio. */
 .image-panel__image {
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
 }
 
-/* Circle variant: the image fills the whole footprint clipped to a disc, and the menu floats over it (top-right)
-   rather than reserving a row, so the disc is centred and matches a circular traced frame exactly. */
+/* Circle variant: the image (already filling the footprint) is clipped to a disc, and the menu floats over it
+   (top-right) rather than reserving a row, so the disc is centred and matches a circular traced frame exactly. */
 .image-panel--circle .image-panel__toolbar {
     position: absolute;
     top: 0;
@@ -52,6 +52,5 @@
 }
 
 .image-panel--circle .image-panel__image {
-    object-fit: cover;
     border-radius: 50%;
 }
