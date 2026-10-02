@@ -12,6 +12,14 @@ export function abilityModifier(score: number): number {
 }
 
 /**
+ * The ability modifier for a (possibly blank) base score and optional extra points, or null when both are blank.
+ */
+export function abilityModifierValue(score: number | null, extra: number | null = null): number | null {
+    if (score === null && extra === null) return null
+    return abilityModifier((score ?? 0) + (extra ?? 0))
+}
+
+/**
  * The D&D 5e skill (or saving-throw) bonus for an ability modifier, given proficiency and expertise.
  */
 export function skillBonus(modifier: number, proficiencyBonus: number, proficient: boolean, expertise: boolean): number {

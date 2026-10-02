@@ -1,5 +1,8 @@
 import type {InfoSheetFactory} from '@pages/CharacterInfoPage/layout/nodes.ts'
 import type {FieldNode} from '@type/FieldNode.ts'
+import type {NumericFieldDefinition} from '@type/NumericFieldDefinition.ts'
+import type {AbilityConfig, AbilityNodes} from '@pages/CharacterPage/layout/sections/abilities.ts'
+import {abilityModifierValue} from '@pages/CharacterPage/logic/formulas/formulas.ts'
 
 // Shared geometry for the companion name/species/size fields: they share a bottom edge (the thin rule above the
 // labels) and sizing, and tile horizontally across that rule, divided at the SPECIES and SIZE label starts.
@@ -35,6 +38,65 @@ const ATTACK_BONUS_WIDTH = 22
 const ATTACK_BONUS_GAP = 6
 const ATTACK_EFFECT_WIDTH = ATTACK_WIDTH - ATTACK_BONUS_GAP - ATTACK_BONUS_WIDTH + (ATTACK_X - ATTACK_BONUS_X)
 
+// The companion's two ability-block nodes: the base score and its derived modifier, reusing the main sheet's node types
+// (the companion has no extra, saving-throw, or skill fields).
+type CompanionAbilityNodes = Pick<AbilityNodes<AbilityConfig>, 'score' | 'modifier'>
+
+/**
+ * One companion ability block's layout anchors: the centres of its score and modifier circles in the traced artwork.
+ */
+type CompanionAbility = {name: string; scoreCenter: {x: number; y: number}; modifierCenter: {x: number; y: number}}
+
+// The companion ability blocks. Each row (beside its STR/DEX/CON/INT/WIS label) has a small score circle on the left
+// and a larger modifier circle overlapping it on the right; the centres are read from the traced artwork.
+const COMPANION_ABILITIES = [
+    {name: 'strength', scoreCenter: {x: 484.41, y: 837.08}, modifierCenter: {x: 501.37, y: 844.01}},
+    {name: 'dexterity', scoreCenter: {x: 484.32, y: 875.57}, modifierCenter: {x: 501.28, y: 882.50}},
+    {name: 'constitution', scoreCenter: {x: 484.22, y: 913.46}, modifierCenter: {x: 501.19, y: 920.39}},
+    {name: 'intelligence', scoreCenter: {x: 484.13, y: 951.33}, modifierCenter: {x: 501.10, y: 958.26}},
+    {name: 'wisdom', scoreCenter: {x: 484.33, y: 990.13}, modifierCenter: {x: 501.29, y: 997.06}},
+] as const satisfies readonly CompanionAbility[]
+
+// Score-input footprint (fits the small circle) and modifier-input footprint (fits the larger circle).
+const SCORE_WIDTH = 18
+const SCORE_HEIGHT = 15
+const SCORE_FONT_SIZE = 13
+const MODIFIER_WIDTH = 26
+const MODIFIER_HEIGHT = 21
+const MODIFIER_FONT_SIZE = 18
+
+/**
+ * Builds one companion ability block: the editable score centred in its small circle and the read-only modifier,
+ * derived from that score via the shared 5e rule, centred in its larger circle.
+ */
+function abilityBlock(factory: InfoSheetFactory, ability: CompanionAbility): CompanionAbilityNodes {
+    const score = factory.inputNode({
+        id: `${ability.name}Score`,
+        x: ability.scoreCenter.x - SCORE_WIDTH / 2,
+        y: ability.scoreCenter.y - SCORE_HEIGHT / 2,
+        width: SCORE_WIDTH,
+        height: SCORE_HEIGHT,
+        type: 'number',
+        fontSize: SCORE_FONT_SIZE,
+    })
+
+    const modifier = factory.derivedNode<number | null>(
+        {
+            id: `${ability.name}Modifier`,
+            x: ability.modifierCenter.x - MODIFIER_WIDTH / 2,
+            y: ability.modifierCenter.y - MODIFIER_HEIGHT / 2,
+            width: MODIFIER_WIDTH,
+            height: MODIFIER_HEIGHT,
+            type: 'number',
+            fontSize: MODIFIER_FONT_SIZE,
+            signed: true,
+        } as NumericFieldDefinition,
+        (get) => abilityModifierValue(get(score.atom)),
+    )
+
+    return {score, modifier}
+}
+
 /**
  * One companion attack row (1-based). An odd row is a single text box ('attackN'); an even row splits the box into a
  * signed numeric bonus ('attackBonusN') and a text effect ('attackEffectN') sharing its width, ATTACK_GAP apart.
@@ -54,10 +116,16 @@ function attackRow(inputNode: InfoSheetFactory['inputNode'], row: number): Field
 
 /**
  * Builds the character-info companion fields: the companion's name, species, and size sitting above the thin rule over
- * their printed labels, plus the square AC/HP/SPEED stat inputs. All coordinates are in the artwork's viewBox units.
+ * their printed labels, the square AC/HP/SPEED stat inputs, and the ability score/modifier circles. All coordinates are
+ * in the artwork's viewBox units.
  */
-export function buildCompanion({inputNode}: InfoSheetFactory) {
+export function buildCompanion(factory: InfoSheetFactory) {
+    const {inputNode} = factory
     return {
+        abilities: Object.fromEntries(
+            COMPANION_ABILITIES.map((ability) => [ability.name, abilityBlock(factory, ability)]),
+        ) as {[A in typeof COMPANION_ABILITIES[number] as A['name']]: CompanionAbilityNodes},
+
         header: {
             name: inputNode({
                 id: 'name',

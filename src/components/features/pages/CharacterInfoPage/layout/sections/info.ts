@@ -3,11 +3,11 @@ import type {InfoSheetFactory} from '@pages/CharacterInfoPage/layout/nodes.ts'
 
 // ---- INTERNAL CONSTANTS ----
 
-const TRAIT_BOX_X = 293           // shared left edge of the ideals/bonds/flaws boxes
-const TRAIT_BOX_WIDTH = 234       // shared width of those boxes
-const TRAIT_BOX_HEIGHT = 48       // shared writing height of those boxes
-const TRAIT_BOX_TOP_Y = 582       // top of the first (ideals) box
-const TRAIT_BOX_STEP = 72         // vertical gap between successive boxes
+const TRAIT_BOX_X = 296           // shared left edge of the ideals/bonds/flaws boxes
+const TRAIT_BOX_WIDTH = 230       // shared width of those boxes
+const TRAIT_BOX_HEIGHT = 46       // shared writing height of those boxes
+const TRAIT_BOX_TOP_Y = 588       // top of the first (ideals) box
+const TRAIT_BOX_STEP = 71         // vertical gap between successive boxes
 
 /**
  * The equal-sized trait boxes stacked below PERSONALITY TRAITS, top to bottom.
@@ -28,7 +28,7 @@ export function buildInfo({inputNode}: InfoSheetFactory) {
         backstory: inputNode({id: 'backstory', x: 44, y: 510, width: 224, height: 498, type: 'textarea', fontSize: 12}),
 
         personality: {
-            personalityTraits: inputNode({id: 'personalityTraits', x: 293, y: 510, width: 234, height: 48, type: 'textarea', fontSize: 12}),
+            personalityTraits: inputNode({id: 'personalityTraits', x: 296, y: 498, width: 230, height: 64, type: 'textarea', fontSize: 12}),
             traitBoxes,
         },
 

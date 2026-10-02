@@ -1,7 +1,7 @@
 import type {Getter} from 'jotai'
 import type {DerivedNode, InputNode} from '@type/FieldNode.ts'
 import type {NumericFieldDefinition} from '@type/NumericFieldDefinition.ts'
-import {abilityModifier, passivePerception, skillBonus} from '@pages/CharacterPage/logic/formulas/formulas.ts'
+import {abilityModifierValue, passivePerception, skillBonus} from '@pages/CharacterPage/logic/formulas/formulas.ts'
 import type {SheetFactory} from '@pages/CharacterPage/layout/nodes.ts'
 
 // ---- INTERNAL CONSTANTS ----
@@ -206,7 +206,7 @@ export function buildAbilities(factory: SheetFactory): AbilitiesSection {
                 fontSize: 36,
                 signed: true,
             } as NumericFieldDefinition,
-            (get) => abilityModifierValue(get, score, extra),
+            (get) => abilityModifierValue(get(score.atom), get(extra.atom)),
         )
 
         const saveProficiency = checkNode({
@@ -230,7 +230,7 @@ export function buildAbilities(factory: SheetFactory): AbilitiesSection {
                 signed: true,
             } as NumericFieldDefinition,
             (get) => {
-                const modifierValue = abilityModifierValue(get, score, extra)
+                const modifierValue = abilityModifierValue(get(score.atom), get(extra.atom))
                 if (modifierValue === null) return null
                 const proficient = get(saveProficiency.atom)
                 return skillBonus(modifierValue, proficiencyBonusValue(get), proficient, false)
@@ -273,7 +273,7 @@ export function buildAbilities(factory: SheetFactory): AbilitiesSection {
                 signed: true,
             } as NumericFieldDefinition,
             (get) => {
-                const modifier = abilityModifierValue(get, score, extra)
+                const modifier = abilityModifierValue(get(score.atom), get(extra.atom))
                 if (modifier === null) return null
                 const proficient = get(proficiency.atom)
                 const expert = get(expertise.atom)
@@ -285,16 +285,6 @@ export function buildAbilities(factory: SheetFactory): AbilitiesSection {
 }
 
 // ---- PRIVATE FUNCTIONS ----
-
-/**
- * Numeric ability modifier from a block's score and extra atoms, or null when the score is blank.
- */
-function abilityModifierValue(get: Getter, score: InputNode<number | null>, extra: InputNode<number | null>): number | null {
-    const scoreValue = get(score.atom)
-    const extraValue = get(extra.atom)
-    if (scoreValue === null && extraValue === null) return null
-    return abilityModifier((scoreValue ?? 0) + (extraValue ?? 0))
-}
 
 /**
  * Expertise-checkbox y of the skill at the given index in a block.
