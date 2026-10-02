@@ -23,11 +23,11 @@ export interface EquipmentSheet {
  */
 export function buildEquipmentSheet(storagePrefix: string): EquipmentSheet {
     const factory = createEquipmentSheetFactory(storagePrefix)
-    const header = buildHeader(factory)
     const equipped = buildEquipped(factory)
     const backpack = buildBackpack(factory)
     const money = buildMoney(factory)
     const storage = buildStorage(factory)
+    const header = buildHeader(factory, {equipped, backpack, money, storage})
 
     const tree = {
         header,

@@ -211,16 +211,44 @@ Wired into `PAGE_TYPES` (`Binder/pageTypes.ts`) as the `characterInfo` type
 A third traced-sheet page (`equipment.svg`), built exactly like
 `CharacterInfoPage` — a per-instance field factory, section builders, a
 `buildEquipmentSheet(prefix)` assembler, and a thin `EquipmentPage.tsx` wrapper
-over the shared `TracedSheetPage`. Also a **scaffold**: it renders the artwork
-with no fields defined yet. Add fields in `layout/sections/equipment.ts`'s
-`buildEquipment(factory)` (and further section builders alongside it, gathered
-into the tree in `layout/sheet.ts`).
+over the shared `TracedSheetPage`. Add fields in the matching
+`layout/sections/*` builder (or add a further section alongside them, gathered into
+the tree in `layout/sheet.ts`).
   - `layout/nodes.ts` — `createEquipmentSheetFactory(prefix)`, the per-instance factory.
   - `layout/sheet.ts` — `buildEquipmentSheet(prefix)`, assembling the section nodes.
-  - `layout/sections/equipment.ts` — `buildEquipment(factory)`, the (empty) first section.
-  - `layout/sections/header.ts` — `buildHeader(factory)`: character name and the carry-capacity/weight line.
-  - `layout/sections/equipped.ts`, `backpack.ts`, `money.ts`, `storage.ts` — `buildEquipped`/`buildBackpack`/
-    `buildMoney`/`buildStorage(factory)`, **empty placeholder** sections with no fields yet.
+    **The weight-source sections (`equipped`, `backpack`, `money`, `storage`) are built before
+    `buildHeader`, which takes them as its `WeightSources` so the header's weight fields can
+    derive from their atoms.**
+  - `layout/sections/header.ts` — `buildHeader(factory, weightSources)`: character name, the
+    identity line, and the carry-capacity/carry-weight/storage-weight line. **Carry capacity** is a
+    `computedInputNode` (Strength × 15) gated on its own `enableCarryCapacityCalculation` star-check.
+    **Carry weight** and **storage weight** are `computedInputNode`s both gated on the shared
+    `enableWeightCalculation` star-check, deriving from the `WeightSources` sections (reading their
+    row/coin atoms by reference, not by id): carry weight sums every equipped + backpack item weight
+    (each row's encoded count × its weight) and — while `money.enableMoneyWeightCalculation` is on —
+    adds the coin weight; storage weight sums `count × weight` over all storage rows. **Encumbrance** is
+    also a `computedInputNode` gated on `enableWeightCalculation`, showing the `encumbranceLabel`
+    message for the carry weight against Strength. Each reverts to a manual input when its check is off.
+  - `layout/generators.ts` — `buildItemRows(inputNode, config)`, the shared EQUIPPED/BACKPACK row
+    builder (the two lists are identical grids in different columns): one `{item, weight}` row (a wide
+    item name and a thin weight) below each grey divider, skipping any prefilled-header rows, returned
+    as `{rows}`. Its `ItemListConfig` carries each list's id prefix, the two column edges, and its
+    skip-rows set. (Storage's row builder stays in its own section — a different 3-column structure.)
+  - `layout/sections/equipped.ts` / `backpack.ts` — `buildEquipped`/`buildBackpack(factory)`: thin
+    wrappers calling `buildItemRows` with their column config (equipped also skips the prefilled-header
+    rows). These rows have no dedicated count column — a per-row count is instead **encoded in the item
+    text** (a trailing "| N" or leading "N |"; see `parseItemCount`) and multiplied by the row weight
+    for the carry-weight total.
+  - `layout/sections/money.ts` — `buildMoney(factory)`: the five coin-count fields (platinum, gold,
+    electrum, silver, copper) plus the `enableMoneyWeightCalculation` star-check.
+  - `layout/sections/storage.ts` — `buildStorage(factory)`: the two side-by-side storage groups
+    (`leftRows`/`rightRows`), each row a `{count, item, weight}` node triple.
+  - `logic/formulas/formulas.ts` — **pure**, unit-tested equipment math: `carryCapacity` (Strength ×
+    15), `totalWeight` (sum of item weights, empty = 0), `coinWeight` (summed coins × 0.02 lb/coin),
+    `parseItemCount` (the count encoded in an item's text — trailing "| N" or leading "N |", trailing
+    wins — or null), `totalItemWeight` (sum of each row's encoded count (or 1) × weight),
+    `totalStorageWeight` (sum of each row's `count × weight`, empty = 0), and `encumbranceLabel` (the
+    standard/variant encumbrance message past 5×/10×/15× Strength, empty below that or Strength unknown).
   - `EquipmentPage.tsx` — the component (same shape as `CharacterInfoPage.tsx`).
 
 Wired into `PAGE_TYPES` as the `equipment` type ("Equipment"), resolved by
