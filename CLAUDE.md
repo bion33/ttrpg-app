@@ -208,7 +208,10 @@ with no new persistence plumbing.
   the handle on the block, and `fixed` anchors it to the zoomed `.binder-view` (its
   containing block) — the only case floating-ui compensates page zoom for, so the handle
   stays aligned at any scale and anywhere down the page (`absolute` drifts with distance
-  under zoom). Responsibility: the block handle.
+  under zoom). The inner `.block-handle__cluster` counter-scales `--page-scale` (so the
+  handle keeps a constant on-screen size as the page zooms) on a wrapper inside the
+  handle, never on the handle itself, so it does not fight floating-ui's positioning
+  transform. Responsibility: the block handle.
 - `extensions/table/` — the Nextcloud-style table editing affordances, added as React **node views**
   over `@tiptap/extension-table`'s nodes (the schemas are untouched, so tables still round-trip as
   plain markdown via the `Markdown` extension; cell merge/split are deliberately unsupported since
@@ -220,14 +223,16 @@ with no new persistence plumbing.
   by each row's last cell instead. The cell renderers pass `{as: 'th'}`/`{as: 'td'}` so the host is
   the real cell element and the table markup stays valid.
   - `TableNodeView.tsx` — wraps the table in a positioned container with a bottom-edge "add row"
-    button and a right-edge control column (outside the table, in the page margin) holding the
-    whole-table "…" menu (delete table) above an "add column" button, revealed on table hover. The
+    button, a right-edge "add column" button (outside the table, in the page margin), and the
+    whole-table "…" menu (delete table) in the bottom-right corner square those two edge strips
+    leave open, all revealed on table hover. The
     body is a real `<tbody>` (`NodeViewContent as="tbody"`) holding ProseMirror's rows.
   - `TableCellNodeView.tsx` — the one node view for both header and data cells (`node.type.name`
     distinguishes them). It renders a per-column "…" menu on every header cell, and — on each **data**
     row's **last** cell (`isLastCellInRow`) — the row's insert/delete-row "…" menu. Both menus are
-    absolutely overlaid on the cell, shown on hover. (The whole-table delete menu lives on the table
-    node view, not the header row.)
+    absolutely overlaid on the cell, shown on hover, and (like the whole-table menu) counter-scale
+    `--page-scale` so they keep a constant on-screen size as the page zooms. (The whole-table delete
+    menu lives on the table node view, not the header row.)
   - `TableActionMenu.tsx` — the shared "…" dropdown (Radix `DropdownMenu`, portalled/fixed so it is
     zoom-safe) the column and row menus use.
   - `tableActions.ts` — the `TableAction` type and the `columnActions`/`rowActions`/
@@ -475,7 +480,10 @@ and drops are committed via `onReorder(from, to)` (`Binder` reorders and persist
 `PageViewport` (`PageViewport.tsx` + `.css`) is the **shared page-view zoom
 scaffold** extracted from `Binder` so every page surface zooms identically. Props:
 `naturalWidth` and `children`. It owns the `.binder-view` wrapper (scaled to a
-persisted fraction of the viewport via `usePageScale(naturalWidth)`), the transient
+persisted fraction of the viewport via `usePageScale(naturalWidth)`, and publishing
+that scale as the `--page-scale` custom property so an in-page control can
+counter-scale by `calc(1 / var(--page-scale))` to a constant on-screen size against
+the zoom transform — the markdown block handle and table "…" menus do), the transient
 `binder-view--zooming` compositor-layer promotion (`will-change: transform` toggled
 as a class on the DOM node for the ~0.3s of a scale change only — a permanent layer
 around the editable markdown surface blanks out after inactivity), and the bottom-left
@@ -840,7 +848,9 @@ second `Modal`; `ConfirmModal` is just `Modal` + `ConfirmBody`.
 floating text-label pill that fades in on hover/focus. Props are `icon`, `label`
 (used as both the pill text and the accessible name), an optional `onClick`, an
 optional `labelSide` (`left`/`right`), `variant` (`default`/`danger`), `size`
-(`small`/`default`/`large`), and `disabled`; it forwards a ref and spreads any
+(`small`/`default`/`large`), `appearance`
+(`raised` with chrome, or `flat` as a plain icon in a list/menu), and `disabled`;
+it forwards a ref and spreads any
 other native button attributes, so it can back a Radix `asChild` trigger (e.g.
 the markdown table's `TableActionMenu` "…" menu). Callers control
 stacking via the surrounding container so the pill can sit above neighbours (e.g.

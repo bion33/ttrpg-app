@@ -68,3 +68,12 @@
     width: 1.5rem;
     height: 1.5rem;
 }
+
+/* A plain icon in a list or menu rather than a raised button: drop the chrome (background, shadow, hover lift) and let
+   a caller-set colour shift carry the hover state. Last, so it also clears the size variants' own shadow. */
+.icon-button--flat,
+.icon-button--flat:hover {
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+}

@@ -19,17 +19,17 @@ function TableActionMenu({label, actions}: TableActionMenuProps) {
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
-                <IconButton icon={<Ellipsis/>} label={label} size="small" contentEditable={false}/>
+                <IconButton icon={<Ellipsis/>} label={label} size="small" appearance="flat" contentEditable={false}/>
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
-                <DropdownMenu.Content className="markdown-toolbar__menu" align="end" sideOffset={4}
+                <DropdownMenu.Content className="menu menu__list" align="end" sideOffset={4}
                                       onCloseAutoFocus={(event) => event.preventDefault()}>
                     {actions.map((action) => {
                         const ActionIcon = action.icon
                         return (
                             <DropdownMenu.Item key={action.id} onSelect={() => action.run()}
-                                               className={'markdown-toolbar__menu-item' +
-                                                   (action.destructive ? ' markdown-toolbar__menu-item--danger' : '')}>
+                                               className={'menu__item' +
+                                                   (action.destructive ? ' menu__item--danger' : '')}>
                                 <ActionIcon size={16}/> {action.label}
                             </DropdownMenu.Item>
                         )

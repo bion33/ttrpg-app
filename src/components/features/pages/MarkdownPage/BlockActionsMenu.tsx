@@ -39,7 +39,7 @@ function BlockActionsMenu({editor, actions, trigger, open, onOpenChange, onRunAc
         <Popover.Root open={open} onOpenChange={onOpenChange}>
             <Popover.Trigger asChild>{trigger}</Popover.Trigger>
             <Popover.Portal>
-                <Popover.Content className="block-menu" align={align} sideOffset={4}
+                <Popover.Content className="menu block-menu" align={align} sideOffset={4}
                                  // Focus the search field on open and keep the caret in the editor on close.
                                  onOpenAutoFocus={(event) => {
                                      event.preventDefault()
@@ -49,13 +49,13 @@ function BlockActionsMenu({editor, actions, trigger, open, onOpenChange, onRunAc
                     <Command className="block-menu__command">
                         <Command.Input ref={inputReference} className="block-menu__input"
                                        placeholder={searchPlaceholder}/>
-                        <Command.List className="block-menu__list">
+                        <Command.List className="menu__list block-menu__list">
                             <Command.Empty className="block-menu__empty">No blocks found</Command.Empty>
                             {actions.map((action) => {
                                 const ActionIcon = action.icon
                                 return (
                                     <Command.Item key={action.id} value={action.label} onSelect={() => select(action)}
-                                                  className={'block-menu__item' +
+                                                  className={'menu__item' +
                                                       (markActive && action.isActive(editor) ? ' is-active' : '')}>
                                         <ActionIcon size={16}/> {action.label}
                                     </Command.Item>

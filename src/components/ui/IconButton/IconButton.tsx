@@ -4,8 +4,9 @@ import './IconButton.css'
 
 /**
  * Props for a round icon button: the icon it shows, its accessible name and hover label, which side that label
- * opens toward, an optional colour variant and size, whether it is disabled, and the click handler (given the event).
- * Any other native button attributes (and a ref) pass through, so it can back a Radix `asChild` trigger.
+ * opens toward, an optional colour variant, size, and appearance (`raised` with chrome, or `flat` as a plain icon in
+ * a list/menu), whether it is disabled, and the click handler (given the event). Any other native button attributes
+ * (and a ref) pass through, so it can back a Radix `asChild` trigger.
  */
 interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
     icon: ReactNode
@@ -14,6 +15,7 @@ interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
     labelSide?: 'left' | 'right'
     variant?: 'default' | 'danger'
     size?: 'small' | 'default' | 'large'
+    appearance?: 'raised' | 'flat'
     disabled?: boolean
 }
 
@@ -28,6 +30,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconB
         labelSide = 'left',
         variant = 'default',
         size = 'default',
+        appearance = 'raised',
         disabled = false,
         className,
         ...rest
@@ -42,7 +45,7 @@ const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(function IconB
                 variant === 'danger' ? ' icon-button--danger' : ''
             }${size === 'large' ? ' icon-button--large' : ''}${
                 size === 'small' ? ' icon-button--small' : ''
-            }${className ? ` ${className}` : ''}`}
+            }${appearance === 'flat' ? ' icon-button--flat' : ''}${className ? ` ${className}` : ''}`}
             data-tooltip={label}
             aria-label={label}
             disabled={disabled}

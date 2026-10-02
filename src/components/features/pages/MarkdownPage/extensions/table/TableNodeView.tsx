@@ -6,7 +6,8 @@ import {lastColumnCellPosition, lastRowCellPosition} from './tablePositions.ts'
 
 /**
  * The node view for a table: wraps the table in a positioned container holding the editable grid, a bottom-edge button
- * that appends a row, and a right-edge flex column with the table "…" menu above an add-column button.
+ * that appends a row, a right-edge button that appends a column, and the table "…" menu in the bottom-right corner
+ * square those two edge strips leave open.
  */
 function TableNodeView({editor, node, getPos}: ReactNodeViewProps) {
     const position = getPos()
@@ -32,8 +33,6 @@ function TableNodeView({editor, node, getPos}: ReactNodeViewProps) {
             {showControls && (
                 <>
                     <div className="tiptap-table-controls" contentEditable={false}>
-                        <TableActionMenu label="Table actions"
-                                         actions={deleteTableActions(editor, lastColumnCellPosition(node, position))}/>
                         <button type="button" className="tiptap-table-add tiptap-table-add--column" title="Add column"
                                 aria-label="Add column" onMouseDown={(event) => event.preventDefault()}
                                 onClick={addColumn}><Plus size={16}/>
@@ -43,6 +42,10 @@ function TableNodeView({editor, node, getPos}: ReactNodeViewProps) {
                             aria-label="Add row" contentEditable={false}
                             onMouseDown={(event) => event.preventDefault()} onClick={addRow}><Plus size={16}/>
                     </button>
+                    <div className="tiptap-table-menu" contentEditable={false}>
+                        <TableActionMenu label="Table actions"
+                                         actions={deleteTableActions(editor, lastColumnCellPosition(node, position))}/>
+                    </div>
                 </>
             )}
         </NodeViewWrapper>

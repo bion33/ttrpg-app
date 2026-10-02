@@ -97,19 +97,15 @@
     flex-shrink: 0;
 }
 
-/* In a list row the actions read as plain icons, not raised circular buttons: drop the icon-button chrome and let a
-   subtle colour shift (and lift) carry the hover state instead. */
+/* In a list row the flat icon actions take this context's size and hover colour (the chrome is dropped by
+   `icon-button--flat`). */
 .template-list__actions .icon-button {
     width: 1.75rem;
     height: 1.75rem;
-    background: transparent;
-    box-shadow: none;
     color: var(--color-ink);
 }
 
 .template-list__actions .icon-button:hover {
-    background: transparent;
-    box-shadow: none;
     color: hsl(38 30% 30%);
 }
 

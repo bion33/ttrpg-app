@@ -61,11 +61,12 @@ function BlockHandle({editor, onRequestImage}: BlockHandleProps) {
                 <BlockActionsMenu editor={editor} actions={BLOCK_ACTIONS} open={menuOpen} onOpenChange={setMenu}
                                   onRunAction={runAction} markActive={false}
                                   trigger={
-                                      <IconButton icon={<Plus/>} label="Insert block" size="small"
+                                      <IconButton icon={<Plus/>} label="Insert block" size="small" appearance="flat"
                                                   className="block-handle__btn"
                                                   onMouseDown={(event) => event.stopPropagation()}/>
                                   }/>
-                <IconButton icon={<GripVertical/>} label="Drag to move" size="small" className="block-handle__grip"/>
+                <IconButton icon={<GripVertical/>} label="Drag to move" size="small" appearance="flat"
+                            className="block-handle__grip"/>
             </div>
         </DragHandle>
     )

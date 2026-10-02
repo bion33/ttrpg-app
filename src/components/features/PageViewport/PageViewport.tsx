@@ -1,4 +1,4 @@
-import type {ReactNode} from 'react'
+import type {CSSProperties, ReactNode} from 'react'
 import {useEffect} from 'react'
 import './PageViewport.css'
 import ViewControls from './ViewControls.tsx'
@@ -31,9 +31,13 @@ function PageViewport({naturalWidth, children}: PageViewportProps) {
         return () => window.clearTimeout(timer)
     }, [scale, viewReference])
 
+    // The scale is also published as a custom property so in-page controls can counter-scale (`1 / --page-scale`) to a
+    // constant on-screen size against the zoom transform.
+    const viewStyle = {transform: `scale(${scale})`, '--page-scale': scale} as CSSProperties
+
     return (
         <>
-            <div className="binder-view" ref={viewReference} style={{transform: `scale(${scale})`}}>
+            <div className="binder-view" ref={viewReference} style={viewStyle}>
                 {children}
             </div>
             <ViewControls onScaleUp={scaleUp} onScaleDown={scaleDown} canScaleUp={canScaleUp}

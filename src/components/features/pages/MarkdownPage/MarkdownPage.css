@@ -316,17 +316,23 @@
     border-color: var(--color-border);
 }
 
-.markdown-toolbar__menu {
+/* ---- Shared dropdown menu (the table "…" menus and the block menu share this visual base) ---- */
+
+.menu {
     z-index: var(--z-controls);
     min-width: 10rem;
-    padding: 0.25rem;
     background: var(--color-surface-raised);
     border: 1px solid var(--color-border);
     border-radius: 0.5rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.markdown-toolbar__menu-item {
+/* The padded, optionally-scrolling row region; the table menu is its own list, the block menu wraps one. */
+.menu__list {
+    padding: 0.25rem;
+}
+
+.menu__item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -338,19 +344,26 @@
     cursor: pointer;
     /* Transparent border reserves space so the active outline below never shifts the row. */
     border: 1px solid transparent;
-    /* Radix items are focusable divs; drop the focus ring in favour of the highlight below. */
+    /* Radix/cmdk items are focusable divs; drop the focus ring in favour of the highlight below. */
     outline: none;
 }
 
-.markdown-toolbar__menu-item[data-highlighted] {
+/* Radix marks the pointer/keyboard target with data-highlighted; cmdk marks it with data-selected. */
+.menu__item[data-highlighted],
+.menu__item[data-selected="true"] {
     background: #efe8d5;
 }
 
 /* Same light shift + outline as the inline marks, so the selected item reads as active without a dark fill. */
-.markdown-toolbar__menu-item.is-active {
+.menu__item.is-active {
     background: rgba(0, 0, 0, 0.1);
     border-color: var(--color-border);
     font-weight: 600;
+}
+
+/* A destructive menu item (delete row/column/table). */
+.menu__item--danger {
+    color: var(--color-danger);
 }
 
 /* ---- Block handle ---- */
@@ -364,22 +377,20 @@
     display: flex;
     align-items: center;
     gap: 0.15rem;
+    /* Counter-scale the zoom transform so the handle stays a constant on-screen size; the inner cluster carries it so
+       it never fights floating-ui's positioning transform on the handle itself. Right-anchored to hug the block edge. */
+    transform: scale(calc(1 / var(--page-scale, 1)));
+    transform-origin: right center;
 }
 
-/* The handle's buttons read as plain icons, not raised circular icon buttons: drop the icon-button chrome and let a
-   subtle colour shift carry the hover state (matching the template-list row actions). */
+/* The flat handle buttons take the muted/ink colour pair (the chrome is dropped by `icon-button--flat`). */
 .block-handle__btn.icon-button,
 .block-handle__grip.icon-button {
-    background: transparent;
-    box-shadow: none;
     color: var(--color-muted);
 }
 
 .block-handle__btn.icon-button:hover,
 .block-handle__grip.icon-button:hover {
-    background: transparent;
-    box-shadow: none;
-    transform: none;
     color: var(--color-ink);
 }
 
@@ -387,15 +398,10 @@
     cursor: grab;
 }
 
-/* ---- Block actions menu (shared searchable dropdown: the toolbar's block groups and the block-handle "+" menu) ---- */
+/* ---- Block actions menu (searchable dropdown over the shared `.menu` base: block groups and the block-handle "+" menu) ---- */
 
 .block-menu {
-    z-index: var(--z-controls);
     width: 14rem;
-    background: var(--color-surface-raised);
-    border: 1px solid var(--color-border);
-    border-radius: 0.3rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .block-menu__input {
@@ -412,10 +418,10 @@
     outline: none;
 }
 
+/* The block list scrolls when it overflows; its padding comes from the shared `.menu__list`. */
 .block-menu__list {
     max-height: 18rem;
     overflow-y: auto;
-    padding: 0.25rem;
 }
 
 .block-menu__empty {
@@ -423,38 +429,6 @@
     color: var(--color-muted);
     font-family: var(--font-serif);
     font-size: 0.9rem;
-}
-
-.block-menu__item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.35rem 0.6rem;
-    border-radius: 0.35rem;
-    color: var(--color-ink);
-    font-family: var(--font-serif);
-    font-size: 0.9rem;
-    cursor: pointer;
-    /* Transparent border reserves space so the active outline below never shifts the row. */
-    border: 1px solid transparent;
-    outline: none;
-}
-
-/* cmdk marks the keyboard-highlighted item; mirror the toolbar menu's light hover shift. */
-.block-menu__item[data-selected="true"] {
-    background: #efe8d5;
-}
-
-/* Same light shift + outline as the inline marks, so the current block type reads as active without a dark fill. */
-.block-menu__item.is-active {
-    background: rgba(0, 0, 0, 0.1);
-    border-color: var(--color-border);
-    font-weight: 600;
-}
-
-/* A destructive menu item (delete row/column/table), reusing the shared dropdown item styling. */
-.markdown-toolbar__menu-item--danger {
-    color: var(--color-danger);
 }
 
 /* ---- Table editing node views (Nextcloud-style edge buttons and per-column/row "…" menus) ---- */
@@ -475,11 +449,14 @@
     position: relative;
 }
 
-/* The per-column menu (header cells) sits at the cell's top-right, revealed on cell hover. */
+/* The per-column menu (header cells) sits at the cell's top-right, revealed on cell hover. It counter-scales the zoom
+   transform (anchored to its pinned top-right corner) so it stays a constant on-screen size. */
 .tiptap-cell__menu {
     position: absolute;
     top: 0.1rem;
     right: 0.1rem;
+    transform: scale(calc(1 / var(--page-scale, 1)));
+    transform-origin: top right;
     opacity: 0;
     transition: opacity 0.15s;
 }
@@ -489,13 +466,15 @@
     opacity: 1;
 }
 
-/* The per-row menu lives on the row's last cell, overlaid just past the cell's right edge (clear of the add-column
-   bar) and vertically centred on the row, revealed on row hover. */
+/* The per-row menu lives on the row's last cell, at the cell's top-right (the same offsets as the per-column menu),
+   revealed on row hover. It counter-scales the zoom transform (anchored to its pinned top-right corner) so it stays a
+   constant on-screen size. */
 .tiptap-cell__row-menu {
     position: absolute;
-    top: 50%;
-    right: 0.2rem;
-    transform: translateY(-50%);
+    top: 0.1rem;
+    right: 0.1rem;
+    transform: scale(calc(1 / var(--page-scale, 1)));
+    transform-origin: top right;
     opacity: 0;
     transition: opacity 0.15s;
 }
@@ -505,8 +484,21 @@
     opacity: 1;
 }
 
-/* The right-edge control column (table "…" menu above the add-column button), pushed into the page margin so it never
-   shrinks the table, revealed on table hover. */
+/* The flat "…" menu triggers take this context's ink/hover colour pair (the chrome is dropped by `icon-button--flat`). */
+.tiptap-cell__menu .icon-button,
+.tiptap-cell__row-menu .icon-button,
+.tiptap-table-menu .icon-button {
+    color: var(--color-ink);
+}
+
+.tiptap-cell__menu .icon-button:hover,
+.tiptap-cell__row-menu .icon-button:hover,
+.tiptap-table-menu .icon-button:hover {
+    color: hsl(38 30% 30%);
+}
+
+/* The right-edge add-column control, pushed into the page margin so it never shrinks the table, revealed on table
+   hover. It stops short of the bottom (bottom: 1.4rem) to leave the corner square for the "…" menu below it. */
 .tiptap-table-controls {
     position: absolute;
     top: 0;
@@ -516,13 +508,32 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 0.3rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+/* The whole-table "…" menu in the bottom-right corner square the right-edge column strip and bottom-edge row strip
+   leave open: same horizontal band as the add-column control (left: 100% + margin), the bottom strip's height. */
+.tiptap-table-menu {
+    position: absolute;
+    left: 100%;
+    bottom: 0;
+    margin-left: 0.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.4rem;
+    /* Counter-scale the zoom transform so the menu stays a constant on-screen size, centred in the corner square. */
+    transform: scale(calc(1 / var(--page-scale, 1)));
     opacity: 0;
     transition: opacity 0.15s;
 }
 
 .tiptap-table-wrapper:hover .tiptap-table-controls,
-.tiptap-table-controls:focus-within {
+.tiptap-table-controls:focus-within,
+.tiptap-table-wrapper:hover .tiptap-table-menu,
+.tiptap-table-menu:focus-within {
     opacity: 1;
 }
 
