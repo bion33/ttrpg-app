@@ -3,11 +3,19 @@ import './CharacterSheet.css'
 import FieldInput from '@ui/FieldInput/FieldInput'
 import PaperPage from '@ui/PaperPage/PaperPage'
 import LoadingSpinner from '@ui/LoadingSpinner/LoadingSpinner'
-import {A4_WIDTH_PX} from '@lib/paper/paperSize.ts'
+import {A4_WIDTH_PX, A4_ASPECT_RATIO} from '@lib/paper/paperSize.ts'
 import {buildSheet} from './layout/sheet.ts'
 
 const SVG_URL = '/character-sheet/character-sheet.svg'
-const VIEW_BOX = '0 0 816 1055.867'
+
+// The traced artwork's own extent in viewBox units; its ratio is slightly shorter than A4.
+const ARTWORK_WIDTH = 816
+const ARTWORK_HEIGHT = 1055.867
+
+// Pad the viewBox symmetrically top and bottom so the overall sheet is true A4, leaving the artwork centred.
+const SHEET_HEIGHT = ARTWORK_WIDTH * A4_ASPECT_RATIO
+const VERTICAL_PADDING = (SHEET_HEIGHT - ARTWORK_HEIGHT) / 2
+const VIEW_BOX = `0 ${-VERTICAL_PADDING} ${ARTWORK_WIDTH} ${SHEET_HEIGHT}`
 
 // The sheet's natural (unscaled) on-screen width: a physical A4 page, the footprint the binder's zoom scales.
 const naturalWidth = A4_WIDTH_PX

@@ -28,4 +28,6 @@
     /* Width is set inline from the shared A4 paper constant (see CharacterSheet.tsx) so the sheet is a fixed footprint. */
     height: auto;
     margin: 0 auto;
+    /* The artwork's own page colour, so the symmetric vertical padding reads as part of the same white sheet. */
+    background: #ffffff;
 }

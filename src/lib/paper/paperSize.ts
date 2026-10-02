@@ -17,3 +17,6 @@ export function millimetresToPixels(millimetres: number): number {
 // The A4 and A5 portrait widths (210mm / 148mm) as CSS pixels, so a sheet on screen matches the printed page.
 export const A4_WIDTH_PX = millimetresToPixels(210)
 export const A5_WIDTH_PX = millimetresToPixels(148)
+
+// The A4 portrait aspect ratio (height / width), so a sheet's height follows from its width in any unit.
+export const A4_ASPECT_RATIO = 297 / 210
