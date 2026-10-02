@@ -1,4 +1,5 @@
-.image-textarea {
+.image-panel {
+    position: relative;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -7,7 +8,7 @@
 
 /* A thin row that reserves the menu's space above the content. Its height divides by the page zoom so its on-screen
    height stays constant and matches the counter-scaled button, keeping the content clear of the menu at any zoom. */
-.image-textarea__toolbar {
+.image-panel__toolbar {
     flex: none;
     display: flex;
     justify-content: flex-end;
@@ -16,21 +17,41 @@
 }
 
 /* The "…" menu, counter-scaling the page zoom (anchored to its top-right corner) to a constant on-screen size. */
-.image-textarea__menu {
+.image-panel__menu {
     transform: scale(calc(1 / var(--page-scale, 1)));
     transform-origin: top right;
 }
 
-/* The textarea or image fills the remaining height below the toolbar row. */
-.image-textarea__content {
+/* The image or fallback fills the remaining height below the toolbar row. */
+.image-panel__content {
     flex: 1;
     min-height: 0;
 }
 
 /* The image fills the content area, letter-boxed to keep its aspect ratio. */
-.image-textarea__image {
+.image-panel__image {
     display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;
+}
+
+/* Circle variant: the image fills the whole footprint clipped to a disc, and the menu floats over it (top-right)
+   rather than reserving a row, so the disc is centred and matches a circular traced frame exactly. */
+.image-panel--circle .image-panel__toolbar {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: auto;
+    z-index: 1;
+}
+
+.image-panel--circle .image-panel__content {
+    position: absolute;
+    inset: 0;
+}
+
+.image-panel--circle .image-panel__image {
+    object-fit: cover;
+    border-radius: 50%;
 }

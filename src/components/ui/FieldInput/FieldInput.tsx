@@ -1,14 +1,16 @@
 import type {WritableAtom} from 'jotai'
 import {atom, useAtom, useAtomValue} from 'jotai'
 import type {FieldDefinition} from '@type/FieldDefinition.ts'
-import type {FieldNode, FieldValue, ImageTextareaNode} from '@type/FieldNode.ts'
+import type {FieldNode, FieldValue} from '@type/FieldNode.ts'
 import type {NumericFieldDefinition} from '@type/NumericFieldDefinition.ts'
+import type {ImageFieldDefinition} from '@type/ImageFieldDefinition.ts'
 import AutoFitInput from '@ui/AutoFitInput/AutoFitInput'
 import CheckInput from '@ui/CheckInput/CheckInput'
 import NumericInput from '@ui/NumericInput/NumericInput'
 import './FieldInput.css'
 import AutoFitTextarea from '@ui/AutoFitTextarea/AutoFitTextarea'
 import ImageTextareaField from '@ui/ImageTextareaField/ImageTextareaField'
+import ImageField from '@ui/ImageField/ImageField'
 import type {CheckFieldDefinition} from "@type/CheckFieldDefinition.ts";
 
 // ---- INTERNAL CONSTANTS ----
@@ -30,7 +32,6 @@ const noop = () => {
  * Renders a field node, dispatching to the writable or derived variant.
  */
 function FieldInput({node}: { node: FieldNode }) {
-    if ('imageUrlAtom' in node) return <ImageTextareaField node={node}/>
     return node.readOnly ? <DerivedField node={node}/> : <WritableField node={node}/>
 }
 
@@ -41,7 +42,7 @@ export default FieldInput
 /**
  * Editable field: two-way bound to its writable atom.
  */
-function WritableField({node}: { node: Exclude<Extract<FieldNode, { readOnly?: false }>, ImageTextareaNode> }) {
+function WritableField({node}: { node: Extract<FieldNode, { readOnly?: false }> }) {
     // The atom is a union of concrete writable atoms; widen it to the common value type for the shared control.
     const [value, setValue] = useAtom(node.atom as unknown as WritableAtom<FieldValue, [FieldValue], void>)
     const readOnly = useAtomValue(node.readOnlyAtom ?? alwaysWritable)
@@ -76,6 +77,20 @@ function control(
             return <AutoFitTextarea field={field} value={value as string} onChange={onChange}/>
         case 'check':
             return <CheckInput field={field as CheckFieldDefinition} value={value as boolean} onChange={onChange}/>
+        case 'image':
+            return <ImageField field={field as ImageFieldDefinition} value={value as string} onChange={onChange}/>
+        case 'imageTextarea':
+            return <ImageTextareaField field={field} value={value as string} onChange={onChange}/>
+        default:
+            // Exhaustiveness guard: a new field type must add a case above.
+            return assertNever(field.type)
     }
+}
+
+/**
+ * Asserts a branch is unreachable, so an unhandled field type is a compile error rather than a silent empty render.
+ */
+function assertNever(type: never): never {
+    throw new Error(`Unhandled field type: ${String(type)}`)
 }
 

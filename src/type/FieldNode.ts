@@ -27,26 +27,16 @@ export type DerivedNode<T extends FieldValue = FieldValue> = {
 }
 
 /**
- * A field that is either a prose textarea or a single image, with a menu to switch between them. `atom` holds the
- * textarea text; `imageUrlAtom` holds the image URL ('' = no image, so the textarea shows instead). Both persist.
- */
-export type ImageTextareaNode = {
-    readOnly?: false
-    definition: FieldDefinition
-    atom: WritableAtom<string, [string], void>
-    imageUrlAtom: WritableAtom<string, [string], void>
-}
-
-/**
- * Any overlay field: writable, computed, or the image-or-textarea field. The writable case is a union of the concrete
- * value types (a writable atom's value is invariant, so a single `InputNode<FieldValue>` would not accept them).
+ * Any overlay field: writable or computed. The writable case is a union of the concrete value types (a writable atom's
+ * value is invariant, so a single `InputNode<FieldValue>` would not accept them). The image and image-or-textarea
+ * fields are ordinary string `InputNode`s - their string encodes the image URL (and, for the combined field, the text
+ * too; see `imageTextareaValue.ts`), decoded only in the control.
  */
 export type FieldNode =
     | InputNode<string>
     | InputNode<number | null>
     | InputNode<boolean>
     | DerivedNode
-    | ImageTextareaNode
 
 /**
  * A field tree is nodes nested in arrays (positional groups) and records

@@ -77,7 +77,8 @@ the jotai atom holding its value. Position and state are one object.
   optional `fontSize`, `textAlign`, `defaultValue`. Per-type extras live in
   subtypes (like `CheckFieldDefinition`), never as flags on the base type:
   `CheckFieldDefinition` adds `shape`/`color`; `NumericFieldDefinition` adds
-  `signed` (display the value with an explicit leading sign, e.g. a `+3` modifier).
+  `signed` (display the value with an explicit leading sign, e.g. a `+3` modifier);
+  `ImageFieldDefinition` adds `shape` (`circle` clips the image to a disc).
 - **Typed values.** An atom holds the field's *natural* type — `string`
   (text/textarea), `number | null` (number, `null` = empty), or `boolean` (check).
   `InputNode<T>`/`DerivedNode<T>` are generic over that value type, so cross-field
@@ -107,13 +108,16 @@ the jotai atom holding its value. Position and state are one object.
   `enabled` atom is true it shows `compute(get)` and is read-only; otherwise it
   is an ordinary editable, persisted input (e.g. passive Perception, auto-calc
   toggled by a checkbox).
-- `imageTextareaNode(definition)` builds a persisted field that is **either** a prose
-  textarea **or** a single image, switched via an in-field "…" menu. Its node
-  (`ImageTextareaNode`, the one `FieldNode` variant with two atoms) carries the
-  textarea text (`atom`) and the image URL (`imageUrlAtom`, `''` = no image) under
-  separate storage keys (`id` and `id:image`), so neither overwrites the other. The
-  control is `@ui/ImageTextareaField`; `FieldInput` dispatches to it on the presence
-  of `imageUrlAtom`.
+- **Image fields are ordinary `InputNode<string>`s** — no special node type or
+  factory builder. Their string value *encodes* the image. A `type: 'image'` field
+  holds the image URL (`''` = none) directly; a `type: 'imageTextarea'` field holds
+  the image URL **and** the prose text encoded together in the one value (so neither
+  overwrites the other), via `@lib/fields/imageTextareaValue.ts`'s pure
+  `parseImageTextareaValue`/`serializeImageTextareaValue` (tested). The split is done
+  only in the control: `FieldInput`'s `control()` dispatches on `definition.type` to
+  `@ui/ImageField` (image only) or `@ui/ImageTextareaField` (image-or-textarea), which
+  decode/encode the string. Build one with `inputNode({…, type: 'image' | 'imageTextarea'})`;
+  a `type: 'image'` field may add `shape: 'circle'` (see `ImageFieldDefinition`).
 - `collectNodes(tree)` flattens a `NodeTree` (nodes nested in arrays / records)
   into a flat render list.
 
@@ -177,10 +181,11 @@ the tree in `layout/sheet.ts`), the same way `CharacterPage`'s sections work.
   - `layout/sections/header.ts` — `buildHeader(factory)`: character name and the
     physical-description grid.
   - `layout/sections/appearance.ts` — `buildAppearance(factory)`: the appearance
-    area, an `imageTextareaNode` usable as prose **or** a single image (toggled by
+    area, an `imageTextarea`-type field usable as prose **or** a single image (toggled by
     its "…" menu).
   - `layout/sections/allies.ts` — `buildAllies(factory)`: the allies &
-    organisations area plus the deity subsection (name band + info area).
+    organisations area plus the deity subsection (a circular portrait image in the
+    deity medallion, a name band, and the info area).
   - `layout/sections/info.ts` — `buildInfo(factory)`: the backstory area, the
     personality subsection (personality traits + ideals/bonds/flaws), and character
     details.
@@ -871,9 +876,12 @@ is additive — host `yarn` workflows are unchanged.
 
 ### UI controls (`src/components/ui/`)
 
-`FieldInput` picks the control for a field's `type`: `NumericInput`,
-`AutoFitInput` (text), `AutoFitTextarea`, `CheckInput`, and `ImageTextareaField`
-(the `imageTextarea` node, dispatched on its `imageUrlAtom`). `FieldForeignObject`
+`FieldInput` picks the control for a field's `type` via `control()`, an **exhaustive**
+`switch` (an `assertNever` default makes a new type a compile error): `NumericInput`,
+`AutoFitInput` (text), `AutoFitTextarea`, `CheckInput`, `ImageField` (image), and
+`ImageTextareaField` (imageTextarea). Every control takes the uniform
+`(field, value, onChange[, readOnly])` contract, so there is no node-shape dispatch —
+image fields are plain string `InputNode`s like any other. `FieldForeignObject`
 positions any control in SVG coordinate space. Writable fields two-way bind to
 their atom (and go read-only when their optional `readOnlyAtom` is true); derived
 fields subscribe read-only.
@@ -882,11 +890,16 @@ fields subscribe read-only.
 bare auto-fitting `<textarea>` (no `foreignObject`), reused by `ImageTextareaField`
 so it can host the textarea inside its own wrapper without nesting foreign objects.
 
-`ImageTextareaField` renders an `imageTextarea` node: the image when its `imageUrlAtom`
-is set, otherwise the `SheetTextarea`, with an always-present "…" `ActionMenu`
+`ImagePanel` is the shared image surface (no `foreignObject` of its own): it shows the
+image when a URL is set, otherwise its `fallback`, with an always-present "…" `ActionMenu`
 (pinned top-right, counter-scaling `--page-scale` to a constant on-screen size) to
-add/change/remove the image via `ImageUrlModal`. The image fills the same footprint
-as the textarea (`object-fit: contain`).
+add/change/remove the image via `ImageUrlModal`. Its `shape` prop (default `rectangle`)
+letter-boxes the image into the footprint (`object-fit: contain`); `circle` instead fills
+the footprint clipped to a disc (`object-fit: cover`, `border-radius: 50%`) with the menu
+floating over it, so it matches a circular traced frame. `ImageField` wraps it in a
+`FieldForeignObject` with no fallback (empty drop target), passing its definition's `shape`;
+`ImageTextareaField` wraps it with a `SheetTextarea` fallback and decodes/encodes the combined
+text+URL value through `imageTextareaValue.ts`.
 
 `ActionMenu` is the shared "…" dropdown (Radix `DropdownMenu`, portalled/fixed so it
 is zoom-safe): props are `label`, `actions` (`ActionMenuItem[]` — `{id, label, icon,
@@ -949,7 +962,9 @@ stacking via the surrounding container so the pill can sit above neighbours (e.g
 
 Framework-agnostic pure helpers live in `src/lib`, **grouped by concern into
 subfolders**, each module colocated with its `*.test.ts`: `fields/fieldNodes.ts`
-(the field-node factory), `colors/tabHue.ts` (the per-index tab/binder hue),
+(the field-node factory), `fields/imageTextareaValue.ts` (the pure
+parse/serialize codec for an `imageTextarea` field's combined text+URL value),
+`colors/tabHue.ts` (the per-index tab/binder hue),
 `colors/hueColors.ts` (the hue → CSS-colour functions for the binder spine and
 paper tabs — `binderSpineLight`/`binderSpineDark`/`binderSpineColor`, `tabColor`,
 and `tabBorderColor` (the active tab's hued page border) — the **single source of
