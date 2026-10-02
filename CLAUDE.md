@@ -190,15 +190,20 @@ with no new persistence plumbing.
   dropdowns (one `ToolbarDropdown` per non-insert `BLOCK_GROUPS` entry), then the standalone
   `INSERT_ACTIONS` buttons (table, image, divider, page break). Active/enabled state comes from
   `useEditorState`. Responsibility: toolbar layout.
-- `ToolbarDropdown.tsx` — one toolbar dropdown grouping a block group's actions; its
-  trigger shows the active action's icon (else the group icon) and its menu runs the
-  chosen action (each item an icon + label). Built on **Radix `DropdownMenu`** (`@radix-ui/react-dropdown-menu`) for
-  keyboard navigation, ARIA menu roles, focus management, and zoom-aware positioning (its
-  `strategy: 'fixed'` popper is portalled to the body, so it is unaffected by the page
-  zoom — see the block handle note below for the same concern). Responsibility: the dropdown.
+- `BlockActionsMenu.tsx` — the **shared searchable dropdown** both the toolbar's block groups and the
+  block-handle "+" menu render (the single block-menu implementation; the two consumers supply only a
+  trigger, the action list, and an `onRunAction`). A **Radix `Popover`** (`@radix-ui/react-popover`,
+  portalled with the same `strategy: 'fixed'` popper, so it is unaffected by the page zoom) wrapping a
+  **cmdk `Command`** (`cmdk`) that filters the actions by label (search field, keyboard navigation,
+  ARIA, empty state), marks the active block type with `is-active`, and runs the chosen action, closing
+  on select / outside / Escape (Radix owns dismissal, so no outside-click hook). Controlled `open`
+  state, so the block handle can pin the drag handle while it is open. Responsibility: the block menu.
+- `ToolbarDropdown.tsx` — one toolbar dropdown grouping a block group's actions: it builds the
+  trigger (showing the active action's icon, else the group icon) and delegates the menu to
+  `BlockActionsMenu`. Responsibility: the group trigger.
 - `BlockHandle.tsx` — the Nextcloud-style per-block hover affordance, wrapping
   `@tiptap/extension-drag-handle-react`'s `<DragHandle>`: a drag grip to reorder blocks
-  plus a "+" button opening a menu (dismissed via `useDismissOnOutside`) that inserts any
+  plus a "+" button opening a `BlockActionsMenu` that inserts any
   block. It passes floating-ui `{placement: 'left', strategy: 'fixed'}`: `left` centres
   the handle on the block, and `fixed` anchors it to the zoomed `.binder-view` (its
   containing block) — the only case floating-ui compensates page zoom for, so the handle
@@ -870,9 +875,7 @@ shrink-to-fit loop behind `AutoFitInput`/`AutoFitTextarea`, owning
 page-view zoom as a viewport-width fraction — derives the scale from the page's
 natural width, with step controls and a measured viewport-fit ceiling —
 consumed by `PageViewport`), `useNameForm(initialName, onSubmit)` (the name-field state,
-mount-focus, and trim/guard submit shared by every add/edit dialogue),
-`useDismissOnOutside(ref, active, onDismiss)` (the outside-pointer-dismiss listener
-behind the block handle's "+" menu), and
+mount-focus, and trim/guard submit shared by every add/edit dialogue), and
 `useNavigation.ts` (the app's location, backed by the
 browser History API so Back/Forward step between visited binders and pages):
 `useLocation()` reads the persisted `location` atom, `useNavigate()` moves to a

@@ -1,7 +1,8 @@
 import type {Editor} from '@tiptap/core'
 import {
-    ArrowDownFromLine, CaseSensitive, CircleCheck, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Image,
+    CaseSensitive, CircleCheck, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Image,
     Info, List, ListOrdered, ListTodo, type LucideIcon, OctagonX, Sheet, SquareSplitVertical, TextQuote, TriangleAlert,
+    UnfoldVertical,
 } from 'lucide-react'
 import {CALLOUT_TYPES, type CalloutType} from '../extensions/callout.ts'
 
@@ -129,7 +130,7 @@ export const BLOCK_ACTIONS: BlockAction[] = [
         run: (editor) => editor.chain().focus().setHorizontalRule().run(),
     },
     {
-        id: 'pageBreak', label: 'Page break', icon: ArrowDownFromLine, group: 'insert',
+        id: 'pageBreak', label: 'Page break', icon: UnfoldVertical, group: 'insert',
         isActive: (editor) => editor.isActive('pageBreak'),
         run: (editor) => editor.chain().focus().setPageBreak().run(),
     },

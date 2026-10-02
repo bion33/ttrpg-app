@@ -361,68 +361,95 @@
 }
 
 .block-handle__cluster {
-    position: relative;
     display: flex;
     align-items: center;
     gap: 0.15rem;
 }
 
-.block-handle__btn,
-.block-handle__grip {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.3rem;
-    height: 1.3rem;
-    border: none;
-    border-radius: 0.25rem;
+/* The handle's buttons read as plain icons, not raised circular icon buttons: drop the icon-button chrome and let a
+   subtle colour shift carry the hover state (matching the template-list row actions). */
+.block-handle__btn.icon-button,
+.block-handle__grip.icon-button {
     background: transparent;
+    box-shadow: none;
     color: var(--color-muted);
-    font-size: 1rem;
-    line-height: 1;
-    cursor: grab;
 }
 
-.block-handle__btn {
-    cursor: pointer;
-}
-
-.block-handle__btn:hover,
-.block-handle__grip:hover {
-    background: rgba(0, 0, 0, 0.08);
+.block-handle__btn.icon-button:hover,
+.block-handle__grip.icon-button:hover {
+    background: transparent;
+    box-shadow: none;
+    transform: none;
     color: var(--color-ink);
 }
 
-.block-handle__menu {
-    position: absolute;
-    top: 1.6rem;
-    left: 0;
+.block-handle__grip.icon-button {
+    cursor: grab;
+}
+
+/* ---- Block actions menu (shared searchable dropdown: the toolbar's block groups and the block-handle "+" menu) ---- */
+
+.block-menu {
     z-index: var(--z-controls);
-    min-width: 10rem;
-    margin: 0;
-    padding: 0.25rem;
-    list-style: none;
+    width: 14rem;
     background: var(--color-surface-raised);
     border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
+    border-radius: 0.3rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.block-handle__menu button {
+.block-menu__input {
+    /* Border-box so the horizontal padding stays inside the command's width instead of overflowing it. */
+    box-sizing: border-box;
     width: 100%;
-    padding: 0.35rem 0.6rem;
+    padding: 0.5rem 0.6rem;
     border: none;
-    border-radius: 0.35rem;
+    border-bottom: 1px solid var(--color-border);
     background: transparent;
     color: var(--color-ink);
     font-family: var(--font-serif);
     font-size: 0.9rem;
-    text-align: left;
-    cursor: pointer;
+    outline: none;
 }
 
-.block-handle__menu button:hover {
-    background: rgba(0, 0, 0, 0.06);
+.block-menu__list {
+    max-height: 18rem;
+    overflow-y: auto;
+    padding: 0.25rem;
+}
+
+.block-menu__empty {
+    padding: 0.5rem 0.6rem;
+    color: var(--color-muted);
+    font-family: var(--font-serif);
+    font-size: 0.9rem;
+}
+
+.block-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.35rem;
+    color: var(--color-ink);
+    font-family: var(--font-serif);
+    font-size: 0.9rem;
+    cursor: pointer;
+    /* Transparent border reserves space so the active outline below never shifts the row. */
+    border: 1px solid transparent;
+    outline: none;
+}
+
+/* cmdk marks the keyboard-highlighted item; mirror the toolbar menu's light hover shift. */
+.block-menu__item[data-selected="true"] {
+    background: #efe8d5;
+}
+
+/* Same light shift + outline as the inline marks, so the current block type reads as active without a dark fill. */
+.block-menu__item.is-active {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: var(--color-border);
+    font-weight: 600;
 }
 
 /* A destructive menu item (delete row/column/table), reusing the shared dropdown item styling. */

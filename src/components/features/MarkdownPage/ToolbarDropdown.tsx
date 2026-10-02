@@ -1,7 +1,8 @@
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import {useState} from 'react'
 import type {Editor} from '@tiptap/core'
 import type {LucideIcon} from 'lucide-react'
 import type {BlockAction} from './blocks/insertBlocks.ts'
+import BlockActionsMenu from './BlockActionsMenu.tsx'
 
 /**
  * Props for a toolbar dropdown: the editor it drives, its default (no-active-member) label/icon, the grouped actions,
@@ -17,37 +18,23 @@ interface ToolbarDropdownProps {
 
 /**
  * A toolbar dropdown grouping related block actions; its trigger shows the active action's icon, else the group icon.
- * Built on Radix `DropdownMenu` for keyboard navigation, ARIA roles, focus management, and zoom-aware positioning.
+ * The menu itself is the shared searchable `BlockActionsMenu`.
  */
 function ToolbarDropdown({editor, label, icon: GroupIcon, actions, activeStates}: ToolbarDropdownProps) {
+    const [open, setOpen] = useState(false)
     const activeIndex = activeStates.findIndex(Boolean)
     const TriggerIcon = activeIndex >= 0 ? actions[activeIndex].icon : GroupIcon
 
     return (
-        <DropdownMenu.Root>
-            <DropdownMenu.Trigger asChild>
-                <button type="button" aria-label={label} data-tooltip={label}
-                        className={'markdown-toolbar__btn markdown-toolbar__btn--menu has-tooltip has-tooltip--top' +
-                            (activeIndex >= 0 ? ' is-active' : '')}><TriggerIcon size={16}/> <span aria-hidden="true">▾</span>
-                </button>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-                <DropdownMenu.Content className="markdown-toolbar__menu" align="start" sideOffset={4}
-                                      // Keep the caret in the editor after a command instead of returning focus here.
-                                      onCloseAutoFocus={(event) => event.preventDefault()}>
-                    {actions.map((action, index) => {
-                        const ItemIcon = action.icon
-                        return (
-                            <DropdownMenu.Item key={action.id} onSelect={() => action.run?.(editor)}
-                                               className={'markdown-toolbar__menu-item' +
-                                                   (activeStates[index] ? ' is-active' : '')}>
-                                <ItemIcon size={16}/> {action.label}
-                            </DropdownMenu.Item>
-                        )
-                    })}
-                </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-        </DropdownMenu.Root>
+        <BlockActionsMenu editor={editor} actions={actions} open={open} onOpenChange={setOpen}
+                          onRunAction={(action) => action.run?.(editor)}
+                          trigger={
+                              <button type="button" aria-label={label} data-tooltip={label}
+                                      className={'markdown-toolbar__btn markdown-toolbar__btn--menu has-tooltip ' +
+                                          'has-tooltip--top' + (activeIndex >= 0 ? ' is-active' : '')}>
+                                  <TriggerIcon size={16}/> <span aria-hidden="true">▾</span>
+                              </button>
+                          }/>
     )
 }
 

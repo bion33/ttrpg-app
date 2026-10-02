@@ -1,8 +1,10 @@
 import {useCallback, useRef, useState} from 'react'
 import type {Editor} from '@tiptap/core'
 import DragHandle from '@tiptap/extension-drag-handle-react'
-import {useDismissOnOutside} from '@hooks/useDismissOnOutside.ts'
+import {GripVertical, Plus} from 'lucide-react'
+import IconButton from '@ui/IconButton/IconButton'
 import {BLOCK_ACTIONS, type BlockAction, runBlockAction} from './blocks/insertBlocks.ts'
+import BlockActionsMenu from './BlockActionsMenu.tsx'
 
 // Stable identity so the React DragHandle's effect does not tear down and re-register the plugin on every render
 // (which resets the handle's position and drops its lock). placement 'left' centres the handle on the block;
@@ -20,24 +22,21 @@ interface BlockHandleProps {
 
 /**
  * The per-block hover affordance shown beside the current line: a drag grip to reorder blocks and a "+" button that
- * opens a menu inserting any block type (the Nextcloud-style block handle).
+ * opens the searchable block menu inserting any block type (the Nextcloud-style block handle).
  */
 function BlockHandle({editor, onRequestImage}: BlockHandleProps) {
     const [menuOpen, setMenuOpen] = useState(false)
     // The document position of the block currently under the handle, used to target the "+" menu's insert.
     const hoveredPosition = useRef<number | null>(null)
-    const containerReference = useRef<HTMLDivElement>(null)
 
     // Pins the handle in place and visible while the menu is open, so the extension's hover tracking cannot
-    // reposition or hide it (and close the menu) as the pointer moves toward the menu. The drag-handle plugin
-    // reads this `lockDragHandle` transaction meta; the React component registers only the plugin, so the
-    // extension's lock commands are unavailable and the meta is dispatched directly.
+    // reposition or hide it as the pointer moves toward the menu. The drag-handle plugin reads this `lockDragHandle`
+    // transaction meta; the React component registers only the plugin, so the extension's lock commands are
+    // unavailable and the meta is dispatched directly.
     const setMenu = useCallback((open: boolean) => {
         editor.view.dispatch(editor.state.tr.setMeta('lockDragHandle', open))
         setMenuOpen(open)
     }, [editor])
-    const closeMenu = useCallback(() => setMenu(false), [setMenu])
-    useDismissOnOutside(containerReference, menuOpen, closeMenu)
 
     // Moves the cursor into the hovered block, then applies the action there.
     function runAction(action: BlockAction) {
@@ -45,7 +44,6 @@ function BlockHandle({editor, onRequestImage}: BlockHandleProps) {
             editor.chain().focus().setTextSelection(hoveredPosition.current + 1).run()
         }
         runBlockAction(action, editor, {onRequestImage})
-        closeMenu()
     }
 
     return (
@@ -56,30 +54,18 @@ function BlockHandle({editor, onRequestImage}: BlockHandleProps) {
             onNodeChange={({pos}) => {
                 hoveredPosition.current = pos
                 // A locked handle suppresses hover changes, so this only reaches an open menu defensively.
-                if (menuOpen) closeMenu()
+                if (menuOpen) setMenu(false)
             }}
         >
-            <div className="block-handle__cluster" ref={containerReference}>
-                <button
-                    type="button"
-                    className="block-handle__btn"
-                    title="Insert block"
-                    onMouseDown={(event) => event.stopPropagation()}
-                    onClick={() => setMenu(!menuOpen)}
-                >+
-                </button>
-                <span className="block-handle__grip" title="Drag to move">⠿</span>
-                {menuOpen && (
-                    <ul className="block-handle__menu">
-                        {BLOCK_ACTIONS.map((action) => (
-                            <li key={action.id}>
-                                <button type="button" onMouseDown={(event) => event.stopPropagation()}
-                                        onClick={() => runAction(action)}>{action.label}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                )}
+            <div className="block-handle__cluster">
+                <BlockActionsMenu editor={editor} actions={BLOCK_ACTIONS} open={menuOpen} onOpenChange={setMenu}
+                                  onRunAction={runAction} markActive={false}
+                                  trigger={
+                                      <IconButton icon={<Plus/>} label="Insert block" size="small"
+                                                  className="block-handle__btn"
+                                                  onMouseDown={(event) => event.stopPropagation()}/>
+                                  }/>
+                <IconButton icon={<GripVertical/>} label="Drag to move" size="small" className="block-handle__grip"/>
             </div>
         </DragHandle>
     )
