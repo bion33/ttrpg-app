@@ -1,0 +1,145 @@
+/* The shared list body of the template managers: rows of templates (or a binder template's tabs) with their actions,
+   plus an add button, inside a Modal body. */
+
+.template-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    /* Cap the height so a long list scrolls rather than growing the modal past the viewport. */
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+/* The back link at the top of a swapped-in sub-view (under the modal title), mirroring the storage settings modal's
+   back-to-providers link: a plain arrow-and-label button, not a bordered action. */
+.template-list__back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    align-self: flex-start;
+    padding: 0;
+    border: none;
+    background: none;
+    font-family: var(--font-serif);
+    font-size: 0.9rem;
+    color: var(--color-text);
+    cursor: pointer;
+}
+
+.template-list__back:hover {
+    color: var(--color-ink);
+}
+
+.template-list__empty {
+    margin: 0;
+    padding: 0.5rem 0;
+    color: var(--color-text);
+    font-style: italic;
+}
+
+/* One list row: the label (and optional meta line) on the left, the action buttons on the right. A binder-template tab
+   row tints itself to its tab hue via --row-color/--row-border (set inline from hueColors); other lists fall back to
+   the neutral paper/border tokens. */
+.template-list__row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--row-border, var(--color-border));
+    border-radius: 0.375rem;
+    background: var(--row-color, var(--color-paper));
+    transition: transform 0.15s ease;
+}
+
+/* The drag grip: a muted handle at the row's start that reorders the row when dragged vertically. */
+.template-list__grip {
+    display: flex;
+    flex-shrink: 0;
+    color: var(--color-text);
+    cursor: grab;
+    touch-action: none;
+}
+
+.template-list__grip svg {
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.template-list__grip:active {
+    cursor: grabbing;
+}
+
+.template-list__text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-width: 0;
+    flex: 1;
+}
+
+.template-list__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.template-list__meta {
+    font-size: 0.8rem;
+    color: var(--color-text);
+}
+
+.template-list__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+/* In a list row the actions read as plain icons, not raised circular buttons: drop the icon-button chrome and let a
+   subtle colour shift (and lift) carry the hover state instead. */
+.template-list__actions .icon-button {
+    width: 1.75rem;
+    height: 1.75rem;
+    background: transparent;
+    box-shadow: none;
+    color: var(--color-ink);
+}
+
+.template-list__actions .icon-button:hover {
+    background: transparent;
+    box-shadow: none;
+    color: hsl(38 30% 30%);
+}
+
+.template-list__actions .icon-button--danger,
+.template-list__actions .icon-button--danger:hover {
+    color: hsl(0 55% 42%);
+}
+
+/* The add button at the foot of the list: a dashed, full-width affordance echoing a blank new row. */
+.template-list__add {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.5rem;
+    border: 1px dashed var(--color-border);
+    border-radius: 0.375rem;
+    background: transparent;
+    color: var(--color-ink);
+    font-family: var(--font-serif);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.template-list__add:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.template-list__add svg {
+    width: 1.1rem;
+    height: 1.1rem;
+}

@@ -1,26 +1,26 @@
 import type {CSSProperties, ReactNode} from 'react'
 import {useEffect, useState} from 'react'
-import {useAtom, useSetAtom} from 'jotai'
+import {useAtom, useSetAtom, useStore} from 'jotai'
 import './Binder.css'
 import {useLocation, useNavigate} from '@hooks/useNavigation.ts'
 import Tabs from './tabs/Tabs.tsx'
 import AddTabModal from './tabs/modals/AddTabModal.tsx'
 import TabControls from './tabs/TabControls.tsx'
-import ViewControls from './ViewControls.tsx'
+import PageViewport from '@features/PageViewport/PageViewport.tsx'
 import EditTabModal from './tabs/modals/EditTabModal.tsx'
 import ConfirmModal from '@ui/ConfirmModal/ConfirmModal'
 import type {PageType} from './pageTypes.ts'
 import type {Page} from './binderAtoms.ts'
-import {activePageAtom, pagesAtom} from './binderAtoms.ts'
+import {activePageAtom, pagePrefix, pagesAtom} from './binderAtoms.ts'
 import {newId} from '@lib/ids/newId.ts'
 import {tabHue} from '@lib/colors/tabHue.ts'
 import {tabBorderColor} from '@lib/colors/hueColors.ts'
-import {usePageScale} from '@hooks/usePageScale.ts'
 import {A4_WIDTH_PX} from '@lib/paper/paperSize.ts'
 import CharacterSheet from '@features/CharacterSheet/CharacterSheet'
 import MarkdownPage from '@features/MarkdownPage/MarkdownPage'
 import EmptyPage from '@features/EmptyPage/EmptyPage'
 import StorageControls from '@features/Storage/StorageControls.tsx'
+import {seedMarkdownContent} from '@features/Templates/templateAtoms.ts'
 
 /**
  * Props for a binder: the storage prefix (its library id) all its pages persist under, and the callback that returns
@@ -37,12 +37,12 @@ interface BinderProps {
  * visited page stays mounted; the inactive ones are hidden), so its editor can suppress its floating toolbar/handle.
  */
 function renderPage(page: Page, storagePrefix: string, active: boolean): ReactNode {
-    const pagePrefix = `${storagePrefix}:${page.storagePrefix}`
+    const prefix = pagePrefix(storagePrefix, page.storagePrefix)
     if (page.type === 'characterSheet') {
-        return <CharacterSheet storagePrefix={pagePrefix}/>
+        return <CharacterSheet storagePrefix={prefix}/>
     }
     if (page.type === 'markdown') {
-        return <MarkdownPage storagePrefix={pagePrefix} active={active}/>
+        return <MarkdownPage storagePrefix={prefix} active={active}/>
     }
     return <EmptyPage title={page.label}/>
 }
@@ -64,6 +64,7 @@ function pageNaturalWidth(type: PageType | undefined): number {
  */
 function Binder({storagePrefix, onExit}: BinderProps) {
     const [pages, setPages] = useAtom(pagesAtom(storagePrefix))
+    const store = useStore()
     const location = useLocation()
     const navigate = useNavigate()
     const rememberActivePage = useSetAtom(activePageAtom(storagePrefix))
@@ -75,7 +76,6 @@ function Binder({storagePrefix, onExit}: BinderProps) {
     const [editing, setEditing] = useState<'edit' | 'delete' | null>(null)
     const activeIndex = Math.max(0, pages.findIndex((page) => page.id === activeId))
     const active = pages.length ? pages[activeIndex] : undefined
-    const {scale, scaleUp, scaleDown, canScaleUp, canScaleDown, viewReference} = usePageScale(pageNaturalWidth(active?.type))
     // The ids of pages visited since this binder opened: each stays mounted (hidden when not active) so switching back
     // to a tab is instant rather than rebuilding its editor. It is grown during render (the endorsed "adjust state
     // while rendering" pattern) as each shown page resolves, and lives only for the binder's mount, so leaving the
@@ -88,21 +88,14 @@ function Binder({storagePrefix, onExit}: BinderProps) {
     // Persists the shown page as this binder's remembered active page, so reopening it returns here.
     useEffect(() => rememberActivePage(activeId), [activeId, rememberActivePage])
 
-    // Promote the view to its own compositor layer only for the duration of a zoom (a little past the 0.25s transition),
-    // then drop it — a permanent layer around the editable markdown surface blanks out after inactivity. Toggled as a
-    // class on the DOM node, since it is a transient compositor hint, not render-driving data.
-    useEffect(() => {
-        const view = viewReference.current
-        if (!view) return
-        view.classList.add('binder-view--zooming')
-        const timer = window.setTimeout(() => view.classList.remove('binder-view--zooming'), 300)
-        return () => window.clearTimeout(timer)
-    }, [scale, viewReference])
-
-    // Appends a new page of the chosen type; its GUID id doubles as the character-sheet storage prefix.
-    function createPage(name: string, type: PageType) {
+    // Appends a new page of the chosen type; its GUID id doubles as the page's storage prefix. A markdown page created
+    // from a template seeds its content from that template's live body.
+    function createPage(name: string, type: PageType, markdownTemplateId?: string) {
         const id = newId()
         setPages([...pages, {id, label: name, type, storagePrefix: id, hue: tabHue(pages.length)}])
+        if (type === 'markdown' && markdownTemplateId) {
+            seedMarkdownContent(store, pagePrefix(storagePrefix, id), markdownTemplateId)
+        }
         navigate({binderId: storagePrefix, pageId: id})
         setAdding(false)
     }
@@ -134,7 +127,7 @@ function Binder({storagePrefix, onExit}: BinderProps) {
 
     return (
         <div className="app-shell" style={{'--sheet-border-color': tabBorderColor(active?.hue ?? 0)} as CSSProperties}>
-            <div className="binder-view" ref={viewReference} style={{transform: `scale(${scale})`}}>
+            <PageViewport naturalWidth={pageNaturalWidth(active?.type)}>
                 {/* Every visited page stays mounted; inactive ones are hidden (display:none), so switching tabs within the
                     binder is instant. Markdown pages draw their own per-sheet paper chrome, so the wrapper drops its
                     border/shadow for them. An empty binder (no active page) shows the untitled empty page. */}
@@ -149,13 +142,11 @@ function Binder({storagePrefix, onExit}: BinderProps) {
                 <Tabs tabs={pages} activeId={active?.id ?? ''}
                       onSelect={(id) => navigate({binderId: storagePrefix, pageId: id})} onReorder={reorderPages}
                       onLastTabChange={setLastTab}/>
-            </div>
+            </PageViewport>
             <TabControls onAdd={() => setAdding(true)} hasActive={!!active} onEdit={() => setEditing('edit')}
                          onDelete={(event) => (event.shiftKey ? deletePage() : setEditing('delete'))} onExit={onExit}
                          lastTab={lastTab}/>
             <StorageControls placement="binder"/>
-            <ViewControls onScaleUp={scaleUp} onScaleDown={scaleDown} canScaleUp={canScaleUp}
-                          canScaleDown={canScaleDown}/>
             {adding && <AddTabModal onCreate={createPage} onCancel={() => setAdding(false)}/>}
             {active && editing === 'edit' && (
                 <EditTabModal initialLabel={active.label} initialHue={active.hue} onSave={editPage}

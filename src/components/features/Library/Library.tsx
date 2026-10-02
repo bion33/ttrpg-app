@@ -1,21 +1,28 @@
 import type {MouseEvent} from 'react'
 import {useState} from 'react'
-import {useAtom, useAtomValue} from 'jotai'
+import {useAtom, useAtomValue, useStore} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
 import {notifyingStorage} from '@lib/storage/observableStorage.ts'
+import {BookDashed, SquareDashedText} from 'lucide-react'
 import './Library.css'
 import Binder from '@features/Binder/Binder.tsx'
-import {activePageAtom, pagesAtom} from '@features/Binder/binderAtoms.ts'
+import {activePageAtom, pagePrefix, pagesAtom} from '@features/Binder/binderAtoms.ts'
 import {libraryLocation} from '@lib/navigation/navigation.ts'
 import {useLocation, useNavigate} from '@hooks/useNavigation.ts'
 import {tabHue} from '@lib/colors/tabHue.ts'
+import {compareByLabel} from '@lib/sorting/compareByLabel.ts'
 import {newId} from '@lib/ids/newId.ts'
+import IconButton from '@ui/IconButton/IconButton'
 import ConfirmModal from '@ui/ConfirmModal/ConfirmModal'
 import AddBinderModal from './modals/AddBinderModal.tsx'
 import EditBinderModal from './modals/EditBinderModal.tsx'
 import LibraryBinder from './LibraryBinder.tsx'
 import {binderTabs} from './logic/binderTabs/binderTabs.ts'
 import StorageControls from '@features/Storage/StorageControls.tsx'
+import MarkdownTemplatesModal from '@features/Templates/MarkdownTemplatesModal.tsx'
+import BinderTemplatesModal from '@features/Templates/BinderTemplatesModal.tsx'
+import {binderTemplatesAtom, seedMarkdownContent} from '@features/Templates/templateAtoms.ts'
+import {instantiateBinderTemplate} from '@features/Templates/logic/instantiate/instantiate.ts'
 
 /**
  * A binder in the library: an opaque id (also the storage-prefix root every one of its pages persists under), a
@@ -62,20 +69,35 @@ function LibraryShelfBinder({binder, onOpen, onEdit, onDelete}: {
  */
 function Library() {
     const [binders, setBinders] = useAtom(bindersAtom)
+    const binderTemplates = useAtomValue(binderTemplatesAtom)
+    const store = useStore()
     const location = useLocation()
     const navigate = useNavigate()
     const openId = location.binderId
     const [adding, setAdding] = useState(false)
+    // Which template manager is open, if any.
+    const [managing, setManaging] = useState<'markdown' | 'binder' | null>(null)
     // The binder targeted by the open edit or delete dialogue, if any.
     const [editing, setEditing] = useState<LibraryBinderItem | null>(null)
     const [deleting, setDeleting] = useState<LibraryBinderItem | null>(null)
     const open = binders.find((binder) => binder.id === openId)
     // Displayed in name order (case-insensitive); the stored list keeps its own order for stable default hues.
-    const sorted = [...binders].sort((first, second) => first.label.localeCompare(second.label, undefined, {sensitivity: 'base'}))
+    const sorted = [...binders].sort(compareByLabel)
 
-    // Adds a binder with a fresh id and a spread-out default spine hue; the shelf stays open so the new binder appears.
-    function createBinder(name: string) {
-        setBinders([...binders, {id: newId(), label: name, hue: tabHue(binders.length)}])
+    // Adds a binder with a fresh id and a spread-out default spine hue; when built from a template, its tabs (and any
+    // markdown content seeded from referenced templates) are created up front. The shelf stays open so it appears.
+    function createBinder(name: string, fromTemplateId?: string) {
+        const id = newId()
+        setBinders([...binders, {id, label: name, hue: tabHue(binders.length)}])
+        const template = fromTemplateId ? binderTemplates.find((candidate) => candidate.id === fromTemplateId) : undefined
+        if (template) {
+            const {pages, seeds} = instantiateBinderTemplate(template, newId)
+            store.set(pagesAtom(id), pages)
+            for (const seed of seeds) {
+                seedMarkdownContent(store, pagePrefix(id, seed.pageId), seed.markdownTemplateId)
+            }
+            store.set(activePageAtom(id), pages[0]?.id ?? '')
+        }
         setAdding(false)
     }
 
@@ -116,6 +138,16 @@ function Library() {
             </div>
 
             <StorageControls placement="library"/>
+
+            <div className="library__templates corner-cluster no-print">
+                <IconButton icon={<SquareDashedText/>} label="Page templates" labelSide="left"
+                            onClick={() => setManaging('markdown')}/>
+                <IconButton icon={<BookDashed/>} label="Binder templates" labelSide="left"
+                            onClick={() => setManaging('binder')}/>
+            </div>
+
+            {managing === 'markdown' && <MarkdownTemplatesModal onClose={() => setManaging(null)}/>}
+            {managing === 'binder' && <BinderTemplatesModal onClose={() => setManaging(null)}/>}
 
             {adding && <AddBinderModal onCreate={createBinder} onCancel={() => setAdding(false)}/>}
             {editing && (

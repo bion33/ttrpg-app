@@ -9,6 +9,13 @@
     color: var(--color-ink);
 }
 
+/* The template-manager controls, pinned to the bottom-right viewport corner; the fixed-stack base comes from the
+   shared `.corner-cluster` utility (index.css) and printing hides them via `.no-print`. */
+.library__templates {
+    bottom: 1.5rem;
+    right: 1.5rem;
+}
+
 /* The binders in a grid whose column gap equals its row gap; columns are as many 9rem covers as fit each row. */
 .library__grid {
     display: grid;

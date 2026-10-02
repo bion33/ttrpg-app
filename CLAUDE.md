@@ -335,15 +335,21 @@ renders. When a binder is open the grid gives way to
 the `Binder` bound to that binder's id (`<Binder storagePrefix={id} onExit=…/>`,
 keyed by id so it remounts per binder). Adding/editing/deleting a binder go
 through the `Modal`-based modals in `modals/`, one component per file
-(`AddBinderModal.tsx` takes a name; `EditBinderModal.tsx` renames + recolours the
-spine via the shared `ui/ColorPicker`); deleting reuses the shared
-`ui/ConfirmModal`, warning all the binder's pages are removed. Default spine hues
-reuse the shared `src/lib/colors/tabHue.ts`. Adding is driven by a **ghost binder** —
+(`AddBinderModal.tsx` takes a name **and an optional "Create from" binder template**;
+`EditBinderModal.tsx` renames + recolours the spine via the shared `ui/ColorPicker`);
+deleting reuses the shared `ui/ConfirmModal`, warning all the binder's pages are
+removed. `Library.createBinder(name, fromTemplateId?)` adds the binder and, when a
+template is chosen, instantiates its structure via `instantiateBinderTemplate`
+(Templates feature) — writing `pagesAtom`/`activePageAtom` and seeding any markdown
+content — before the shelf refreshes. Default spine hues reuse the shared
+`src/lib/colors/tabHue.ts`. Adding is driven by a **ghost binder** —
 the same `LibraryBinder` markup faded to a low opacity (`.library__binder--ghost`, the
 `ghost` variant), with a plus icon in the portrait in place of a letter and the
 name "Add binder". It sits in the grid's last cell after the existing covers and
 opens `AddBinderModal`; there is no separate corner button, and an empty library
-shows just the ghost cover.
+shows just the ghost cover. A bottom-right `corner-cluster` of two `IconButton`s
+(`library__templates`) opens the **Page templates** and **Binder templates** managers
+(Templates feature).
 
 ### Binder feature (`src/components/features/Binder/`)
 
@@ -366,21 +372,18 @@ tab-strip components live together in a `tabs/` subfolder (`Tabs`,
 `EditTabModal`); they are feature-specific, so they live in the feature folder,
 not in `ui/` (tab deletion reuses the shared `ui/ConfirmModal`). The pure
 per-index tab-hue function lives in `src/lib/colors/tabHue.ts` (shared by `Binder` and
-`Library`, unit-tested in `tabHue.test.ts`). Page-view zoom is owned by the
-`usePageScale(naturalWidthPx)` hook (`src/hooks/`), not `Binder` itself; `Binder`
-passes it the active page's natural width (resolved by `pageNaturalWidth(type)`,
-which reads each page component's own `naturalWidth`). `Binder` promotes the
-zoomed `.binder-view` to its own compositor layer (`will-change: transform`, via
-the `.binder-view--zooming` class) **only for the ~0.3s of a scale change**,
-toggling the class on the DOM node (not via state): a permanent layer around the
-editable markdown surface blanks out after inactivity, so the promotion is scoped
-to the transition.
+`Library`, unit-tested in `tabHue.test.ts`). Page-view zoom lives in the shared
+**`PageViewport`** (see its feature below), which `Binder` wraps its pages and
+`Tabs` in, passing the active page's natural width (resolved by
+`pageNaturalWidth(type)`, which reads each page component's own `naturalWidth`).
 
 The page list is **dynamic and persisted**: a `Page` is serialisable tab
 metadata (`id`, `label`, `type`, `storagePrefix`), declared with the per-binder
 atoms in `binderAtoms.ts`, and `renderPage(page, storagePrefix, active)` (in `Binder.tsx`)
 resolves it to an element by `type` — `characterSheet` → `CharacterSheet` bound to
-the **binder-prefixed** storage prefix `${storagePrefix}:${page.storagePrefix}`,
+the **binder-prefixed** storage prefix (`pagePrefix(storagePrefix, page.storagePrefix)`,
+the one `binderAtoms.ts` helper for the `${binderPrefix}:${pageId}` join every page-
+seeding site shares),
 `markdown` → a `MarkdownPage` bound to the same binder-prefixed prefix (passed `active`,
 whether it is the shown page, so a hidden-but-mounted notes tab suppresses its
 body-portalled toolbar/handle; each notes tab keeps its own persistent editor rather than
@@ -412,11 +415,18 @@ the add-page menu (`PAGE_TYPES`), only used as the stand-in described above.
 
 Adding a page is driven from `TabControls` (below), which opens `AddTabModal`
 (`tabs/modals/AddTabModal.tsx`) — a proper modal (not `window.prompt`) asking for a
-**name** and a **type**. On submit `Binder.createPage` mints the id via
+**name** and a **type**, and (when the type is `markdown`) an optional **Template**
+(Blank + the markdown templates; see the Templates feature). `AddTabModal` is just
+`Modal` + `AddTabForm` (`tabs/modals/AddTabForm.tsx`, the body-only form) — and likewise
+`EditTabModal` is `Modal` + `EditTabForm` (`tabs/modals/EditTabForm.tsx`) — split so a
+dialogue swapping its body in place (the binder-template tab editor) can show the
+add/edit form without nesting a second `Modal`. On submit
+`Binder.createPage(name, type, markdownTemplateId?)` mints the id via
 `src/lib/ids/newId.ts`'s `newId()` (the shared GUID helper, unit-tested in
 `newId.test.ts`) — an opaque id decoupled from the name so it survives renames;
-that id is also the character sheet's `storagePrefix`, and the new page becomes
-active.
+that id is also the page's `storagePrefix`, and the new page becomes active. A
+markdown page created from a template seeds its content via
+`seedMarkdownContent` (Templates feature) from that template's live body.
 
 `TabControls` (`tabs/TabControls.tsx`/`.css`) is a vertical cluster of round
 `IconButton`s in the gutter right of the tab strip, plus a **Back to library**
@@ -424,10 +434,9 @@ button (calls `onExit`) pinned to the top-left viewport corner. The **Add page**
 button is always shown (adding is the only way to add a page — there is no "+"
 tab); the edit, delete, and **Print** buttons act on the **active** tab and
 appear only when one is active (`hasActive`; Print calls `window.print()`).
-Separately, `ViewControls` (a bottom-left cluster) zooms the page and tab strip
-in/out, its buttons `disabled` at the min scale and the viewport-fit max. A
-`@media print` block in `Binder.css` hides the tab strip and controls and zeroes
-the margins so only the page content prints. Editing opens `EditTabModal.tsx` (in
+Zoom is handled by the shared `PageViewport` (its `ViewControls`, a bottom-left
+cluster); see that feature below. A `@media print` block in `Binder.css` hides the
+tab strip and controls and zeroes the margins so only the page content prints. Editing opens `EditTabModal.tsx` (in
 `tabs/modals/`, built on the shared `Modal`): it renames the label (the
 id/`storagePrefix` and stored fields are untouched) and recolours the tab `hue`
 via the shared `ui/ColorPicker`, both in one dialogue; deletion opens the shared
@@ -443,6 +452,86 @@ dragged vertically to reorder (transform-based, so displaced tabs glide via the 
 `transform` transition); the drag also navigates to the tab (its click fires as normal),
 and drops are committed via `onReorder(from, to)` (`Binder` reorders and persists the
 `pages` list).
+
+### PageViewport feature (`src/components/features/PageViewport/`)
+
+`PageViewport` (`PageViewport.tsx` + `.css`) is the **shared page-view zoom
+scaffold** extracted from `Binder` so every page surface zooms identically. Props:
+`naturalWidth` and `children`. It owns the `.binder-view` wrapper (scaled to a
+persisted fraction of the viewport via `usePageScale(naturalWidth)`), the transient
+`binder-view--zooming` compositor-layer promotion (`will-change: transform` toggled
+as a class on the DOM node for the ~0.3s of a scale change only — a permanent layer
+around the editable markdown surface blanks out after inactivity), and the bottom-left
+`ViewControls` cluster (`ViewControls.tsx` + `.css`, moved here from `Binder`). The
+`.binder-view*` CSS (including its `@media print` transform reset) lives in
+`PageViewport.css`. `Binder` wraps its pages + `Tabs` in it; the markdown-template
+editor (Templates feature) wraps its `MarkdownPage` in it. The caller keeps the
+`.app-shell` wrapper and sets `--sheet-border-color`.
+
+### Templates feature (`src/components/features/Templates/`)
+
+**Library-wide reusable templates**, riding the existing localStorage → snapshot →
+sync path (every atom uses `notifyingStorage()`, so no new persistence plumbing).
+Two kinds:
+
+- **Markdown (page) templates** — reusable note layouts picked when adding a Notes
+  page.
+- **Binder templates** — a reusable **structure only** (ordered tabs: type, label,
+  hue, and for a markdown tab a *reference* to a markdown template), chosen when
+  adding a binder. The markdown reference is resolved to a concrete content copy only
+  at binder-creation time, so the template stays live-linked (editing it later affects
+  only binders created afterward).
+
+- `templateTypes.ts` (pure) — `MarkdownTemplate = {id, label}` (its body lives
+  separately); `BinderTemplatePage = {id, label, type, hue, markdownTemplateId?}`;
+  `BinderTemplate = {id, label, pages}`.
+- `templateAtoms.ts` — `markdownTemplatesAtom` (`'markdownTemplates'`) and
+  `binderTemplatesAtom` (`'binderTemplates'`), both `atomWithStorage(…, [],
+  notifyingStorage())`. `templateContentPrefix(id)` = `` `template:${id}` `` — a
+  markdown template's body reuses **`markdownAtom(templateContentPrefix(id))`** (key
+  `template:<id>:markdown`), so it serialises like any notes page (no new content
+  store). `seedMarkdownContent(store, destinationPrefix, markdownTemplateId)` copies a
+  template's live body into a destination page's markdown (shared by both creation
+  paths); `clearMarkdownTemplateContent(store, id)` blanks a deleted template's body.
+- `logic/instantiate/instantiate.ts` (+ test, **pure**) —
+  `instantiateBinderTemplate(template, makeId)` → `{pages, seeds}`: concrete `Page[]`
+  (ids from the injected `makeId`, `storagePrefix === id`, order/label/type/hue
+  preserved) plus the markdown `seeds` to copy. Deterministic; no atoms/DOM/store.
+- `TemplateEditor.tsx` (+ `.css`) — the markdown-template **editor surface** (a
+  navigable location, not a binder): an `.app-shell` around
+  `<PageViewport naturalWidth={MarkdownPage.naturalWidth}>` wrapping
+  `<MarkdownPage storagePrefix={templateContentPrefix(id)} active/>`, plus
+  `StorageControls` and a top-left Back-to-library `IconButton`. No tab strip / tab
+  controls. `AppContent` renders it when `isMarkdownTemplate(location)`.
+  Both managers hold a single `Modal` whose **body swaps in place** by a `view` state
+  (list / add / rename / delete, plus `edit` for binder templates) rather than stacking
+  a dialogue on a dialogue — so add/rename/delete render `NameForm`/`ConfirmBody`
+  bodies inside the one modal, their Cancel/submit/confirm returning to the list.
+- `MarkdownTemplatesModal.tsx` — the page-templates manager: a `ManagerList` of
+  `markdownTemplatesAtom` with add/rename (`NameForm`), delete (`ConfirmBody`, also
+  `clearMarkdownTemplateContent`), and **Edit** → `navigate(markdownTemplateLocation(id))`.
+- `BinderTemplatesModal.tsx` — the binder-templates manager: a list view (`ManagerList`
+  of `binderTemplatesAtom`, add/rename/delete) whose **Edit** swaps to
+  `BinderTemplatePagesEditor` for that template.
+- `BinderTemplatePagesEditor.tsx` — the **lighter plain tab list** for one binder
+  template's `pages` (not the rotated `Tabs` strip), each row tinted to its tab hue via
+  `tabColor`/`tabBorderColor`: reorder, edit (label + hue), delete, and add. It **owns its
+  own `Modal`** (title + a top back link to the templates list), and **add/edit/delete each
+  swap that dialog body in place** — to `AddTabForm`, `EditTabForm`, and `ConfirmBody`
+  respectively, their own Cancel/submit/confirm buttons returning to the tab list — rather
+  than stacking a second modal. The add-tab form still returns the markdown-template id;
+  re-pointing a markdown tab's template = delete + re-add.
+  New-tab hue = `tabHue(pages.length)`.
+- `ManagerList.tsx` + `NameForm.tsx` + `Templates.css` — the shared list body
+  (rename/open/delete rows, sorted by `compareByLabel`, + add button) and the shared
+  single-field add/rename **body** (no `Modal` of its own), so the two managers stay
+  uniform rather than duplicating structure.
+
+Applied at creation: `Binder.createPage` seeds a new Notes page from a chosen
+markdown template; `Library.createBinder(name, fromTemplateId?)` instantiates a chosen
+binder template — `store.set(pagesAtom(id), pages)`, `seedMarkdownContent` per seed,
+`store.set(activePageAtom(id), pages[0]?.id ?? '')` (same store, no remount). A
+since-deleted markdown reference yields an empty Notes page (graceful).
 
 ### Storage feature (`src/components/features/Storage/`, `src/lib/storage/`, `src/hooks/useStorage.ts`)
 
@@ -725,7 +814,10 @@ picker styling lives in `ColorPicker.css`.
 
 `ConfirmModal` is the shared `Modal`-based confirmation dialog (used for deleting
 binders and tabs). Props are `title`, `message`, `confirmLabel`, an optional
-`variant` (`primary`/`danger`), `onConfirm`, and `onCancel`.
+`variant` (`primary`/`danger`), `onConfirm`, and `onCancel`. Its message-plus-actions
+**body** is `ConfirmBody` (same props minus `title`), split out so a modal that swaps
+its body in place (the template managers) can show a confirmation without nesting a
+second `Modal`; `ConfirmModal` is just `Modal` + `ConfirmBody`.
 
 `IconButton` is the shared round, Material-style button: an icon at rest with a
 floating text-label pill that fades in on hover/focus. Props are `icon`, `label`
@@ -751,18 +843,20 @@ inline CSS custom properties so the colours never drift from the CSS; `Binder` s
 `.page` wrapper and the markdown sheets share), `ids/newId.ts`
 (`newId()`, the one `crypto.randomUUID()` GUID helper for both binder and page
 ids), `navigation/navigation.ts` (the pure `Location` type — which
-binder is open and which page is active — with
-`libraryLocation`/`isLibrary`/`sameLocation`), and `paper/paperSize.ts`
+binder is open and which page is active, or which markdown template is open in its
+editor surface — with `libraryLocation`/`markdownTemplateLocation`/`isLibrary`/
+`isMarkdownTemplate`/`sameLocation`), and `paper/paperSize.ts`
 (`millimetresToPixels` and the `A4_WIDTH_PX`/`A5_WIDTH_PX` physical page widths in
 CSS px — the single source for page footprints, used by the page components' widths
-and the zoom math). The `storage/` subfolder is the
-whole-library persistence group (below). Shared React hooks live in
+and the zoom math), and `sorting/compareByLabel.ts` (the shared case-insensitive
+`label`-order comparator every binder/template list and dropdown sorts with). The
+`storage/` subfolder is the whole-library persistence group (below). Shared React hooks live in
 `src/hooks`: `useAutoFitFontSize(ref, value, maxFontSize, axis)` (the
 shrink-to-fit loop behind `AutoFitInput`/`AutoFitTextarea`, owning
 `DEFAULT_FONT_SIZE`/`MIN_FONT_SIZE`), `usePageScale(naturalWidthPx)` (the persisted
 page-view zoom as a viewport-width fraction — derives the scale from the page's
 natural width, with step controls and a measured viewport-fit ceiling —
-consumed by `Binder`), `useNameForm(initialName, onSubmit)` (the name-field state,
+consumed by `PageViewport`), `useNameForm(initialName, onSubmit)` (the name-field state,
 mount-focus, and trim/guard submit shared by every add/edit dialogue),
 `useDismissOnOutside(ref, active, onDismiss)` (the outside-pointer-dismiss listener
 behind the block handle's "+" menu), and
@@ -842,7 +936,7 @@ CSS literals: the components set them as inline custom properties computed by
 - **`lib/` and `logic/` are organised into subfolders**, not a flat pile of files.
   In `logic/` each module gets its own folder holding it and its colocated test
   (`logic/formulas/formulas.ts` + `formulas.test.ts`). In `lib/` modules are
-  grouped by concern (`colors/`, `fields/`, `ids/`, `navigation/`, `paper/`, `storage/` — and
+  grouped by concern (`colors/`, `fields/`, `ids/`, `navigation/`, `paper/`, `sorting/`, `storage/` — and
   `storage/` is further split into `providers/`, `oauth/`, `sync/`). A concern
   folder may hold one or several modules; put a new pure helper in the matching
   concern folder (or a new one) rather than at the `lib/` root.

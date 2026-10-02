@@ -1,4 +1,5 @@
 import Modal from '@ui/Modal/Modal'
+import ConfirmBody from './ConfirmBody.tsx'
 
 /**
  * Props for the confirm dialog: its heading, the message to show, the confirm button's label and variant, and the
@@ -19,15 +20,8 @@ interface ConfirmModalProps {
 function ConfirmModal({title, message, confirmLabel, variant = 'primary', onConfirm, onCancel}: ConfirmModalProps) {
     return (
         <Modal title={title} onClose={onCancel}>
-            <div className="modal__body">
-                <p className="modal__prompt">{message}</p>
-                <div className="modal__actions">
-                    <button type="button" className="modal__btn" onClick={onCancel}>Cancel</button>
-                    <button type="button" className={`modal__btn modal__btn--${variant}`} onClick={onConfirm}>
-                        {confirmLabel}
-                    </button>
-                </div>
-            </div>
+            <ConfirmBody message={message} confirmLabel={confirmLabel} variant={variant} onConfirm={onConfirm}
+                         onCancel={onCancel}/>
         </Modal>
     )
 }

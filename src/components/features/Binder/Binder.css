@@ -7,28 +7,6 @@
     margin: 2.5rem 5%;
 }
 
-/* Wraps the page and tab strip so they scale together (the transform is set in Binder.tsx) while the view controls,
-   which sit outside it, stay a fixed size. Anchors the absolutely-positioned tab strip and, scaling from the top
-   centre, keeps the page centred as it grows or shrinks. The scale (a fraction of the viewport width) is derived in
-   usePageScale so the page never exceeds the screen width. Shrinks to wrap its fixed-width page (every page type is a
-   fixed physical-sheet footprint) and stays centred, so the tab strip (anchored to the view's right edge) sits flush. */
-.binder-view {
-    position: relative;
-    width: fit-content;
-    margin: 0 auto;
-    transform-origin: top center;
-    /* Ease the zoom directly on transform (a concrete scale(), not a var) so it composites instead of jittering. */
-    transition: transform 0.25s ease-in-out;
-}
-
-/* `will-change: transform` is toggled transiently (the --zooming modifier, added in Binder.tsx only while a zoom
-   runs) so the heavy character-sheet SVG GPU-scales smoothly. It is deliberately NOT permanent: a permanently-promoted
-   compositor layer holding the editable markdown surface has its rasterised tiles evicted after inactivity and goes
-   blank until an interaction forces a repaint. */
-.binder-view--zooming {
-    will-change: transform;
-}
-
 .page {
     position: relative;
     /* Above the inactive tabs (which they tuck under) but below the active tab (which notches the border). */
@@ -63,11 +41,6 @@
 
     .app-shell {
         margin: 0;
-    }
-
-    /* Print at the true page size regardless of the on-screen zoom (!important beats the inline transform). */
-    .binder-view {
-        transform: none !important;
     }
 
     .page {

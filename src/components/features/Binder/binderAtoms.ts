@@ -19,6 +19,13 @@ const activePageAtoms = new Map<string, WritableAtom<string, [string | ((previou
 // ---- EXPORTED FUNCTIONS ----
 
 /**
+ * The storage prefix a page persists under within its binder's namespace: the binder's prefix joined to the page id.
+ */
+export function pagePrefix(binderPrefix: string, pageId: string): string {
+    return `${binderPrefix}:${pageId}`
+}
+
+/**
  * The persisted page list for the binder at the given storage prefix — one shared atom instance per prefix, so the
  * binder and the library shelf read and write the same list. Empty until the user adds a page.
  */
