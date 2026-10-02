@@ -38,7 +38,7 @@ function ToolbarDropdown({editor, label, icon: GroupIcon, actions, activeStates}
                     {actions.map((action, index) => {
                         const ItemIcon = action.icon
                         return (
-                            <DropdownMenu.Item key={action.id} onSelect={() => action.run(editor)}
+                            <DropdownMenu.Item key={action.id} onSelect={() => action.run?.(editor)}
                                                className={'markdown-toolbar__menu-item' +
                                                    (activeStates[index] ? ' is-active' : '')}>
                                 <ItemIcon size={16}/> {action.label}

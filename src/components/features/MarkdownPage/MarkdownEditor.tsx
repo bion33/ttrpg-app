@@ -15,6 +15,7 @@ import {Pagination} from './extensions/pagination/pagination.ts'
 import {tableExtensions} from './extensions/table/tableExtensions.ts'
 import MarkdownToolbar from './MarkdownToolbar.tsx'
 import BlockHandle from './BlockHandle.tsx'
+import ImageUrlModal from './ImageUrlModal.tsx'
 
 /**
  * Props for the markdown editor: the markdown to show (read on mount, and re-applied if it changes externally, e.g. a
@@ -34,6 +35,8 @@ interface MarkdownEditorProps {
 function MarkdownEditor({markdown, onChange, active}: MarkdownEditorProps) {
     // The number of A4 sheets the content spans, reported by the pagination extension; drives the backdrop sheets.
     const [pageCount, setPageCount] = useState(1)
+    // Whether the insert-image dialog is open; on confirm it inserts at the editor's current selection.
+    const [imageDialogOpen, setImageDialogOpen] = useState(false)
     const editor = useEditor({
         extensions: [
             StarterKit.configure({link: false, codeBlock: false}),
@@ -66,8 +69,19 @@ function MarkdownEditor({markdown, onChange, active}: MarkdownEditorProps) {
             {/* The toolbar (portalled out of the zoomed .binder-view to the viewport bottom, see MarkdownPage.css) and the
                 block handle render only for the active page: an inactive page is hidden via display:none, but the portal
                 escapes that, so its toolbar would otherwise linger over the active page. */}
-            {active && createPortal(<MarkdownToolbar editor={editor}/>, document.body)}
-            {active && <BlockHandle editor={editor}/>}
+            {active && createPortal(
+                <MarkdownToolbar editor={editor} onRequestImage={() => setImageDialogOpen(true)}/>, document.body)}
+            {active && <BlockHandle editor={editor} onRequestImage={() => setImageDialogOpen(true)}/>}
+            {/* Portalled to the body like the toolbar: rendered in place it would sit inside the zoomed, page-tall
+                `.binder-view` transform, which confines its fixed backdrop to the editor and scales it. */}
+            {imageDialogOpen && createPortal(
+                <ImageUrlModal
+                    onInsert={(url) => {
+                        editor.chain().focus().setImage({src: url}).run()
+                        setImageDialogOpen(false)
+                    }}
+                    onCancel={() => setImageDialogOpen(false)}
+                />, document.body)}
             <div className="md-sheets">
                 {/* One A4 sheet per page behind the flow; the first fuses with the active tab, the rest stack below. */}
                 <div className="md-sheet-backdrop" aria-hidden="true">

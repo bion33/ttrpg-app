@@ -2,7 +2,7 @@ import {useCallback, useRef, useState} from 'react'
 import type {Editor} from '@tiptap/core'
 import DragHandle from '@tiptap/extension-drag-handle-react'
 import {useDismissOnOutside} from '@hooks/useDismissOnOutside.ts'
-import {BLOCK_ACTIONS, type BlockAction} from './blocks/insertBlocks.ts'
+import {BLOCK_ACTIONS, type BlockAction, runBlockAction} from './blocks/insertBlocks.ts'
 
 // Stable identity so the React DragHandle's effect does not tear down and re-register the plugin on every render
 // (which resets the handle's position and drops its lock). placement 'left' centres the handle on the block;
@@ -11,17 +11,18 @@ import {BLOCK_ACTIONS, type BlockAction} from './blocks/insertBlocks.ts'
 const COMPUTE_POSITION_CONFIG = {placement: 'left', strategy: 'fixed'} as const
 
 /**
- * Props for the block handle: the editor whose blocks it acts on.
+ * Props for the block handle: the editor whose blocks it acts on and the callback opening the insert-image dialog.
  */
 interface BlockHandleProps {
     editor: Editor
+    onRequestImage: () => void
 }
 
 /**
  * The per-block hover affordance shown beside the current line: a drag grip to reorder blocks and a "+" button that
  * opens a menu inserting any block type (the Nextcloud-style block handle).
  */
-function BlockHandle({editor}: BlockHandleProps) {
+function BlockHandle({editor, onRequestImage}: BlockHandleProps) {
     const [menuOpen, setMenuOpen] = useState(false)
     // The document position of the block currently under the handle, used to target the "+" menu's insert.
     const hoveredPosition = useRef<number | null>(null)
@@ -43,7 +44,7 @@ function BlockHandle({editor}: BlockHandleProps) {
         if (hoveredPosition.current !== null) {
             editor.chain().focus().setTextSelection(hoveredPosition.current + 1).run()
         }
-        action.run(editor)
+        runBlockAction(action, editor, {onRequestImage})
         closeMenu()
     }
 

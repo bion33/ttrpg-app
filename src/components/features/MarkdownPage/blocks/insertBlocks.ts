@@ -11,6 +11,12 @@ import {CALLOUT_TYPES, type CalloutType} from '../extensions/callout.ts'
  */
 export type BlockGroupId = 'heading' | 'block' | 'list' | 'insert'
 
+/**
+ * A block action that cannot act immediately but must first collect input from a dialog (currently only the image
+ * action, which needs a URL). The consumer opens the matching dialog instead of calling `run`.
+ */
+export type BlockActionDialog = 'image'
+
 export interface BlockAction {
     id: string
     label: string
@@ -18,7 +24,28 @@ export interface BlockAction {
     // Actions of the same group share a toolbar dropdown / a block-handle menu section.
     group: BlockGroupId
     isActive: (editor: Editor) => boolean
-    run: (editor: Editor) => void
+    // Set on an action that applies immediately; a `dialog` action has none (its dialog does the insert on confirm).
+    run?: (editor: Editor) => void
+    // Set on an action that must gather input from a dialog before it can act.
+    dialog?: BlockActionDialog
+}
+
+/**
+ * The dialog-opening callbacks a block action may need, supplied by the consumer so the action list stays free of UI.
+ */
+export interface BlockActionHandlers {
+    onRequestImage: () => void
+}
+
+/**
+ * Runs a block action: opens its dialog when it needs input, otherwise applies it to the editor immediately.
+ */
+export function runBlockAction(action: BlockAction, editor: Editor, handlers: BlockActionHandlers): void {
+    if (action.dialog === 'image') {
+        handlers.onRequestImage()
+        return
+    }
+    action.run?.(editor)
 }
 
 /**
@@ -94,10 +121,7 @@ export const BLOCK_ACTIONS: BlockAction[] = [
     {
         id: 'image', label: 'Image', icon: Image, group: 'insert',
         isActive: (editor) => editor.isActive('image'),
-        run: (editor) => {
-            const url = window.prompt('Image URL')?.trim()
-            if (url) editor.chain().focus().setImage({src: url}).run()
-        },
+        dialog: 'image',
     },
     {
         id: 'horizontalRule', label: 'Divider', icon: SquareSplitVertical, group: 'insert',

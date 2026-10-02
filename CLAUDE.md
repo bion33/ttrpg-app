@@ -174,9 +174,17 @@ with no new persistence plumbing.
   (`display:none`) would otherwise leak its portalled toolbar over the active page.
   It renders the **sheet stack**: a `.md-sheets` box holding a `.md-sheet-backdrop`
   (one `.md-sheet` div per page, count from `Pagination`) behind the overlaid
-  `<EditorContent>`. Responsibility: editor configuration + sheet-stack composition.
+  `<EditorContent>`. It also owns the insert-image dialog state, passing an `onRequestImage`
+  callback to the toolbar and block handle and rendering `ImageUrlModal` (portalled to the body,
+  since in place it would sit inside the zoomed `.binder-view` transform; it inserts at the
+  editor's current selection on confirm). Responsibility: editor configuration + sheet-stack
+  composition + image-dialog hosting.
   Images are by URL/paste only for
   now — real upload needs a later storage decision (base64 bloats the snapshot).
+- `ImageUrlModal.tsx` / `ImageUrlForm.tsx` — the insert-image dialogue (shared `Modal` +
+  body-only form, mirroring `AddTabModal`/`AddTabForm`): a single URL field validated with
+  `@lib/url/httpUrl.ts`'s `isHttpUrl` (http(s) only), its Insert button disabled until the URL is
+  valid. Replaces the old `window.prompt`.
 - `MarkdownToolbar.tsx` — the formatting toolbar, all `lucide-react` icons: undo/redo, the
   Headings dropdown, inline marks (bold/italic/underline/strikethrough), the Blocks and Lists
   dropdowns (one `ToolbarDropdown` per non-insert `BLOCK_GROUPS` entry), then the standalone
@@ -226,7 +234,11 @@ with no new persistence plumbing.
 - `blocks/insertBlocks.ts` — `BLOCK_ACTIONS`, the **single source of truth** for the
   block types a user can apply/insert (headings 1–6, text/paragraph, quote, the four
   callout variants, the three list kinds, table, image, divider, page break): each is `{id, label,
-  icon, group, isActive(editor), run(editor)}` (`icon` a `lucide-react` component). Two
+  icon, group, isActive(editor)}` plus either a `run(editor)` that applies immediately **or** a
+  `dialog` marker (currently only `'image'`) for an action that must gather input from a dialog first
+  (`icon` a `lucide-react` component). `runBlockAction(action, editor, handlers)` is the shared
+  dispatcher both consumers call — it opens the action's dialog (via a `handlers` callback) or runs
+  it — so the dialog-vs-run branch lives in one place. Two
   projections derive from it: `BLOCK_GROUPS` buckets the dropdown groups — `heading`
   (Headings), `block` (Blocks: text, quote, callouts), `list` (Lists) — each with a
   default trigger label/icon; `INSERT_ACTIONS` is the flat `insert` group (table, image,
@@ -848,8 +860,9 @@ editor surface — with `libraryLocation`/`markdownTemplateLocation`/`isLibrary`
 `isMarkdownTemplate`/`sameLocation`), and `paper/paperSize.ts`
 (`millimetresToPixels` and the `A4_WIDTH_PX`/`A5_WIDTH_PX` physical page widths in
 CSS px — the single source for page footprints, used by the page components' widths
-and the zoom math), and `sorting/compareByLabel.ts` (the shared case-insensitive
-`label`-order comparator every binder/template list and dropdown sorts with). The
+and the zoom math), `sorting/compareByLabel.ts` (the shared case-insensitive
+`label`-order comparator every binder/template list and dropdown sorts with), and
+`url/httpUrl.ts` (`isHttpUrl`, validating an http(s) image URL). The
 `storage/` subfolder is the whole-library persistence group (below). Shared React hooks live in
 `src/hooks`: `useAutoFitFontSize(ref, value, maxFontSize, axis)` (the
 shrink-to-fit loop behind `AutoFitInput`/`AutoFitTextarea`, owning
@@ -936,7 +949,7 @@ CSS literals: the components set them as inline custom properties computed by
 - **`lib/` and `logic/` are organised into subfolders**, not a flat pile of files.
   In `logic/` each module gets its own folder holding it and its colocated test
   (`logic/formulas/formulas.ts` + `formulas.test.ts`). In `lib/` modules are
-  grouped by concern (`colors/`, `fields/`, `ids/`, `navigation/`, `paper/`, `sorting/`, `storage/` — and
+  grouped by concern (`colors/`, `fields/`, `ids/`, `navigation/`, `paper/`, `sorting/`, `url/`, `storage/` — and
   `storage/` is further split into `providers/`, `oauth/`, `sync/`). A concern
   folder may hold one or several modules; put a new pure helper in the matching
   concern folder (or a new one) rather than at the `lib/` root.

@@ -2,14 +2,15 @@ import type {ReactNode} from 'react'
 import type {Editor} from '@tiptap/core'
 import {useEditorState} from '@tiptap/react'
 import {Bold, Italic, Strikethrough, Underline} from 'lucide-react'
-import {BLOCK_ACTIONS, BLOCK_GROUPS, INSERT_ACTIONS} from './blocks/insertBlocks.ts'
+import {BLOCK_ACTIONS, BLOCK_GROUPS, INSERT_ACTIONS, runBlockAction} from './blocks/insertBlocks.ts'
 import ToolbarDropdown from './ToolbarDropdown.tsx'
 
 /**
- * Props for the toolbar: the editor it drives.
+ * Props for the toolbar: the editor it drives and the callback opening the insert-image dialog.
  */
 interface MarkdownToolbarProps {
     editor: Editor
+    onRequestImage: () => void
 }
 
 // The inline marks, kept here (not in insertBlocks) since the block-insert menu does not apply marks.
@@ -32,7 +33,7 @@ const OTHER_GROUPS = BLOCK_GROUPS.filter((group) => group.id !== 'heading')
  * The formatting toolbar: undo/redo, the headings dropdown, inline marks, the block dropdowns, and the insert
  * buttons, driving the editor's commands.
  */
-function MarkdownToolbar({editor}: MarkdownToolbarProps) {
+function MarkdownToolbar({editor, onRequestImage}: MarkdownToolbarProps) {
     const state = useEditorState({
         editor,
         selector: ({editor}) => ({
@@ -84,7 +85,7 @@ function MarkdownToolbar({editor}: MarkdownToolbarProps) {
                     <button key={action.id} type="button" aria-label={action.label} data-tooltip={action.label}
                             className={'markdown-toolbar__btn markdown-toolbar__btn--icon has-tooltip has-tooltip--top' +
                                 (state.blocks[action.id] ? ' is-active' : '')}
-                            onClick={() => action.run(editor)}><ActionIcon size={16}/>
+                            onClick={() => runBlockAction(action, editor, {onRequestImage})}><ActionIcon size={16}/>
                     </button>
                 )
             })}
