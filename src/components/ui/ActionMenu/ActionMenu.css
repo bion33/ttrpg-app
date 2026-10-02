@@ -1,0 +1,49 @@
+/* ---- Shared "…" dropdown menu (the base the action-menu trigger and the markdown block/toolbar menus share) ---- */
+
+.menu {
+    z-index: var(--z-controls);
+    min-width: 10rem;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* The padded, optionally-scrolling row region; the action menu is its own list, the block menu wraps one. */
+.menu__list {
+    padding: 0.25rem;
+}
+
+.menu__item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.35rem;
+    color: var(--color-ink);
+    font-family: var(--font-serif);
+    font-size: 0.9rem;
+    cursor: pointer;
+    /* Transparent border reserves space so the active outline below never shifts the row. */
+    border: 1px solid transparent;
+    /* Radix/cmdk items are focusable divs; drop the focus ring in favour of the highlight below. */
+    outline: none;
+}
+
+/* Radix marks the pointer/keyboard target with data-highlighted; cmdk marks it with data-selected. */
+.menu__item[data-highlighted],
+.menu__item[data-selected="true"] {
+    background: #efe8d5;
+}
+
+/* Same light shift + outline as the inline marks, so the selected item reads as active without a dark fill. */
+.menu__item.is-active {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: var(--color-border);
+    font-weight: 600;
+}
+
+/* A destructive menu item (e.g. delete row/column/table, remove image). */
+.menu__item--danger {
+    color: var(--color-danger);
+}

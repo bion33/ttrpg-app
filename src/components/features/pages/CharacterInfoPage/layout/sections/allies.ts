@@ -6,11 +6,11 @@ import type {InfoSheetFactory} from '@pages/CharacterInfoPage/layout/nodes.ts'
  */
 export function buildAllies({inputNode}: InfoSheetFactory) {
     return {
-        alliesAndOrganisations: inputNode({id: 'alliesAndOrganisations', x: 293, y: 173, width: 236, height: 286, type: 'textarea', fontSize: 12}),
+        alliesAndOrganisations: inputNode({id: 'alliesAndOrganisations', x: 296, y: 180, width: 234, height: 290, type: 'textarea', fontSize: 12}),
 
         deity: {
-            deityName: inputNode({id: 'deityName', x: 576, y: 360, width: 160, height: 20, type: 'text', fontSize: 16, textAlign: 'center'}),
-            deityInfo: inputNode({id: 'deityInfo', x: 543, y: 412, width: 232, height: 52, type: 'textarea', fontSize: 12}),
+            deityName: inputNode({id: 'deityName', x: 586, y: 360, width: 140, height: 20, type: 'text', fontSize: 16, textAlign: 'center'}),
+            deityInfo: inputNode({id: 'deityInfo', x: 537, y: 408, width: 235, height: 62, type: 'textarea', fontSize: 12}),
         },
     }
 }

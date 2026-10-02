@@ -7,7 +7,7 @@ export type FieldDefinition = {
     y: number
     width: number
     height: number
-    type: 'text' | 'textarea' | 'number' | 'check'
+    type: 'text' | 'textarea' | 'number' | 'check' | 'imageTextarea'
     fontSize?: number
     // Horizontal text alignment; 'number' fields default to 'center'.
     textAlign?: 'left' | 'center' | 'right'

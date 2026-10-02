@@ -1,6 +1,6 @@
 import {NodeViewContent, NodeViewWrapper, type ReactNodeViewProps} from '@tiptap/react'
 import {Plus} from 'lucide-react'
-import TableActionMenu from './TableActionMenu.tsx'
+import ActionMenu from '@ui/ActionMenu/ActionMenu.tsx'
 import {deleteTableActions} from './tableActions.ts'
 import {lastColumnCellPosition, lastRowCellPosition} from './tablePositions.ts'
 
@@ -43,8 +43,8 @@ function TableNodeView({editor, node, getPos}: ReactNodeViewProps) {
                             onMouseDown={(event) => event.preventDefault()} onClick={addRow}><Plus size={16}/>
                     </button>
                     <div className="tiptap-table-menu" contentEditable={false}>
-                        <TableActionMenu label="Table actions"
-                                         actions={deleteTableActions(editor, lastColumnCellPosition(node, position))}/>
+                        <ActionMenu label="Table actions"
+                                    actions={deleteTableActions(editor, lastColumnCellPosition(node, position))}/>
                     </div>
                 </>
             )}

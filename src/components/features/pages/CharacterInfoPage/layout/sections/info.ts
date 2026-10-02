@@ -25,14 +25,14 @@ export function buildInfo({inputNode}: InfoSheetFactory) {
     const traitBoxes = TRAIT_BOXES.map((id, index) => traitBox(inputNode, id, index))
 
     return {
-        backstory: inputNode({id: 'backstory', x: 42, y: 513, width: 228, height: 493, type: 'textarea', fontSize: 12}),
+        backstory: inputNode({id: 'backstory', x: 44, y: 510, width: 224, height: 498, type: 'textarea', fontSize: 12}),
 
         personality: {
             personalityTraits: inputNode({id: 'personalityTraits', x: 293, y: 510, width: 234, height: 48, type: 'textarea', fontSize: 12}),
             traitBoxes,
         },
 
-        details: inputNode({id: 'details', x: 549, y: 499, width: 225, height: 271, type: 'textarea', fontSize: 12}),
+        details: inputNode({id: 'details', x: 552, y: 499, width: 219, height: 274, type: 'textarea', fontSize: 12}),
     }
 }
 

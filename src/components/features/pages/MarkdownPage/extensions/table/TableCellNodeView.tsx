@@ -1,5 +1,5 @@
 import {NodeViewContent, NodeViewWrapper, type ReactNodeViewProps} from '@tiptap/react'
-import TableActionMenu from './TableActionMenu.tsx'
+import ActionMenu from '@ui/ActionMenu/ActionMenu.tsx'
 import {columnActions, rowActions} from './tableActions.ts'
 import {cellInnerPosition, isLastCellInRow} from './tablePositions.ts'
 
@@ -20,12 +20,12 @@ function TableCellNodeView({editor, node, getPos}: ReactNodeViewProps) {
             <NodeViewContent className="tiptap-cell__content"/>
             {hasPosition && isHeader && (
                 <span className="tiptap-cell__menu" contentEditable={false}>
-                    <TableActionMenu label="Column actions" actions={columnActions(editor, innerPosition)}/>
+                    <ActionMenu label="Column actions" actions={columnActions(editor, innerPosition)}/>
                 </span>
             )}
             {lastInRow && !isHeader && (
                 <span className="tiptap-cell__row-menu" contentEditable={false}>
-                    <TableActionMenu label="Row actions" actions={rowActions(editor, innerPosition)}/>
+                    <ActionMenu label="Row actions" actions={rowActions(editor, innerPosition)}/>
                 </span>
             )}
         </NodeViewWrapper>

@@ -8,6 +8,7 @@ import {Markdown} from '@tiptap/markdown'
 import {TaskList} from '@tiptap/extension-task-list'
 import {TaskItem} from '@tiptap/extension-task-item'
 import {Image} from '@tiptap/extension-image'
+import '@ui/ActionMenu/ActionMenu.css'
 import './MarkdownPage.css'
 import {Callout} from './extensions/callout.ts'
 import {PageBreak} from './extensions/pageBreak.ts'
@@ -15,7 +16,7 @@ import {Pagination} from './extensions/pagination/pagination.ts'
 import {tableExtensions} from './extensions/table/tableExtensions.ts'
 import MarkdownToolbar from './MarkdownToolbar.tsx'
 import BlockHandle from './BlockHandle.tsx'
-import ImageUrlModal from './ImageUrlModal.tsx'
+import ImageUrlModal from '@ui/ImageUrlModal/ImageUrlModal.tsx'
 
 /**
  * Props for the markdown editor: the markdown to show (read on mount, and re-applied if it changes externally, e.g. a

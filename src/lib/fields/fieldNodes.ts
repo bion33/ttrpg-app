@@ -3,7 +3,7 @@ import {atom} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
 import {notifyingStorage} from '@lib/storage/observableStorage.ts'
 import type {FieldDefinition} from '@type/FieldDefinition.ts'
-import type {DerivedNode, FieldNode, FieldValue, InputNode, NodeTree} from '@type/FieldNode.ts'
+import type {DerivedNode, FieldNode, FieldValue, ImageTextareaNode, InputNode, NodeTree} from '@type/FieldNode.ts'
 import type {CheckFieldDefinition} from "@type/CheckFieldDefinition.ts";
 
 /**
@@ -74,7 +74,19 @@ export function createFieldFactory(storagePrefix: string) {
         return {definition, atom: value, readOnlyAtom: enabled}
     }
 
-    return {inputNode, checkNode, computedInputNode}
+    /**
+     * Builds a persisted field that shows either a prose textarea or a single image, toggled by a menu; the text and
+     * the image URL persist under their own keys so neither overwrites the other.
+     */
+    function imageTextareaNode(definition: FieldDefinition): ImageTextareaNode {
+        return {
+            definition,
+            atom: atomWithStorage<string>(storageKey(definition.id), '', notifyingStorage<string>(), {getOnInit: true}),
+            imageUrlAtom: atomWithStorage<string>(storageKey(`${definition.id}:image`), '', notifyingStorage<string>(), {getOnInit: true}),
+        }
+    }
+
+    return {inputNode, checkNode, computedInputNode, imageTextareaNode}
 }
 
 /**

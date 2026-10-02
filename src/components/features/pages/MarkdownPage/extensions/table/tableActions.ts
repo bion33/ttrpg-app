@@ -1,17 +1,11 @@
 import type {Editor} from '@tiptap/core'
-import {ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, ArrowUpToLine, type LucideIcon, Trash2} from 'lucide-react'
+import {ArrowDownToLine, ArrowLeftToLine, ArrowRightToLine, ArrowUpToLine, Trash2} from 'lucide-react'
+import type {ActionMenuItem} from '@ui/ActionMenu/ActionMenu.tsx'
 
 /**
- * One command in a table "…" menu: its menu label and icon, whether it removes structure (styled as destructive), and
- * a handler that applies it.
+ * One command in a table "…" menu: the shared action-menu item shape (label, icon, destructive flag, and handler).
  */
-export interface TableAction {
-    id: string
-    label: string
-    icon: LucideIcon
-    destructive: boolean
-    run: () => void
-}
+export type TableAction = ActionMenuItem
 
 // Builds a chain that places the caret inside `cellPosition` first, so the command targets that cell's row/column.
 function focusCell(editor: Editor, cellPosition: number) {

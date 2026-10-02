@@ -17,3 +17,12 @@
 .sheet-field:hover {
     background: rgba(170, 59, 255, 0.08);
 }
+
+/* Multi-line variant (textarea): no manual resize grip, grows via the auto-fit font size instead. */
+.sheet-field--multiline {
+    resize: none;
+    overflow: hidden;
+    line-height: 1.15;
+    padding: 1px 2px;
+    white-space: pre-wrap;
+}

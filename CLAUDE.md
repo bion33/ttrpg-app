@@ -107,6 +107,13 @@ the jotai atom holding its value. Position and state are one object.
   `enabled` atom is true it shows `compute(get)` and is read-only; otherwise it
   is an ordinary editable, persisted input (e.g. passive Perception, auto-calc
   toggled by a checkbox).
+- `imageTextareaNode(definition)` builds a persisted field that is **either** a prose
+  textarea **or** a single image, switched via an in-field "…" menu. Its node
+  (`ImageTextareaNode`, the one `FieldNode` variant with two atoms) carries the
+  textarea text (`atom`) and the image URL (`imageUrlAtom`, `''` = no image) under
+  separate storage keys (`id` and `id:image`), so neither overwrites the other. The
+  control is `@ui/ImageTextareaField`; `FieldInput` dispatches to it on the presence
+  of `imageUrlAtom`.
 - `collectNodes(tree)` flattens a `NodeTree` (nodes nested in arrays / records)
   into a flat render list.
 
@@ -170,7 +177,8 @@ the tree in `layout/sheet.ts`), the same way `CharacterPage`'s sections work.
   - `layout/sections/header.ts` — `buildHeader(factory)`: character name and the
     physical-description grid.
   - `layout/sections/appearance.ts` — `buildAppearance(factory)`: the appearance
-    prose area (simple for now, room to grow).
+    area, an `imageTextareaNode` usable as prose **or** a single image (toggled by
+    its "…" menu).
   - `layout/sections/allies.ts` — `buildAllies(factory)`: the allies &
     organisations area plus the deity subsection (name band + info area).
   - `layout/sections/info.ts` — `buildInfo(factory)`: the backstory area, the
@@ -237,16 +245,14 @@ with no new persistence plumbing.
   It renders the **sheet stack**: a `.md-sheets` box holding a `.md-sheet-backdrop`
   (one `.md-sheet` div per page, count from `Pagination`) behind the overlaid
   `<EditorContent>`. It also owns the insert-image dialog state, passing an `onRequestImage`
-  callback to the toolbar and block handle and rendering `ImageUrlModal` (portalled to the body,
-  since in place it would sit inside the zoomed `.binder-view` transform; it inserts at the
-  editor's current selection on confirm). Responsibility: editor configuration + sheet-stack
+  callback to the toolbar and block handle and rendering the shared `@ui/ImageUrlModal` (portalled
+  to the body, since in place it would sit inside the zoomed `.binder-view` transform; it inserts
+  at the editor's current selection on confirm). Responsibility: editor configuration + sheet-stack
   composition + image-dialog hosting.
   Images are by URL/paste only for
   now — real upload needs a later storage decision (base64 bloats the snapshot).
-- `ImageUrlModal.tsx` / `ImageUrlForm.tsx` — the insert-image dialogue (shared `Modal` +
-  body-only form, mirroring `AddTabModal`/`AddTabForm`): a single URL field validated with
-  `@lib/url/httpUrl.ts`'s `isHttpUrl` (http(s) only), its Insert button disabled until the URL is
-  valid. Replaces the old `window.prompt`.
+  The insert-image dialogue itself is the shared `@ui/ImageUrlModal` (see UI controls), reused by
+  the character-info appearance field too.
 - `MarkdownToolbar.tsx` — the formatting toolbar, all `lucide-react` icons: undo/redo, the
   Headings dropdown, inline marks (bold/italic/underline/strikethrough), the Blocks and Lists
   dropdowns (one `ToolbarDropdown` per non-insert `BLOCK_GROUPS` entry), then the standalone
@@ -295,11 +301,10 @@ with no new persistence plumbing.
     absolutely overlaid on the cell, shown on hover, and (like the whole-table menu) counter-scale
     `--page-scale` so they keep a constant on-screen size as the page zooms. (The whole-table delete
     menu lives on the table node view, not the header row.)
-  - `TableActionMenu.tsx` — the shared "…" dropdown (Radix `DropdownMenu`, portalled/fixed so it is
-    zoom-safe) the column and row menus use.
-  - `tableActions.ts` — the `TableAction` type and the `columnActions`/`rowActions`/
-    `deleteTableActions` builders (each `{id, label, icon, destructive, run}`), each placing the
-    caret in the right cell before running the command.
+    The column/row/table menus render the shared `@ui/ActionMenu` (see UI controls).
+  - `tableActions.ts` — `TableAction` (an alias of `@ui/ActionMenu`'s `ActionMenuItem`) and the
+    `columnActions`/`rowActions`/`deleteTableActions` builders (each `{id, label, icon, destructive,
+    run}`), each placing the caret in the right cell before running the command.
   - `tablePositions.ts` — the **pure, unit-tested** (`tablePositions.test.ts`) caret-position math:
     `isHeaderRow`, `firstCellInnerPosition`, `isLastCellInRow` (which cell carries the row menu), and
     `lastRowCellPosition`/`lastColumnCellPosition` (the append-at-end targets for the edge buttons).
@@ -867,10 +872,32 @@ is additive — host `yarn` workflows are unchanged.
 ### UI controls (`src/components/ui/`)
 
 `FieldInput` picks the control for a field's `type`: `NumericInput`,
-`AutoFitInput` (text), `AutoFitTextarea`, `CheckInput`. `FieldForeignObject`
+`AutoFitInput` (text), `AutoFitTextarea`, `CheckInput`, and `ImageTextareaField`
+(the `imageTextarea` node, dispatched on its `imageUrlAtom`). `FieldForeignObject`
 positions any control in SVG coordinate space. Writable fields two-way bind to
 their atom (and go read-only when their optional `readOnlyAtom` is true); derived
 fields subscribe read-only.
+
+`AutoFitTextarea` is `FieldForeignObject` + `SheetTextarea` — `SheetTextarea` is the
+bare auto-fitting `<textarea>` (no `foreignObject`), reused by `ImageTextareaField`
+so it can host the textarea inside its own wrapper without nesting foreign objects.
+
+`ImageTextareaField` renders an `imageTextarea` node: the image when its `imageUrlAtom`
+is set, otherwise the `SheetTextarea`, with an always-present "…" `ActionMenu`
+(pinned top-right, counter-scaling `--page-scale` to a constant on-screen size) to
+add/change/remove the image via `ImageUrlModal`. The image fills the same footprint
+as the textarea (`object-fit: contain`).
+
+`ActionMenu` is the shared "…" dropdown (Radix `DropdownMenu`, portalled/fixed so it
+is zoom-safe): props are `label`, `actions` (`ActionMenuItem[]` — `{id, label, icon,
+destructive?, run}`), and `align`. Used by the markdown table menus and the appearance
+field. It owns `ActionMenu.css`, the `.menu`/`.menu__list`/`.menu__item` base the
+markdown block/toolbar menus also build on (so `MarkdownEditor.tsx` imports it).
+
+`ImageUrlModal` / `ImageUrlForm` — the shared insert-image dialogue (shared `Modal` +
+body-only form, mirroring `AddTabModal`/`AddTabForm`): a single URL field validated
+with `@lib/url/httpUrl.ts`'s `isHttpUrl` (http(s) only), its Insert button disabled
+until the URL is valid. Reused by the markdown editor and the appearance field.
 
 `PaperPage` is the shared white, A4-proportioned document-style page shell (its
 one style, so it never drifts): `EmptyPage`, the `CharacterPage` loading state,
@@ -914,7 +941,7 @@ optional `labelSide` (`left`/`right`), `variant` (`default`/`danger`), `size`
 (`raised` with chrome, or `flat` as a plain icon in a list/menu), and `disabled`;
 it forwards a ref and spreads any
 other native button attributes, so it can back a Radix `asChild` trigger (e.g.
-the markdown table's `TableActionMenu` "…" menu). Callers control
+the shared `ActionMenu` "…" menu). Callers control
 stacking via the surrounding container so the pill can sit above neighbours (e.g.
 `Binder`'s `TabControls` gives its cluster a high `z-index`).
 

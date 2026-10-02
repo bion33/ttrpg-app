@@ -9,7 +9,7 @@ export function buildHeader({inputNode}: InfoSheetFactory) {
         characterName: inputNode({
             id: 'characterName',
             x: 88,
-            y: 82,
+            y: 88,
             width: 230,
             height: 28,
             type: 'text',
@@ -17,12 +17,12 @@ export function buildHeader({inputNode}: InfoSheetFactory) {
             textAlign: 'center'
         }),
 
-        age: inputNode({id: 'age', x: 360, y: 64, width: 146, height: 22, type: 'text', fontSize: 18}),
-        height: inputNode({id: 'height', x: 510, y: 64, width: 122, height: 22, type: 'text', fontSize: 18}),
-        weight: inputNode({id: 'weight', x: 639, y: 64, width: 116, height: 22, type: 'text', fontSize: 18}),
+        age: inputNode({id: 'age', x: 354, y: 68, width: 146, height: 22, type: 'text', fontSize: 18}),
+        height: inputNode({id: 'height', x: 504, y: 68, width: 126, height: 22, type: 'text', fontSize: 18}),
+        weight: inputNode({id: 'weight', x: 633, y: 68, width: 126, height: 22, type: 'text', fontSize: 18}),
 
-        eyes: inputNode({id: 'eyes', x: 360, y: 98, width: 146, height: 22, type: 'text', fontSize: 18}),
-        skin: inputNode({id: 'skin', x: 510, y: 98, width: 122, height: 22, type: 'text', fontSize: 18}),
-        hair: inputNode({id: 'hair', x: 639, y: 98, width: 116, height: 22, type: 'text', fontSize: 18}),
+        eyes: inputNode({id: 'eyes', x: 354, y: 102, width: 146, height: 22, type: 'text', fontSize: 18}),
+        skin: inputNode({id: 'skin', x: 504, y: 102, width: 126, height: 22, type: 'text', fontSize: 18}),
+        hair: inputNode({id: 'hair', x: 633, y: 102, width: 126, height: 22, type: 'text', fontSize: 18}),
     }
 }

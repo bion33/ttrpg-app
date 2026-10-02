@@ -1,13 +1,14 @@
 import type {WritableAtom} from 'jotai'
 import {atom, useAtom, useAtomValue} from 'jotai'
 import type {FieldDefinition} from '@type/FieldDefinition.ts'
-import type {FieldNode, FieldValue} from '@type/FieldNode.ts'
+import type {FieldNode, FieldValue, ImageTextareaNode} from '@type/FieldNode.ts'
 import type {NumericFieldDefinition} from '@type/NumericFieldDefinition.ts'
 import AutoFitInput from '@ui/AutoFitInput/AutoFitInput'
 import CheckInput from '@ui/CheckInput/CheckInput'
 import NumericInput from '@ui/NumericInput/NumericInput'
 import './FieldInput.css'
 import AutoFitTextarea from '@ui/AutoFitTextarea/AutoFitTextarea'
+import ImageTextareaField from '@ui/ImageTextareaField/ImageTextareaField'
 import type {CheckFieldDefinition} from "@type/CheckFieldDefinition.ts";
 
 // ---- INTERNAL CONSTANTS ----
@@ -29,6 +30,7 @@ const noop = () => {
  * Renders a field node, dispatching to the writable or derived variant.
  */
 function FieldInput({node}: { node: FieldNode }) {
+    if ('imageUrlAtom' in node) return <ImageTextareaField node={node}/>
     return node.readOnly ? <DerivedField node={node}/> : <WritableField node={node}/>
 }
 
@@ -39,7 +41,7 @@ export default FieldInput
 /**
  * Editable field: two-way bound to its writable atom.
  */
-function WritableField({node}: { node: Extract<FieldNode, { readOnly?: false }> }) {
+function WritableField({node}: { node: Exclude<Extract<FieldNode, { readOnly?: false }>, ImageTextareaNode> }) {
     // The atom is a union of concrete writable atoms; widen it to the common value type for the shared control.
     const [value, setValue] = useAtom(node.atom as unknown as WritableAtom<FieldValue, [FieldValue], void>)
     const readOnly = useAtomValue(node.readOnlyAtom ?? alwaysWritable)

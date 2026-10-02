@@ -1,0 +1,36 @@
+.image-textarea {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+}
+
+/* A thin row that reserves the menu's space above the content. Its height divides by the page zoom so its on-screen
+   height stays constant and matches the counter-scaled button, keeping the content clear of the menu at any zoom. */
+.image-textarea__toolbar {
+    flex: none;
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    height: calc(1.5rem / var(--page-scale, 1));
+}
+
+/* The "…" menu, counter-scaling the page zoom (anchored to its top-right corner) to a constant on-screen size. */
+.image-textarea__menu {
+    transform: scale(calc(1 / var(--page-scale, 1)));
+    transform-origin: top right;
+}
+
+/* The textarea or image fills the remaining height below the toolbar row. */
+.image-textarea__content {
+    flex: 1;
+    min-height: 0;
+}
+
+/* The image fills the content area, letter-boxed to keep its aspect ratio. */
+.image-textarea__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}

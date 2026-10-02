@@ -1,28 +1,41 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import {Ellipsis} from 'lucide-react'
+import {Ellipsis, type LucideIcon} from 'lucide-react'
 import IconButton from '@ui/IconButton/IconButton.tsx'
-import type {TableAction} from './tableActions.ts'
+import './ActionMenu.css'
 
 /**
- * Props for a table "…" menu: its accessible label and the actions it offers.
+ * One command in an "…" menu: its menu label and icon, whether it is destructive (styled as such), and a handler that
+ * applies it.
  */
-interface TableActionMenuProps {
+export interface ActionMenuItem {
+    id: string
     label: string
-    actions: TableAction[]
+    icon: LucideIcon
+    destructive?: boolean
+    run: () => void
 }
 
 /**
- * The "…" dropdown shown on a table header cell or row: a trigger button opening a menu of table actions. Built on
- * Radix `DropdownMenu` for keyboard navigation, ARIA roles, and zoom-aware (portalled, fixed) positioning.
+ * Props for an "…" menu: its accessible label, the actions it offers, and how its popup aligns to the trigger.
  */
-function TableActionMenu({label, actions}: TableActionMenuProps) {
+interface ActionMenuProps {
+    label: string
+    actions: ActionMenuItem[]
+    align?: 'start' | 'center' | 'end'
+}
+
+/**
+ * The shared "…" dropdown: a trigger button opening a menu of actions. Built on Radix `DropdownMenu` for keyboard
+ * navigation, ARIA roles, and zoom-aware (portalled, fixed) positioning.
+ */
+function ActionMenu({label, actions, align = 'end'}: ActionMenuProps) {
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
                 <IconButton icon={<Ellipsis/>} label={label} size="small" appearance="flat" contentEditable={false}/>
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
-                <DropdownMenu.Content className="menu menu__list" align="end" sideOffset={4}
+                <DropdownMenu.Content className="menu menu__list" align={align} sideOffset={4}
                                       onCloseAutoFocus={(event) => event.preventDefault()}>
                     {actions.map((action) => {
                         const ActionIcon = action.icon
@@ -40,4 +53,4 @@ function TableActionMenu({label, actions}: TableActionMenuProps) {
     )
 }
 
-export default TableActionMenu
+export default ActionMenu
