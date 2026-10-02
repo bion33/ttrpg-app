@@ -218,6 +218,9 @@ into the tree in `layout/sheet.ts`).
   - `layout/nodes.ts` — `createEquipmentSheetFactory(prefix)`, the per-instance factory.
   - `layout/sheet.ts` — `buildEquipmentSheet(prefix)`, assembling the section nodes.
   - `layout/sections/equipment.ts` — `buildEquipment(factory)`, the (empty) first section.
+  - `layout/sections/header.ts` — `buildHeader(factory)`: character name and the carry-capacity/weight line.
+  - `layout/sections/equipped.ts`, `backpack.ts`, `money.ts`, `storage.ts` — `buildEquipped`/`buildBackpack`/
+    `buildMoney`/`buildStorage(factory)`, **empty placeholder** sections with no fields yet.
   - `EquipmentPage.tsx` — the component (same shape as `CharacterInfoPage.tsx`).
 
 Wired into `PAGE_TYPES` as the `equipment` type ("Equipment"), resolved by

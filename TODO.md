@@ -1,4 +1,3 @@
 # Sheets
 
-- Character Info
 - Equipment

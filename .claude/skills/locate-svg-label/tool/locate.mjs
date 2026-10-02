@@ -6,19 +6,40 @@
 // is a starting point to hand-tune, not a final answer.
 //
 // Usage:
-//   node locate.mjs --label "CHARACTER NAME" [--url http://localhost:5173]
+//   node locate.mjs --label "CHARACTER NAME" --svg public/character-sheet/character-sheet.svg
 //     [--selector svg] [--hint below|above|left|right|center] [--width N]
 //     [--height N] [--gap N]
 //
-// Requires the target page to already be running (e.g. `yarn dev`) and to
-// contain the SVG inline in the DOM (not inside an <img> or object, which
-// can't be introspected this way).
+// Reads a standalone SVG file straight off disk (--svg) and renders it inline
+// in headless Chromium, so no dev server or running app is needed. The
+// returned boxes are in that SVG file's own viewBox coordinate space. Pass
+// --url instead to introspect an SVG already inlined in a running page's DOM
+// (not inside an <img>/<object>, which can't be introspected this way).
 
+import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright';
+
+// Renders the --svg file inline (no server), else navigates to --url.
+async function openPage(browser, args) {
+  const page = await browser.newPage({ viewport: { width: 1200, height: 1600 } });
+  if (args.svg) {
+    const svgSource = readFileSync(args.svg, 'utf8');
+    const html =
+      '<!doctype html><meta charset="utf-8">' +
+      '<style>html,body{margin:0}svg{display:block;width:100vw;height:auto}</style>' +
+      svgSource;
+    await page.setContent(html, { waitUntil: 'networkidle' });
+  } else {
+    await page.goto(args.url, { waitUntil: 'networkidle' });
+  }
+  await page.waitForSelector(args.selector);
+  return page;
+}
 
 function parseArgs(argv) {
   const args = {
     url: 'http://localhost:5173',
+    svg: null,
     selector: 'svg',
     hint: 'below',
     label: null,
@@ -30,6 +51,7 @@ function parseArgs(argv) {
     const a = argv[i];
     const next = () => argv[++i];
     if (a === '--url') args.url = next();
+    else if (a === '--svg') args.svg = next();
     else if (a === '--selector') args.selector = next();
     else if (a === '--label') args.label = next();
     else if (a === '--hint') args.hint = next();
@@ -51,9 +73,7 @@ if (!args.label) {
 
 const browser = await chromium.launch();
 try {
-  const page = await browser.newPage({ viewport: { width: 1200, height: 1600 } });
-  await page.goto(args.url, { waitUntil: 'networkidle' });
-  await page.waitForSelector(args.selector);
+  const page = await openPage(browser, args);
 
   const result = await page.evaluate(
     ({ selector, label, hint, gap, width, height }) => {

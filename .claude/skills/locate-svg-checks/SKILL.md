@@ -1,15 +1,16 @@
 ---
 name: locate-svg-checks
-description: Find small hand-drawn/traced circles (or other round shapes) inside a rendered, inline SVG — e.g. the tick-boxes on a scanned/traced character sheet — and get their bounding boxes, in the SVG's own viewBox coordinates, for overlaying interactive checkbox elements (typically a <foreignObject> input) on top of them. Use whenever placing checkbox overlays against circular marks in SVG background art — "turn the death saves circles into checkboxes", "where are the proficiency dots", etc. Requires the app's dev server to already be running with the SVG inlined in the DOM (not an <img>/<object> reference).
+description: Find small hand-drawn/traced circles (or other round shapes) inside a rendered SVG — e.g. the tick-boxes on a scanned/traced character sheet — and get their bounding boxes, in the SVG's own viewBox coordinates, for overlaying interactive checkbox elements (typically a <foreignObject> input) on top of them. Use whenever placing checkbox overlays against circular marks in SVG background art — "turn the death saves circles into checkboxes", "where are the proficiency dots", etc. Renders a standalone SVG file from disk in headless Chromium, so no dev server is required.
 ---
 
 # locate-svg-checks
 
 Sibling skill to [[locate-svg-label]] — use that one for text-label-relative
-field placement, this one for circular tick-box art. Same underlying
-technique (reading true position off the DOM via `getScreenCTM()` in headless
-Chromium, so nested/convoluted `transform` chains in traced SVGs don't need
-to be chased by hand), applied to shape geometry instead of text content.
+field placement, this one for circular tick-box art. Same underlying technique
+(render a standalone SVG file from disk — `--svg`, no dev server — and read true
+position off the DOM via `getScreenCTM()` in headless Chromium, so
+nested/convoluted `transform` chains in traced SVGs don't need to be chased by
+hand), applied to shape geometry instead of text content.
 
 ## Why this is harder than it looks
 
@@ -40,14 +41,14 @@ at the screenshot.
 
 ## Usage
 
-The target dev server must already be running (e.g. `yarn dev`) and the SVG
-must be inlined in the page DOM.
+Point `--svg` at the SVG file on disk — no dev server needed. The returned
+boxes are in that file's own `viewBox` coordinate space.
 
 Anchor near a text label (searches a square region around it):
 
 ```bash
 node .claude/skills/locate-svg-checks/tool/locate-circles.mjs \
-  --near "DEATH SAVES" --selector "svg.character-sheet" --radius 90
+  --near "DEATH SAVES" --svg public/character-sheet/character-sheet.svg --radius 90
 ```
 
 Or give an explicit region directly (viewBox user units: `x,y,width,height`)
@@ -55,14 +56,16 @@ once you know roughly where to look, e.g. from a cropped screenshot:
 
 ```bash
 node .claude/skills/locate-svg-checks/tool/locate-circles.mjs \
-  --region "660,175,130,70" --selector "svg.character-sheet"
+  --region "660,175,130,70" --svg public/character-sheet/character-sheet.svg
 ```
 
 Arguments:
 - `--near`: substring to search for in the SVG's text content, case-insensitive. Mutually exclusive with `--region`.
 - `--radius` (default `90`): half-width, in SVG user units, of the square search box centered on the matched label when using `--near`.
 - `--region`: explicit `x,y,width,height` search box in viewBox user units, if you already know roughly where to look (e.g. from a screenshot) or `--near` pulled in an unrelated group.
-- `--url` (default `http://localhost:5173`): page to load.
+- `--svg`: path to the standalone SVG file to render from disk (the normal mode — no server).
+- `--url` (default `http://localhost:5173`): alternative to `--svg` — a running page with the SVG
+  inlined in its DOM; only needed to inspect live, runtime-modified SVG rather than the source file.
 - `--selector` (default `svg`): CSS selector for the target `<svg>` element.
 - `--min-size` / `--max-size` (default `4` / `20`): bounding-box size range, in SVG user units, for a shape to count as a candidate circle. Widen these if the real circles are unusually large/small (check a screenshot first to estimate).
 
@@ -72,10 +75,10 @@ to hand straight to a `<foreignObject>`) and raw `style` string (useful for
 spotting a pre-filled "example checked" circle by its `fill`).
 
 **Always cross-check the result against a screenshot** of that region before
-using it — crop the dev server screenshot to the search box and eyeball that
-the count and layout match what's actually drawn (see locate-svg-label's own
-tips on this — same idea applies here). Geometry search over-fires easily
-where multiple checkbox groups sit close together.
+using it — render the SVG file (or crop a screenshot) to the search box and
+eyeball that the count and layout match what's actually drawn (see
+locate-svg-label's own tips on this — same idea applies here). Geometry search
+over-fires easily where multiple checkbox groups sit close together.
 
 ## First-time setup
 

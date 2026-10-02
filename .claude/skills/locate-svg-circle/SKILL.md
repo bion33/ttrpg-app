@@ -1,6 +1,6 @@
 ---
 name: locate-svg-circle
-description: Find one large filled "value" circle inside a rendered, inline SVG (e.g. the PROFICIENCY BONUS, PASSIVE PERCEPTION, or ARMOR CLASS circle on a scanned/traced character sheet) and get its center plus a CENTERED bounding box, in the SVG's own viewBox coordinates, for dropping a numeric/text input (a <foreignObject>) into the middle of it. Use whenever placing a single input inside a round field beside a label — "add a number in the proficiency circle", "put an input in the passive perception circle", etc. Requires the app's dev server to already be running with the SVG inlined in the DOM (not an <img>/<object> reference).
+description: Find one large filled "value" circle inside a rendered SVG (e.g. the PROFICIENCY BONUS, PASSIVE PERCEPTION, or ARMOR CLASS circle on a scanned/traced character sheet) and get its center plus a CENTERED bounding box, in the SVG's own viewBox coordinates, for dropping a numeric/text input (a <foreignObject>) into the middle of it. Use whenever placing a single input inside a round field beside a label — "add a number in the proficiency circle", "put an input in the passive perception circle", etc. Renders a standalone SVG file from disk in headless Chromium, so no dev server is required.
 ---
 
 # locate-svg-circle
@@ -11,10 +11,10 @@ overlays). This one targets **one big filled circle beside a label** and
 returns a box **centered** on it, because a numeric/text input wants centering,
 not corner-anchoring.
 
-Same core technique as its siblings: read true position off the live DOM via
-`getScreenCTM()` in headless Chromium, so the nested/convoluted
-`transform="matrix(...)"` chains that PDF-trace tools emit don't have to be
-chased by hand.
+Same core technique as its siblings: render a standalone SVG file from disk
+(`--svg`, no dev server) and read true position off the DOM via `getScreenCTM()`
+in headless Chromium, so the nested/convoluted `transform="matrix(...)"` chains
+that PDF-trace tools emit don't have to be chased by hand.
 
 ## Why match by fill, not geometry
 
@@ -35,13 +35,13 @@ perfection.
 
 ## Usage
 
-The target dev server must already be running (e.g. `yarn dev`) and the SVG
-must be inlined in the page DOM (not `<img src>`/`<object>`).
+Point `--svg` at the SVG file on disk — no dev server needed. The returned
+boxes are in that file's own `viewBox` coordinate space.
 
 ```bash
 node .claude/skills/locate-svg-circle/tool/locate-circle.mjs \
   --near "PROFICIENCY" --side left \
-  --selector "svg.character-sheet"
+  --svg public/character-sheet/character-sheet.svg
 ```
 
 Arguments:
@@ -50,7 +50,10 @@ Arguments:
 - `--side` (default `auto`): which side of the label the circle is on — `left`,
   `right`, `above`, `below`, or `auto` (nearest matching circle in range).
 - `--region "x,y,w,h"`: anchor by an explicit box instead of a label.
-- `--url` (default `http://localhost:5173`), `--selector` (default `svg`).
+- `--svg`: path to the standalone SVG file to render from disk (the normal mode — no server).
+- `--url` (default `http://localhost:5173`): alternative to `--svg` — a running page with the SVG
+  inlined in its DOM; only needed to inspect live, runtime-modified SVG rather than the source file.
+- `--selector` (default `svg`).
 - `--radius` (default 120): how far, in user units, to look from the anchor
   center.
 - `--min-size` / `--max-size` (default 30 / 90): circle diameter range in user
