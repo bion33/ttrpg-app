@@ -1,6 +1,14 @@
 import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {StorageProvider, StorageTarget} from './StorageProvider.ts'
-import {parseSnapshot, serialiseSnapshot} from './fileProvider.ts'
+import {
+    extractMetadata,
+    metadataLocator,
+    parseSnapshot,
+    serialiseInvalidatedMetadata,
+    serialiseMetadata,
+    serialiseSnapshot,
+} from '@lib/storage/snapshotCodec.ts'
+import {readRevisionWithFallback} from './revisionProbe.ts'
 import {describeHttpFailure} from './httpError.ts'
 
 /**
@@ -114,8 +122,16 @@ export const nextcloudProvider: StorageProvider = {
 
     async save(target: StorageTarget, snapshot: LibrarySnapshot) {
         if (!active) throw new Error('Not connected to Nextcloud.')
-        const response = await relay('PUT', target.locator, active, serialiseSnapshot(snapshot))
-        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+        const connection = active
+        const put = async (locator: string, content: string) => {
+            const response = await relay('PUT', locator, connection, content)
+            if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+        }
+        // Invalidate the sidecar first, so a later-failing write never leaves it describing a stale revision; a probe
+        // then falls back to the body. Then the body, then the sidecar describing it.
+        await put(metadataLocator(target.locator), serialiseInvalidatedMetadata())
+        await put(target.locator, serialiseSnapshot(snapshot))
+        await put(metadataLocator(target.locator), serialiseMetadata(extractMetadata(snapshot)))
     },
 
     async load(target: StorageTarget) {
@@ -128,9 +144,12 @@ export const nextcloudProvider: StorageProvider = {
 
     async readRevision(target: StorageTarget) {
         if (!active) return null
-        const response = await relay('GET', target.locator, active)
-        if (response.status === 404) return null
-        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
-        return parseSnapshot(await response.text()).revision
+        const connection = active
+        return readRevisionWithFallback(async (locator) => {
+            const response = await relay('GET', locator, connection)
+            if (response.status === 404) return null
+            if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+            return response.text()
+        }, target.locator)
     },
 }

@@ -16,9 +16,19 @@
 }
 
 @keyframes loading-spinner-flip {
-    0% { transform: rotate(0deg); }
-    35.714% { transform: rotate(0deg); }
-    50% { transform: rotate(180deg); }
-    85.714% { transform: rotate(180deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+    35.714% {
+        transform: rotate(0deg);
+    }
+    50% {
+        transform: rotate(180deg);
+    }
+    85.714% {
+        transform: rotate(180deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }

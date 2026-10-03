@@ -1,5 +1,5 @@
-import {forwardRef} from 'react'
 import type {ButtonHTMLAttributes, MouseEvent, ReactNode} from 'react'
+import {forwardRef} from 'react'
 import './IconButton.css'
 
 /**

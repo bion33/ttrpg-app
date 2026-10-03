@@ -1,8 +1,8 @@
 import type {Getter} from 'jotai'
 import type {DerivedNode, InputNode} from '@type/FieldNode.ts'
-import type {NumericFieldDefinition} from '@type/NumericFieldDefinition.ts'
-import {abilityModifierValue, passivePerception, skillBonus} from '@pages/CharacterPage/logic/formulas/formulas.ts'
-import type {SheetFactory} from '@pages/CharacterPage/layout/nodes.ts'
+import {passivePerception, skillBonus} from '@pages/CharacterPage/logic/formulas/formulas.ts'
+import {abilityModifierValue} from '@lib/dnd/abilities.ts'
+import type {SheetFactory} from '@lib/fields/fieldNodes.ts'
 
 // ---- INTERNAL CONSTANTS ----
 
@@ -195,7 +195,7 @@ export function buildAbilities(factory: SheetFactory): AbilitiesSection {
         })
 
         // Read-only modifier derived from this block's score and extra atoms.
-        const modifier = derivedNode<number | null>(
+        const modifier = derivedNode(
             {
                 id: `${ability.name}Modifier`,
                 x: 70.71,
@@ -205,7 +205,7 @@ export function buildAbilities(factory: SheetFactory): AbilitiesSection {
                 type: 'number',
                 fontSize: 36,
                 signed: true,
-            } as NumericFieldDefinition,
+            },
             (get) => abilityModifierValue(get(score.atom), get(extra.atom)),
         )
 
@@ -218,7 +218,7 @@ export function buildAbilities(factory: SheetFactory): AbilitiesSection {
         const SAVE_BONUS_GAP = 2.5
 
         // A saving throw is the ability modifier plus the proficiency bonus when proficient (no expertise).
-        const saveBonus = derivedNode<number | null>(
+        const saveBonus = derivedNode(
             {
                 id: `${ability.name}SavingThrowBonus`,
                 x: 149.2,
@@ -228,7 +228,7 @@ export function buildAbilities(factory: SheetFactory): AbilitiesSection {
                 type: 'number',
                 fontSize: 12,
                 signed: true,
-            } as NumericFieldDefinition,
+            },
             (get) => {
                 const modifierValue = abilityModifierValue(get(score.atom), get(extra.atom))
                 if (modifierValue === null) return null
@@ -261,7 +261,7 @@ export function buildAbilities(factory: SheetFactory): AbilitiesSection {
             type: 'check'
         })
         // Bonus = ability modifier, plus the proficiency bonus once (proficient) or twice (expertise).
-        const bonus = derivedNode<number | null>(
+        const bonus = derivedNode(
             {
                 id: `${id}Bonus`,
                 x: 149.2,
@@ -271,7 +271,7 @@ export function buildAbilities(factory: SheetFactory): AbilitiesSection {
                 type: 'number',
                 fontSize: 12,
                 signed: true,
-            } as NumericFieldDefinition,
+            },
             (get) => {
                 const modifier = abilityModifierValue(get(score.atom), get(extra.atom))
                 if (modifier === null) return null

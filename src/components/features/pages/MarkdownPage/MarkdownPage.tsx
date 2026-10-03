@@ -1,4 +1,4 @@
-import {Suspense, lazy, useEffect, useMemo, useState} from 'react'
+import {lazy, Suspense, useEffect, useMemo, useState} from 'react'
 import {useAtom} from 'jotai'
 import {A4_WIDTH_PX} from '@lib/paper/paperSize.ts'
 import {markdownAtom} from './markdownAtoms.ts'

@@ -18,12 +18,18 @@ function focusCell(editor: Editor, cellPosition: number) {
 export function columnActions(editor: Editor, cellPosition: number): TableAction[] {
     const focus = focusCell(editor, cellPosition)
     return [
-        {id: 'addColumnBefore', label: 'Insert column before', icon: ArrowLeftToLine, destructive: false,
-            run: () => focus().addColumnBefore().run()},
-        {id: 'addColumnAfter', label: 'Insert column after', icon: ArrowRightToLine, destructive: false,
-            run: () => focus().addColumnAfter().run()},
-        {id: 'deleteColumn', label: 'Delete column', icon: Trash2, destructive: true,
-            run: () => focus().deleteColumn().run()},
+        {
+            id: 'addColumnBefore', label: 'Insert column before', icon: ArrowLeftToLine, destructive: false,
+            run: () => focus().addColumnBefore().run()
+        },
+        {
+            id: 'addColumnAfter', label: 'Insert column after', icon: ArrowRightToLine, destructive: false,
+            run: () => focus().addColumnAfter().run()
+        },
+        {
+            id: 'deleteColumn', label: 'Delete column', icon: Trash2, destructive: true,
+            run: () => focus().deleteColumn().run()
+        },
     ]
 }
 
@@ -33,12 +39,18 @@ export function columnActions(editor: Editor, cellPosition: number): TableAction
 export function rowActions(editor: Editor, cellPosition: number): TableAction[] {
     const focus = focusCell(editor, cellPosition)
     return [
-        {id: 'addRowBefore', label: 'Insert row before', icon: ArrowUpToLine, destructive: false,
-            run: () => focus().addRowBefore().run()},
-        {id: 'addRowAfter', label: 'Insert row after', icon: ArrowDownToLine, destructive: false,
-            run: () => focus().addRowAfter().run()},
-        {id: 'deleteRow', label: 'Delete row', icon: Trash2, destructive: true,
-            run: () => focus().deleteRow().run()},
+        {
+            id: 'addRowBefore', label: 'Insert row before', icon: ArrowUpToLine, destructive: false,
+            run: () => focus().addRowBefore().run()
+        },
+        {
+            id: 'addRowAfter', label: 'Insert row after', icon: ArrowDownToLine, destructive: false,
+            run: () => focus().addRowAfter().run()
+        },
+        {
+            id: 'deleteRow', label: 'Delete row', icon: Trash2, destructive: true,
+            run: () => focus().deleteRow().run()
+        },
     ]
 }
 
@@ -48,7 +60,9 @@ export function rowActions(editor: Editor, cellPosition: number): TableAction[] 
 export function deleteTableActions(editor: Editor, cellPosition: number): TableAction[] {
     const focus = focusCell(editor, cellPosition)
     return [
-        {id: 'deleteTable', label: 'Delete table', icon: Trash2, destructive: true,
-            run: () => focus().deleteTable().run()},
+        {
+            id: 'deleteTable', label: 'Delete table', icon: Trash2, destructive: true,
+            run: () => focus().deleteTable().run()
+        },
     ]
 }

@@ -1,6 +1,6 @@
 import {useState} from 'react'
 import type {NumericFieldDefinition} from '@type/NumericFieldDefinition.ts'
-import {formatModifier} from '@pages/CharacterPage/logic/formulas/formulas.ts'
+import {formatModifier} from '@lib/number/formatModifier.ts'
 import FieldForeignObject from '@ui/FieldForeignObject/FieldForeignObject'
 import './NumericInput.css'
 
@@ -64,7 +64,7 @@ function SignedNumericInput({
                             }: {
     value: number | null
     onChange: (value: number | null) => void
-    style: {fontSize?: number; textAlign: 'left' | 'center' | 'right'}
+    style: { fontSize?: number; textAlign: 'left' | 'center' | 'right' }
 }) {
     // A live draft while editing, so intermediate input (a lone "+"/"-") is preserved; null hands display back to the model.
     const [draft, setDraft] = useState<string | null>(null)

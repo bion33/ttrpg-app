@@ -12,9 +12,9 @@ const app = new Hono()
 
 // Same-origin in production via the proxy; the lock matters if the api is reached directly.
 app.use('/api/*', cors({
-  origin: process.env.APP_ORIGIN ?? '*',
-  allowMethods: ['GET', 'POST'],
-  allowHeaders: ['content-type', 'authorization', 'x-nc-url', 'x-nc-method', 'depth'],
+    origin: process.env.APP_ORIGIN ?? '*',
+    allowMethods: ['GET', 'POST'],
+    allowHeaders: ['content-type', 'authorization', 'x-nc-url', 'x-nc-method', 'depth'],
 }))
 
 app.get('/api/health', (context) => context.text('ok'))

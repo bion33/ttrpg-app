@@ -1,6 +1,7 @@
 import {type SyntheticEvent, useState} from 'react'
 import type {NextcloudConnection} from '@lib/storage/providers/nextcloudProvider.ts'
-import AutosaveToggle from './AutosaveToggle.tsx'
+import ConnectedView from './ConnectedView.tsx'
+import {errorMessage} from '@lib/errors/errorMessage.ts'
 
 /**
  * Props for the Nextcloud connect form: the current connection (null when disconnected), the connect/disconnect actions
@@ -40,24 +41,13 @@ function NextcloudConnectForm({
 
     if (connection) {
         return (
-            <div className="modal__body">
-                <p className="modal__prompt">Connected to {connection.label}.</p>
-                <AutosaveToggle enabled={autosaveEnabled} onChange={onAutosaveChange}/>
-                <div className="modal__actions">
-                    <button
-                        type="button"
-                        className="modal__btn modal__btn--danger-outline"
-                        disabled={busy}
-                        onClick={() => {
-                            setBusy(true)
-                            void onDisconnect().finally(() => setBusy(false))
-                        }}
-                    >
-                        Disconnect
-                    </button>
-                    <button type="button" className="modal__btn modal__btn--primary" onClick={onClose}>Done</button>
-                </div>
-            </div>
+            <ConnectedView
+                label={connection.label}
+                autosaveEnabled={autosaveEnabled}
+                onAutosaveChange={onAutosaveChange}
+                onDisconnect={onDisconnect}
+                onClose={onClose}
+            />
         )
     }
 
@@ -77,7 +67,7 @@ function NextcloudConnectForm({
                 label: buildLabel(trimmedUrl, trimmedPath),
             })
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : 'Could not connect to Nextcloud.')
+            setError(errorMessage(caught, 'Could not connect to Nextcloud.'))
         } finally {
             setBusy(false)
         }

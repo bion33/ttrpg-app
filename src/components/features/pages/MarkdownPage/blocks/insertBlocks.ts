@@ -1,7 +1,24 @@
 import type {Editor} from '@tiptap/core'
 import {
-    CaseSensitive, CircleCheck, Heading1, Heading2, Heading3, Heading4, Heading5, Heading6, Image,
-    Info, List, ListOrdered, ListTodo, type LucideIcon, OctagonX, Sheet, SquareSplitVertical, TextQuote, TriangleAlert,
+    CaseSensitive,
+    CircleCheck,
+    Heading1,
+    Heading2,
+    Heading3,
+    Heading4,
+    Heading5,
+    Heading6,
+    Image,
+    Info,
+    List,
+    ListOrdered,
+    ListTodo,
+    type LucideIcon,
+    OctagonX,
+    Sheet,
+    SquareSplitVertical,
+    TextQuote,
+    TriangleAlert,
     UnfoldVertical,
 } from 'lucide-react'
 import {CALLOUT_TYPES, type CalloutType} from '../extensions/callout.ts'
@@ -60,12 +77,16 @@ export interface BlockGroup {
 }
 
 // The heading icon per level, used for both the menu item and (of the active level) the dropdown trigger.
-const HEADING_ICONS: Record<number, LucideIcon> = {1: Heading1, 2: Heading2, 3: Heading3, 4: Heading4, 5: Heading5,
-    6: Heading6}
+const HEADING_ICONS: Record<number, LucideIcon> = {
+    1: Heading1, 2: Heading2, 3: Heading3, 4: Heading4, 5: Heading5,
+    6: Heading6
+}
 
 // The icon per callout kind (info/success/warning/danger).
-const CALLOUT_ICONS: Record<CalloutType, LucideIcon> = {info: Info, success: CircleCheck, warning: TriangleAlert,
-    danger: OctagonX}
+const CALLOUT_ICONS: Record<CalloutType, LucideIcon> = {
+    info: Info, success: CircleCheck, warning: TriangleAlert,
+    danger: OctagonX
+}
 
 // Title-cases a callout type for its menu label (e.g. "info" -> "Info callout").
 function calloutLabel(type: CalloutType): string {
@@ -137,7 +158,7 @@ export const BLOCK_ACTIONS: BlockAction[] = [
 ]
 
 // The label and default (no-active-member) trigger icon for each dropdown group.
-const GROUP_DEFAULTS: Record<'heading' | 'block' | 'list', {label: string; icon: LucideIcon}> = {
+const GROUP_DEFAULTS: Record<'heading' | 'block' | 'list', { label: string; icon: LucideIcon }> = {
     heading: {label: 'Headings', icon: Heading1},
     block: {label: 'Blocks', icon: CaseSensitive},
     list: {label: 'Lists', icon: List},

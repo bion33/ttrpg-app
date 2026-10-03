@@ -1,4 +1,4 @@
-import {useCallback, useState} from 'react'
+import {useCallback, useEffect, useRef, useState} from 'react'
 import type {ProviderId} from '@lib/storage/providers/StorageProvider.ts'
 import {getProvider} from '@lib/storage/providers/providers.ts'
 
@@ -42,45 +42,69 @@ export interface CloudConnection<Connection> {
 }
 
 /**
- * Owns the connect/disconnect/hydrate lifecycle shared by every cloud provider (Nextcloud, OneDrive, and later Google):
+ * Owns the connect/disconnect/hydrate lifecycle shared by every cloud provider (Nextcloud, OneDrive, Google Drive):
  * adopt → validate → persist → activate → reset base on connect, and the inverse on disconnect. The provider's own
  * `persist` port is passed as the adopt rotation callback, so a rotated refresh token is saved through the one persister.
+ * Overlapping connect/disconnect are guarded, and a disconnect resets local state even if clearing storage fails.
  */
 export function useCloudConnection<Connection>(
     ports: CloudConnectionPorts<Connection>,
     actions: CloudConnectionActions,
 ): CloudConnection<Connection> {
     const [connection, setConnection] = useState<Connection | null>(null)
+    // Guards against overlapping connect/disconnect, which would corrupt the provider's single adopted connection.
+    const inFlight = useRef(false)
+    // Guards state writes against a connection op that resolves after this hook has unmounted. Set on mount (not just at
+    // the initial value) so a remount — e.g. StrictMode's mount/unmount/remount — restores it after the first cleanup.
+    const mounted = useRef(true)
+    useEffect(() => {
+        mounted.current = true
+        return () => {
+            mounted.current = false
+        }
+    }, [])
 
     const connect = useCallback(async (next: Connection) => {
+        if (inFlight.current) throw new Error('A storage connection change is already in progress.')
+        inFlight.current = true
         const previous = connection
         ports.adopt(next, ports.persist)
         try {
             await getProvider(ports.providerId).connect()
+            await ports.persist(next)
+            if (mounted.current) setConnection(next)
+            await actions.activateProvider(ports.providerId)
+            await actions.resetSyncBase()
         } catch (caught) {
             // Restore the previously adopted connection so a failed connect leaves the working one in place.
             ports.adopt(previous, ports.persist)
             throw caught
+        } finally {
+            inFlight.current = false
         }
-        await ports.persist(next)
-        setConnection(next)
-        await actions.activateProvider(ports.providerId)
-        await actions.resetSyncBase()
     }, [connection, ports, actions])
 
     const disconnect = useCallback(async () => {
+        if (inFlight.current) return
+        inFlight.current = true
         ports.adopt(null)
-        await ports.clear()
-        setConnection(null)
-        await actions.activateProvider('file')
-        actions.clearProbe()
-        await actions.resetSyncBase()
+        try {
+            await ports.clear()
+        } finally {
+            // Reset local/provider state even if clearing the stored connection failed, so a failure can't strand the
+            // app on a half-disconnected cloud provider.
+            if (mounted.current) setConnection(null)
+            await actions.activateProvider('file')
+            actions.clearProbe()
+            await actions.resetSyncBase()
+            inFlight.current = false
+        }
     }, [ports, actions])
 
     const hydrate = useCallback(async () => {
         const stored = await ports.load()
         ports.adopt(stored, ports.persist)
-        setConnection(stored)
+        if (mounted.current) setConnection(stored)
     }, [ports])
 
     return {connection, connect, disconnect, hydrate}

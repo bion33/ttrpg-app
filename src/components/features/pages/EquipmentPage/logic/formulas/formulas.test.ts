@@ -1,5 +1,12 @@
 import {describe, expect, it} from 'vitest'
-import {carryCapacity, coinWeight, encumbranceLabel, parseItemCount, totalItemWeight, totalStorageWeight, totalWeight} from './formulas.ts'
+import {
+    carryCapacity,
+    coinWeight,
+    parseItemCount,
+    totalItemWeight,
+    totalStorageWeight,
+    totalWeight
+} from './formulas.ts'
 
 describe('carryCapacity', () => {
     it('is 15 pounds per point of Strength', () => {
@@ -81,28 +88,5 @@ describe('totalStorageWeight', () => {
 
     it('is zero for no rows', () => {
         expect(totalStorageWeight([])).toBe(0)
-    })
-})
-
-describe('encumbranceLabel', () => {
-    it('is empty while within five times Strength', () => {
-        expect(encumbranceLabel(50, 10)).toBe('')
-        expect(encumbranceLabel(0, 10)).toBe('')
-    })
-
-    it('reports the variant encumbered level past five times Strength', () => {
-        expect(encumbranceLabel(51, 10)).toBe('Std.: unencumbered, Var.: encumbered')
-    })
-
-    it('reports the variant heavily-encumbered level past ten times Strength', () => {
-        expect(encumbranceLabel(101, 10)).toBe('Std.: unencumbered, Var.: heavily encumbered')
-    })
-
-    it('reports immobility past fifteen times Strength', () => {
-        expect(encumbranceLabel(151, 10)).toBe('Too encumbered to move')
-    })
-
-    it('is empty when Strength is unknown', () => {
-        expect(encumbranceLabel(999, null)).toBe('')
     })
 })

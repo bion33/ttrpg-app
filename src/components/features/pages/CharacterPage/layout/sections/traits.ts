@@ -1,5 +1,5 @@
 import type {FieldNode} from '@type/FieldNode.ts'
-import type {SheetFactory} from '@pages/CharacterPage/layout/nodes.ts'
+import type {SheetFactory} from '@lib/fields/fieldNodes.ts'
 import type {CheckFieldDefinition} from "@type/CheckFieldDefinition.ts";
 
 // ---- INTERNAL CONSTANTS ----

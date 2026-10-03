@@ -1,9 +1,13 @@
 {
   "compilerOptions": {
     "target": "es2023",
-    "lib": ["ES2023"],
+    "lib": [
+      "ES2023"
+    ],
     "module": "esnext",
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
@@ -15,5 +19,7 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }

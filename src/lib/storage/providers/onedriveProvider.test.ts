@@ -2,7 +2,13 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
 import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {OneDriveConnection} from './onedriveProvider.ts'
 import {adoptConnection, contentUrl, onedriveProvider} from './onedriveProvider.ts'
-import {serialiseSnapshot} from './fileProvider.ts'
+import {
+    extractMetadata,
+    metadataLocator,
+    serialiseInvalidatedMetadata,
+    serialiseMetadata,
+    serialiseSnapshot,
+} from '@lib/storage/snapshotCodec.ts'
 
 const connection: OneDriveConnection = {refreshToken: 'refresh-0', label: 'OneDrive'}
 
@@ -57,28 +63,57 @@ describe('onedriveProvider', () => {
         expect(await onedriveProvider.load(target)).toBeNull()
     })
 
-    it('reads the in-file revision, and maps 404 to null', async () => {
+    it('reads the revision from the small sidecar without fetching the body', async () => {
         vi.stubGlobal('fetch', vi.fn()
             .mockResolvedValueOnce(refreshResponse())
-            .mockResolvedValueOnce(new Response(serialiseSnapshot(snapshot), {status: 200})))
+            .mockResolvedValueOnce(new Response(serialiseMetadata(extractMetadata(snapshot)), {status: 200})))
         expect(await onedriveProvider.readRevision(target)).toBe('rev-42')
+        expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2)
+        expect(vi.mocked(fetch).mock.calls[1][0]).toBe(contentUrl(metadataLocator(target.locator)))
+    })
 
-        adoptConnection(connection)
+    it('falls back to the body revision when the sidecar is absent', async () => {
         vi.stubGlobal('fetch', vi.fn()
             .mockResolvedValueOnce(refreshResponse())
+            .mockResolvedValueOnce(new Response(null, {status: 404}))                        // sidecar missing
+            .mockResolvedValueOnce(new Response(serialiseSnapshot(snapshot), {status: 200}))) // body
+        expect(await onedriveProvider.readRevision(target)).toBe('rev-42')
+    })
+
+    it('falls back to the body revision when the sidecar holds the invalidation marker', async () => {
+        vi.stubGlobal('fetch', vi.fn()
+            .mockResolvedValueOnce(refreshResponse())
+            .mockResolvedValueOnce(new Response(serialiseInvalidatedMetadata(), {status: 200}))  // mid-save marker
+            .mockResolvedValueOnce(new Response(serialiseSnapshot(snapshot), {status: 200})))     // body
+        expect(await onedriveProvider.readRevision(target)).toBe('rev-42')
+    })
+
+    it('returns null when neither sidecar nor body exists', async () => {
+        vi.stubGlobal('fetch', vi.fn()
+            .mockResolvedValueOnce(refreshResponse())
+            .mockResolvedValueOnce(new Response(null, {status: 404}))
             .mockResolvedValueOnce(new Response(null, {status: 404})))
         expect(await onedriveProvider.readRevision(target)).toBeNull()
     })
 
-    it('PUTs the serialised snapshot on save', async () => {
+    it('invalidates the sidecar, then PUTs the body, then PUTs the describing sidecar, in order', async () => {
         vi.stubGlobal('fetch', vi.fn()
             .mockResolvedValueOnce(refreshResponse())
-            .mockResolvedValueOnce(new Response(null, {status: 200})))
+            .mockResolvedValueOnce(new Response(null, {status: 200}))  // PUT invalidated sidecar
+            .mockResolvedValueOnce(new Response(null, {status: 200}))  // PUT body
+            .mockResolvedValueOnce(new Response(null, {status: 200}))) // PUT describing sidecar
         await onedriveProvider.save(target, snapshot)
-        const [url, init] = vi.mocked(fetch).mock.calls[1]
-        expect(url).toBe(contentUrl(target.locator))
-        expect(init?.method).toBe('PUT')
-        expect(init?.body).toBe(serialiseSnapshot(snapshot))
+        const calls = vi.mocked(fetch).mock.calls.slice(1).map(([url, init]) =>
+            ({url, method: init?.method, body: init?.body}))
+        expect(calls).toEqual([
+            {url: contentUrl(metadataLocator(target.locator)), method: 'PUT', body: serialiseInvalidatedMetadata()},
+            {url: contentUrl(target.locator), method: 'PUT', body: serialiseSnapshot(snapshot)},
+            {
+                url: contentUrl(metadataLocator(target.locator)),
+                method: 'PUT',
+                body: serialiseMetadata(extractMetadata(snapshot)),
+            },
+        ])
     })
 
     it('refreshes once and retries on a 401 from Graph', async () => {

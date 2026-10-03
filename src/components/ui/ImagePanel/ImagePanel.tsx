@@ -26,11 +26,18 @@ function ImagePanel({imageUrl, onChangeImage, fallback, shape = 'rectangle'}: Im
     const [dialogOpen, setDialogOpen] = useState(false)
 
     const actions: ActionMenuItem[] = [
-        {id: 'setImage', label: imageUrl ? 'Change image' : 'Add image', icon: ImagePlus, run: () => setDialogOpen(true)},
+        {
+            id: 'setImage',
+            label: imageUrl ? 'Change image' : 'Add image',
+            icon: ImagePlus,
+            run: () => setDialogOpen(true)
+        },
     ]
     if (imageUrl) {
-        actions.push({id: 'removeImage', label: 'Remove image', icon: Trash2, destructive: true,
-            run: () => onChangeImage('')})
+        actions.push({
+            id: 'removeImage', label: 'Remove image', icon: Trash2, destructive: true,
+            run: () => onChangeImage('')
+        })
     }
 
     return (

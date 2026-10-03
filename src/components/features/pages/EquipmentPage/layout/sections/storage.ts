@@ -1,4 +1,4 @@
-import type {EquipmentSheetFactory} from '@pages/EquipmentPage/layout/nodes.ts'
+import type {SheetFactory} from '@lib/fields/fieldNodes.ts'
 
 // ---- INTERNAL CONSTANTS ----
 
@@ -21,7 +21,7 @@ const RIGHT_GROUP = {countX: 413.2, itemX: 434.73, weightX: 736.6, rightEdge: 76
  *
  * All coordinates are in the artwork's viewBox units (see FieldDefinition).
  */
-export function buildStorage({inputNode}: EquipmentSheetFactory) {
+export function buildStorage({inputNode}: SheetFactory) {
     const bands = Array.from({length: ROW_COUNT}, (_unused, index) => rowBand(index))
     const leftRows = bands.map((band, index) => storageRow(inputNode, LEFT_GROUP, band, index + 1))
     const rightRows = bands.map((band, index) => storageRow(inputNode, RIGHT_GROUP, band, ROW_COUNT + index + 1))
@@ -31,7 +31,7 @@ export function buildStorage({inputNode}: EquipmentSheetFactory) {
 // ---- PRIVATE FUNCTIONS ----
 
 type StorageGroup = typeof LEFT_GROUP
-type RowBand = {y: number; height: number}
+type RowBand = { y: number; height: number }
 
 /**
  * The vertical extent of the writing row at the given position (0-based): a uniform row height whose
@@ -46,7 +46,7 @@ function rowBand(index: number): RowBand {
  * Fields for one storage row (globally numbered): the thin count, the wide item name, and the thin weight.
  */
 function storageRow(
-    inputNode: EquipmentSheetFactory['inputNode'],
+    inputNode: SheetFactory['inputNode'],
     group: StorageGroup,
     band: RowBand,
     number: number,

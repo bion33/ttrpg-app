@@ -44,7 +44,8 @@ function ManagerList({items, openLabel, onOpen, onRename, onDelete, addLabel, on
                     <div className="template-list__actions">
                         <IconButton icon={<PencilLine/>} label="Rename" size="small" labelSide="left" appearance="flat"
                                     onClick={() => onRename(item.id)}/>
-                        <IconButton icon={<SquarePen/>} label={openLabel} size="small" labelSide="left" appearance="flat"
+                        <IconButton icon={<SquarePen/>} label={openLabel} size="small" labelSide="left"
+                                    appearance="flat"
                                     onClick={() => onOpen(item.id)}/>
                         <IconButton icon={<Trash2/>} label="Delete" size="small" labelSide="left" appearance="flat"
                                     variant="danger" onClick={(event) => onDelete(item.id, event)}/>

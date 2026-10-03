@@ -1,4 +1,4 @@
-import type {EquipmentSheetFactory} from '@pages/EquipmentPage/layout/nodes.ts'
+import type {SheetFactory} from '@lib/fields/fieldNodes.ts'
 
 // ---- INTERNAL CONSTANTS ----
 // Shared row geometry for the EQUIPPED and BACKPACK item lists (identical grids in different columns).
@@ -29,7 +29,7 @@ export interface ItemListConfig {
  * Builds one item-and-weight list: one `{item, weight}` row below each grey divider (a wide item name and a thin
  * weight), skipping any prefilled-header rows. All coordinates are in the artwork's viewBox units (see FieldDefinition).
  */
-export function buildItemRows(inputNode: EquipmentSheetFactory['inputNode'], config: ItemListConfig) {
+export function buildItemRows(inputNode: SheetFactory['inputNode'], config: ItemListConfig) {
     const rows = Array.from({length: ROW_COUNT}, (_unused, index) => index + 1)
         .filter((row) => !config.skipRows?.has(row))
         .map((row) => itemRow(inputNode, config, row))
@@ -41,7 +41,7 @@ export function buildItemRows(inputNode: EquipmentSheetFactory['inputNode'], con
 /**
  * Fields for one item-and-weight row at the given position (1-based): the wide item name and the thin weight.
  */
-function itemRow(inputNode: EquipmentSheetFactory['inputNode'], config: ItemListConfig, row: number) {
+function itemRow(inputNode: SheetFactory['inputNode'], config: ItemListConfig, row: number) {
     const y = FIRST_ROW_Y + (row - 1) * ROW_STEP
     return {
         item: inputNode({

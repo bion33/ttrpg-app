@@ -1,4 +1,4 @@
-import type {SheetFactory} from '@pages/CharacterPage/layout/nodes.ts'
+import type {SheetFactory} from '@lib/fields/fieldNodes.ts'
 
 /**
  * Builds the header fields: character name, class/level, and identity line.

@@ -1,11 +1,5 @@
 import {describe, expect, it} from 'vitest'
-import {
-    isLibrary,
-    isMarkdownTemplate,
-    libraryLocation,
-    markdownTemplateLocation,
-    sameLocation,
-} from './navigation.ts'
+import {isLibrary, isMarkdownTemplate, libraryLocation, markdownTemplateLocation, sameLocation,} from './navigation.ts'
 
 describe('libraryLocation', () => {
     it('has no binder open and no page active', () => {

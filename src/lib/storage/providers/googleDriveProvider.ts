@@ -1,6 +1,14 @@
 import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {StorageProvider, StorageTarget} from './StorageProvider.ts'
-import {parseSnapshot, serialiseSnapshot} from './fileProvider.ts'
+import {
+    extractMetadata,
+    metadataLocator,
+    parseSnapshot,
+    serialiseInvalidatedMetadata,
+    serialiseMetadata,
+    serialiseSnapshot,
+} from '@lib/storage/snapshotCodec.ts'
+import {readRevisionWithFallback} from './revisionProbe.ts'
 import {createOAuthTokenClient} from '@lib/storage/oauth/oauthTokenClient.ts'
 import {describeHttpFailure} from './httpError.ts'
 
@@ -13,7 +21,11 @@ export interface GoogleDriveConnection {
     refreshToken: string
     label: string
     fileId?: string
+    metadataFileId?: string
 }
+
+// Which connection field caches a resolved app-data file id: the snapshot body's file, or its metadata sidecar's.
+type FileIdSlot = 'fileId' | 'metadataFileId'
 
 const DRIVE_API = 'https://www.googleapis.com/drive/v3'
 const UPLOAD_API = 'https://www.googleapis.com/upload/drive/v3'
@@ -38,16 +50,16 @@ function describeFailure(status: number): string {
     return `Google Drive request failed (${status}).`
 }
 
-// Persists a newly resolved/created id onto the active connection so later ops address the file directly.
-function rememberFileId(fileId: string): void {
+// Persists a newly resolved/created id into the given slot on the active connection so later ops address it directly.
+function rememberFileId(slot: FileIdSlot, fileId: string): void {
     const active = tokenClient.getConnection()
     if (!active) return
-    tokenClient.setConnection({...active, fileId})
+    tokenClient.setConnection({...active, [slot]: fileId})
 }
 
 // Creates the app-data file (metadata + JSON media in one multipart POST), returning its new id; the first save writes
-// the initial revision this way. `fields=id` is required so the response carries the id to store.
-async function createFile(fileName: string, snapshot: LibrarySnapshot): Promise<string> {
+// the initial content this way. `fields=id` is required so the response carries the id to store.
+async function createFile(fileName: string, slot: FileIdSlot, content: string): Promise<string> {
     const boundary = 'ttrpg-boundary'
     const metadata = {name: fileName, parents: ['appDataFolder']}
     const body = [
@@ -58,7 +70,7 @@ async function createFile(fileName: string, snapshot: LibrarySnapshot): Promise<
         `--${boundary}`,
         'Content-Type: application/json',
         '',
-        serialiseSnapshot(snapshot),
+        content,
         `--${boundary}--`,
         '',
     ].join('\r\n')
@@ -70,12 +82,12 @@ async function createFile(fileName: string, snapshot: LibrarySnapshot): Promise<
         }))
     if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
     const {id} = await response.json() as { id: string }
-    rememberFileId(id)
+    rememberFileId(slot, id)
     return id
 }
 
-// Queries the app-data folder once for the file id by name, returning it (persisted) or null when absent.
-async function lookupFileId(fileName: string): Promise<string | null> {
+// Queries the app-data folder once for the file id by name, returning it (persisted into the slot) or null when absent.
+async function lookupFileId(fileName: string, slot: FileIdSlot): Promise<string | null> {
     const query = new URLSearchParams({
         spaces: 'appDataFolder',
         q: `name='${fileName}'`,
@@ -87,7 +99,7 @@ async function lookupFileId(fileName: string): Promise<string | null> {
     if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
     const {files} = await response.json() as { files: { id: string }[] }
     const found = files[0]?.id ?? null
-    if (found) rememberFileId(found)
+    if (found) rememberFileId(slot, found)
     return found
 }
 
@@ -97,24 +109,66 @@ interface FileIdResult {
     created: boolean
 }
 
-// Resolves the app-data file id at most once: the stored id (no request) else a single name lookup, creating the file
-// with `snapshot` when it does not exist and `create` is set. `created` is true only when this call wrote a new file.
+// Resolves an app-data file id at most once: the slot's stored id (no request) else a single name lookup, creating the
+// file with `content` when it does not exist and `create` is set. `created` is true only when this call wrote the file.
 async function ensureFileId(
     fileName: string,
-    options: { create: false } | { create: true; snapshot: LibrarySnapshot },
+    slot: FileIdSlot,
+    options: { create: false } | { create: true; content: string },
 ): Promise<FileIdResult> {
-    const storedId = tokenClient.getConnection()?.fileId
+    const storedId = tokenClient.getConnection()?.[slot]
     if (storedId) return {fileId: storedId, created: false}
-    const existing = await lookupFileId(fileName)
+    const existing = await lookupFileId(fileName, slot)
     if (existing) return {fileId: existing, created: false}
     if (!options.create) return {fileId: null, created: false}
-    return {fileId: await createFile(fileName, options.snapshot), created: true}
+    return {fileId: await createFile(fileName, slot, options.content), created: true}
 }
 
-// Forgets the stored file id (e.g. after an external delete) so the next resolve re-looks-up or recreates it.
-function forgetFileId(): void {
+// Forgets a slot's stored file id (e.g. after an external delete) so the next resolve re-looks-up or recreates it.
+function forgetFileId(slot: FileIdSlot): void {
     const active = tokenClient.getConnection()
-    if (active) tokenClient.setConnection({...active, fileId: undefined})
+    if (active) tokenClient.setConnection({...active, [slot]: undefined})
+}
+
+// Writes `content` to an existing app-data file by id (overwriting its media); 404 means the id is stale (externally
+// deleted), reported so the caller can forget it and recreate.
+async function patchMedia(fileId: string, content: string): Promise<{ ok: true } | { ok: false; gone: boolean }> {
+    const response = await withAccessToken((token) =>
+        fetch(`${UPLOAD_API}/files/${fileId}?uploadType=media`, {
+            method: 'PATCH',
+            headers: {authorization: `Bearer ${token}`, 'content-type': 'application/json'},
+            body: content,
+        }))
+    if (response.status === 404) return {ok: false, gone: true}
+    if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+    return {ok: true}
+}
+
+// Ensures an app-data file holds exactly `content`: creates it when absent, else overwrites its media, recreating once
+// if the stored id was externally deleted.
+async function writeFile(fileName: string, slot: FileIdSlot, content: string): Promise<void> {
+    const {fileId, created} = await ensureFileId(fileName, slot, {create: true, content})
+    // A freshly created file already holds `content` (multipart write); create:true always yields a non-null id.
+    if (created || fileId === null) return
+    const written = await patchMedia(fileId, content)
+    if (written.ok) return
+    forgetFileId(slot)
+    await ensureFileId(fileName, slot, {create: true, content})
+}
+
+// Reads an app-data file's media text, or null when it does not exist; a stored id that 404s is forgotten so the next
+// resolve re-looks-up or recreates it.
+async function readMedia(fileName: string, slot: FileIdSlot): Promise<string | null> {
+    const {fileId} = await ensureFileId(fileName, slot, {create: false})
+    if (!fileId) return null
+    const response = await withAccessToken((token) =>
+        fetch(`${DRIVE_API}/files/${fileId}?alt=media`, {headers: {authorization: `Bearer ${token}`}}))
+    if (response.status === 404) {
+        forgetFileId(slot)
+        return null
+    }
+    if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+    return response.text()
 }
 
 /**
@@ -138,43 +192,25 @@ export const googleDriveProvider: StorageProvider = {
     },
 
     async save(target: StorageTarget, snapshot: LibrarySnapshot) {
-        const resolved = await ensureFileId(target.locator, {create: true, snapshot})
-        // A freshly created file already holds this snapshot (multipart write), so no update PATCH is needed.
-        if (resolved.created) return
-        const response = await withAccessToken((token) =>
-            fetch(`${UPLOAD_API}/files/${resolved.fileId}?uploadType=media`, {
-                method: 'PATCH',
-                headers: {authorization: `Bearer ${token}`, 'content-type': 'application/json'},
-                body: serialiseSnapshot(snapshot),
-            }))
-        // The stored id was deleted externally: forget it and recreate the file once.
-        if (response.status === 404) {
-            forgetFileId()
-            await ensureFileId(target.locator, {create: true, snapshot})
-            return
-        }
-        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+        // Invalidate the sidecar first, so a later-failing write never leaves it describing a stale revision; a probe
+        // then falls back to the body. Then the body, then the sidecar describing it. The sidecar file is reused by id
+        // (overwritten, never deleted) so its id does not churn each save.
+        await writeFile(metadataLocator(target.locator), 'metadataFileId', serialiseInvalidatedMetadata())
+        await writeFile(target.locator, 'fileId', serialiseSnapshot(snapshot))
+        await writeFile(metadataLocator(target.locator), 'metadataFileId', serialiseMetadata(extractMetadata(snapshot)))
     },
 
     async load(target: StorageTarget) {
-        const {fileId} = await ensureFileId(target.locator, {create: false})
-        if (!fileId) return null
-        const response = await withAccessToken((token) =>
-            fetch(`${DRIVE_API}/files/${fileId}?alt=media`, {headers: {authorization: `Bearer ${token}`}}))
-        if (response.status === 404) return null
-        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
-        return parseSnapshot(await response.text())
+        const text = await readMedia(target.locator, 'fileId')
+        return text === null ? null : parseSnapshot(text)
     },
 
     async readRevision(target: StorageTarget) {
         if (!tokenClient.getConnection()) return null
-        const {fileId} = await ensureFileId(target.locator, {create: false})
-        if (!fileId) return null
-        const response = await withAccessToken((token) =>
-            fetch(`${DRIVE_API}/files/${fileId}?alt=media`, {headers: {authorization: `Bearer ${token}`}}))
-        if (response.status === 404) return null
-        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
         // The in-file revision GUID (not Drive's version/headRevisionId) is what save() mints and compares against.
-        return parseSnapshot(await response.text()).revision
+        return readRevisionWithFallback(
+            (locator) => readMedia(locator, locator === target.locator ? 'fileId' : 'metadataFileId'),
+            target.locator,
+        )
     },
 }

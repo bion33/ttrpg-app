@@ -40,14 +40,20 @@ and reported.**
 
 ## What this is
 
-A TTRPG character web app. The UI is a scanned/traced character-sheet
-image exported as an SVG, with interactive HTML form controls overlaid exactly
-on top of the printed fields. Field values persist to `localStorage`; a few
-fields (e.g. ability modifiers) are computed from others.
+A TTRPG character web app. A **library** holds **binders**; each binder holds an
+ordered list of **pages** (tabs). Pages come in types — several traced
+character-sheet pages, a markdown "Notes" page, and an empty stand-in. A traced
+page's UI is a scanned/traced sheet image exported as an SVG, with interactive
+HTML form controls overlaid exactly on top of the printed fields. All state
+persists to `localStorage`; a durable sync layer snapshots the whole
+`localStorage` key space to external providers (file, Nextcloud, OneDrive,
+Google Drive).
 
 Stack: React 19 + TypeScript, Vite, [jotai](https://jotai.org) for state,
-Vitest for tests, ESLint. Package manager: **yarn** (Yarn 4 / Berry, see
-`packageManager` in `package.json`; run it via corepack, e.g. `npx corepack@latest yarn …`).
+Vitest for tests, ESLint. Package manager: **yarn** (Yarn 4 / Berry; run via
+corepack, e.g. `npx corepack@latest yarn …`). A separate `server/` is a
+standalone Node/Hono API (its own Yarn install) exposing the same-origin
+`/api/*` relay/OAuth backend the cloud storage providers use.
 
 ## Commands
 
@@ -55,994 +61,200 @@ Vitest for tests, ESLint. Package manager: **yarn** (Yarn 4 / Berry, see
 - `yarn build` — type-check (`tsc -b`) then Vite production build.
 - `yarn lint` — ESLint over the repo.
 - `yarn preview` — serve the built `dist/`.
-- `yarn test` — Vitest (default config; test files are `*.test.ts` colocated with source).
+- `yarn test` — Vitest (test files are `*.test.ts` colocated with source).
+- `docker compose up` — three-container dev stack (nginx proxy at
+  `http://localhost:8080` → Vite `web` + Hono `api`); additive, host `yarn`
+  workflows unchanged.
 
-## Core architecture
+## Directory map
 
-The whole sheet is one `<svg viewBox="0 0 816 1055.867">`. Inside it:
+- `src/components/features/` — one folder per feature (`Library/`, `Binder/`,
+  `PageViewport/`, `Templates/`, `Storage/`, and `pages/` holding the page-type
+  features). Feature-specific components live in their feature folder, **not** in
+  `ui/`.
+- `src/components/ui/` — shared, feature-agnostic controls (see UI controls
+  pattern).
+- `src/lib/` — framework-agnostic pure helpers, grouped by concern into
+  subfolders (`colors/`, `dnd/`, `fields/`, `ids/`, `navigation/`, `number/`,
+  `paper/`, `sorting/`, `url/`, `storage/`).
+- `src/hooks/` — shared React hooks.
+- `src/type/` — shared field-node types.
+- `src/migrations/` — snapshot migration engine + one file per version.
+- `server/` — the standalone API service.
+- `public/` — source artwork assets (the traced SVGs, OAuth callback pages).
 
-1. The artwork SVG (`public/character-sheet/character-sheet.svg`) is fetched at
-   runtime, its inner markup extracted and injected via `dangerouslySetInnerHTML`.
-2. Interactive fields are rendered as `<foreignObject>` elements **in the same
-   viewBox coordinate space** as the artwork, so the browser scales artwork and
-   inputs together — there is no pixel/resize tracking.
+## Core patterns
 
-Key idea: **every field is a node** carrying both its layout (`definition`) and
-the jotai atom holding its value. Position and state are one object.
+These are the architectural ideas the whole app is built from. When extending,
+follow the established pattern rather than inventing a parallel one.
 
-### Field node model (`src/type/`, `src/lib/fields/fieldNodes.ts`)
+### Field nodes (traced sheets)
 
-- `FieldDefinition` — layout for one field: `id`, `x/y/width/height` (viewBox
-  units, **not pixels**), `type` (`text | textarea | number | check`), and
-  optional `fontSize`, `textAlign`, `defaultValue`. Per-type extras live in
-  subtypes (like `CheckFieldDefinition`), never as flags on the base type:
-  `CheckFieldDefinition` adds `shape`/`color`; `NumericFieldDefinition` adds
-  `signed` (display the value with an explicit leading sign, e.g. a `+3` modifier);
-  `ImageFieldDefinition` adds `shape` (`circle` clips the image to a disc).
-- **Typed values.** An atom holds the field's *natural* type — `string`
-  (text/textarea), `number | null` (number, `null` = empty), or `boolean` (check).
-  `InputNode<T>`/`DerivedNode<T>` are generic over that value type, so cross-field
-  logic reads atoms **directly** (`get(score.atom)` is `number | null`,
-  `get(proficiency.atom)` is `boolean`) with no parsing. Parsing and formatting
-  (including `signed`) live only in the UI controls — the single boundary. (No
-  storage migration: values persist in the typed form, so pre-typed localStorage
-  data is not read back.)
-- `FieldNode` — an `InputNode` (writable atom; either persisted via
-  `atomWithStorage` or computed-with-fallback) or a `DerivedNode` (read-only
-  atom computed from other atoms, not persisted). An `InputNode` may carry an
-  optional `readOnlyAtom` that locks editing at runtime. (The `FieldNode` union
-  lists the concrete `InputNode<…>` value types explicitly, since a writable
-  atom's value type is invariant.)
-- `createFieldFactory(prefix)` returns `inputNode`, `checkNode`, and
-  `computedInputNode` builders bound to a storage-key prefix. **One factory
-  instance per sheet instance** — `layout/nodes.ts`'s `createSheetFactory(prefix)`
-  bundles those three with `derivedNode` into a `SheetFactory`, and each sheet
-  page passes its own prefix so its fields get an isolated localStorage
-  namespace. Within one sheet, all fields must come from that single factory, or
-  they would split across namespaces.
-- `checkNode(definition)` builds a persisted checkbox field from a `CheckFieldDefinition`
-  (an `inputNode` typed to check defs); use it for any check field carrying a
-  `shape`/`color` so no `as CheckFieldDefinition` cast is needed.
-- `derivedNode(definition, read)` builds a computed field.
-- `computedInputNode(definition, enabled, compute)` builds a hybrid field: while the
-  `enabled` atom is true it shows `compute(get)` and is read-only; otherwise it
-  is an ordinary editable, persisted input (e.g. passive Perception, auto-calc
-  toggled by a checkbox).
-- **Image fields are ordinary `InputNode<string>`s** — no special node type or
-  factory builder. Their string value *encodes* the image. A `type: 'image'` field
-  holds the image URL (`''` = none) directly; a `type: 'imageTextarea'` field holds
-  the image URL **and** the prose text encoded together in the one value (so neither
-  overwrites the other), via `@lib/fields/imageTextareaValue.ts`'s pure
-  `parseImageTextareaValue`/`serializeImageTextareaValue` (tested). The split is done
-  only in the control: `FieldInput`'s `control()` dispatches on `definition.type` to
-  `@ui/ImageField` (image only) or `@ui/ImageTextareaField` (image-or-textarea), which
-  decode/encode the string. Build one with `inputNode({…, type: 'image' | 'imageTextarea'})`;
-  a `type: 'image'` field may add `shape: 'circle'` (see `ImageFieldDefinition`).
-- `collectNodes(tree)` flattens a `NodeTree` (nodes nested in arrays / records)
-  into a flat render list.
+The field-node model lives in `src/type/` and `src/lib/fields/fieldNodes.ts`.
 
-### CharacterPage feature (`src/components/features/pages/CharacterPage/`)
+- **Every field is a node** carrying both its layout (`definition`) and the jotai
+  atom holding its value — position and state are one object.
+- A `FieldDefinition` gives layout in **viewBox units, not pixels** (`id`,
+  `x/y/width/height`, `type`, optional `fontSize`/`textAlign`/`defaultValue`).
+  Per-type extras live in **dedicated subtypes** (`CheckFieldDefinition`,
+  `NumericFieldDefinition`, `ImageFieldDefinition`), never as flags on the base
+  type.
+- Atoms hold the field's **natural typed value** — `string`, `number | null`
+  (`null` = empty), or `boolean`. Cross-field logic reads atoms directly with no
+  parsing; **parsing/formatting lives only in the UI controls**, the single
+  boundary.
+- `InputNode<T>` = writable (persisted, or computed-with-fallback) atom, with an
+  optional `readOnlyAtom` to lock editing at runtime. `DerivedNode<T>` = read-only
+  atom computed from other atoms, not persisted.
+- A sheet is built **per instance** from a storage prefix, never as module-level
+  singletons. `createSheetFactory(prefix)` returns a `SheetFactory` bundling the
+  node builders (`inputNode`, `checkNode`, `numericNode`, `computedInputNode`,
+  `derivedNode`), all bound to that prefix so each sheet gets an isolated
+  `localStorage` namespace. **One factory instance per sheet instance** — all its
+  fields must come from it. (Prefer the typed builders — `checkNode`,
+  `numericNode` — over casting a base `inputNode`.)
+- Image fields are ordinary `InputNode<string>`s whose string value *encodes* the
+  image (and, for `imageTextarea`, the prose too, via a pure tested codec in
+  `fields/`). No special node type.
+- `collectNodes(tree)` flattens a nested `NodeTree` into a flat render list.
 
-- `layout/` — the **single source of truth** for the sheet's fields. The sheet
-  is built **per instance** from a storage prefix (so multiple sheet pages get
-  isolated namespaces), not as module-level singletons.
-  - `sheet.ts` — exports `buildSheet(storagePrefix)`, which creates the sheet's
-    factory, calls each section builder with it, gathers their nodes into a
-    structured tree, and returns `{fields}` (the flat `collectNodes(tree)` render
-    list; the tree itself is internal and not exposed). Each field is created
-    exactly once, in its section builder.
-  - `layout/nodes.ts` — `createSheetFactory(prefix)`, the per-instance factory
-    (`inputNode`/`computedInputNode`/`derivedNode`) every section builder draws
-    from.
-  - `layout/sections/*.ts` — each exports a `build<Section>(factory)` function
-    returning that region's nodes (`buildHeader`, `buildAbilities`,
-    `buildCombat`, `buildSpells`, `buildTraits`). A section owns the
-    repeated-row builders and step constants it alone uses — the ability-block
-    generator in `abilities.ts` (skill rows interpolated between real artwork
-    anchors; `buildAbilities` returns both `abilityMeta` and `abilities` since
-    their derivations reference each other), the weapon/cantrip/spell-slot
-    builders in `spells.ts`, the damage-grid builder in `traits.ts`. Only
-    builders/constants shared by more than one section belong in a common
-    `generators.ts`/`constants.ts` module.
-  - `logic/formulas/formulas.ts` — **pure** D&D 5e rules math (no atoms/React/storage),
-    unit-tested in `formulas.test.ts`. Atoms wire these into derived fields.
-  - `CharacterPage.tsx` — the `CharacterPage` component: takes a `storagePrefix` prop, memoizes
-    `buildSheet(prefix)`, and renders the resulting `fields` through the shared
-    `TracedSheetPage` (below). A thin config: SVG url, artwork extent, error copy.
+### Traced-sheet pages
 
-### TracedSheetPage shared component (`src/components/features/pages/TracedSheetPage/`)
+Every traced-artwork page (CharacterPage, CharacterInfoPage, EquipmentPage, …)
+follows the **same shape**:
 
-The shared surface **every traced-artwork sheet page renders through** — the
-single implementation of the fetch-and-inject-SVG + A4-padding + overlay-fields
-pattern, extracted so adding a new traced sheet is just a layout plus a thin
-wrapper. `TracedSheetPage.tsx` takes `svgUrl`, the artwork's own `artworkWidth`/
-`artworkHeight`, the `fields` render list, an optional `fieldOverlays` map, and the
-load-error copy; it fetches
-and injects the artwork, symmetrically pads its viewBox to a true A4 footprint,
-and overlays the `fields` as `FieldInput`s in the artwork's coordinate space,
-showing a `PaperPage` loading/error state meanwhile. `fieldOverlays` keys SVG
-decoration by field id, painting it directly **above that field** (so later fields
-still paint over it) in the same coordinate space — e.g. `CharacterInfoPage`
-re-paints the artwork's grey deity name plate with an SVG `<use href="#…">` above
-the portrait field, so the circular portrait does not cover it yet the deity
-name/info inputs still sit on the plate. It exports
-`TRACED_SHEET_NATURAL_WIDTH` (the A4 width each page re-exposes as its
-`naturalWidth` for the zoom) and owns `TracedSheetPage.css` (the `.traced-sheet-page`
-sheet styling) and the `sheetFonts.css` import (the traced-sheet `@font-face`
-rules — Mongolian Baiti, the Liberation Serif "Times-Roman" mapping — bundled
-once here rather than per page). A page component (`CharacterPage`,
-`CharacterInfoPage`) builds its own `fields` and renders one `TracedSheetPage`.
+- A `layout/` folder is the single source of truth for the page's fields, built
+  per instance:
+  - `layout/sheet.ts` exports `build<Name>Sheet(storagePrefix)` — creates the
+    factory, calls each section builder, gathers their nodes into a structured
+    tree, and returns `{fields}` (the flat `collectNodes` render list).
+  - `layout/sections/*.ts` — each exports a `build<Section>(factory)` returning
+    that region's nodes. **A field is created exactly once, in its section
+    builder.** A section owns the repeated-row builders and step constants it
+    alone uses; only builders/constants shared across sections go in a common
+    `generators.ts`/`constants.ts`.
+  - `logic/formulas/formulas.ts` + `formulas.test.ts` — **pure**, unit-tested
+    rules math specific to the sheet. Atoms wire it in via `derivedNode`. Rules
+    math reused across sheets lives in `@lib/dnd`, `@lib/number`, etc.
+- A thin `<Name>Page.tsx` component takes a `storagePrefix`, memoizes its
+  `build…Sheet(prefix)`, and renders the resulting `fields` through the shared
+  **`TracedSheetPage`** — the single implementation of the fetch-and-inject-SVG +
+  A4-padding + overlay-fields-in-the-artwork's-coordinate-space pattern. The page
+  component is just config (SVG url, artwork extent, error copy, optional
+  `fieldOverlays` for SVG decoration painted above a given field).
 
-### CharacterInfoPage feature (`src/components/features/pages/CharacterInfoPage/`)
+Adding a traced sheet = a new `layout/` + a thin wrapper + registry wiring (see
+Page registry).
 
-A second traced-sheet page (`character-info.svg`), built the same way as
-`CharacterPage` — a per-instance field factory, section builders, a
-`buildInfoSheet(prefix)` assembler, and a thin `CharacterInfoPage.tsx` wrapper
-over the shared `TracedSheetPage`. Add fields in the matching
-`layout/sections/*` builder (or add a further section alongside them, gathered into
-the tree in `layout/sheet.ts`), the same way `CharacterPage`'s sections work.
-  - `layout/nodes.ts` — `createInfoSheetFactory(prefix)`, the per-instance factory.
-  - `layout/sheet.ts` — `buildInfoSheet(prefix)`, assembling the section nodes into
-    the flat `fields` render list.
-  - `layout/sections/header.ts` — `buildHeader(factory)`: character name and the
-    physical-description grid.
-  - `layout/sections/appearance.ts` — `buildAppearance(factory)`: the appearance
-    area, an `imageTextarea`-type field usable as prose **or** a single image (toggled by
-    its "…" menu).
-  - `layout/sections/allies.ts` — `buildAllies(factory)`: the allies &
-    organisations area plus the deity subsection (a circular portrait image in the
-    deity medallion, a name band, and the info area).
-  - `layout/sections/info.ts` — `buildInfo(factory)`: the backstory area, the
-    personality subsection (personality traits + ideals/bonds/flaws), and character
-    details.
-  - `layout/sections/companion.ts` — `buildCompanion(factory)`: a **placeholder**
-    section with no fields yet.
-  - `CharacterInfoPage.tsx` — the component (same shape as `CharacterPage.tsx`); it also
-    passes `TracedSheetPage` a `fieldOverlays` entry keyed to the deity portrait that re-paints
-    the artwork's grey deity name plate (`<use href="#…">`) directly above the portrait, so the
-    circular portrait does not cover the plate while the deity name/info inputs still sit on it.
+### Markdown page
 
-Wired into `PAGE_TYPES` (`Binder/pageTypes.ts`) as the `characterInfo` type
-("Character info"), so it appears in the add-page modal and `Binder`'s
-`renderPage`/`pageNaturalWidth` resolve it.
+The `markdown` ("Notes") page is a [Tiptap](https://tiptap.dev) v3 WYSIWYG
+editor persisting content as a **plain markdown string** (riding the same
+`localStorage` → snapshot → providers path, no new persistence plumbing). Key
+decisions: the heavy editor is `React.lazy`-split; custom Tiptap extensions
+(callout, page break, a custom pagination extension, table node views) round-trip
+to plain markdown; **pagination break math is pure and unit-tested** in
+`logic/pagination/`, with the DOM-measuring extension wiring it in; the editor
+draws its own stacked physical-A4 sheets so it is true WYSIWYG and print maps
+sheet→page via CSS fragmentation. Block insert/apply actions have a **single
+source of truth** (`blocks/insertBlocks.ts`) projected into both the toolbar and
+the block handle so they never drift.
 
-### EquipmentPage feature (`src/components/features/pages/EquipmentPage/`)
+### Library / Binder / navigation
 
-A third traced-sheet page (`equipment.svg`), built exactly like
-`CharacterInfoPage` — a per-instance field factory, section builders, a
-`buildEquipmentSheet(prefix)` assembler, and a thin `EquipmentPage.tsx` wrapper
-over the shared `TracedSheetPage`. Add fields in the matching
-`layout/sections/*` builder (or add a further section alongside them, gathered into
-the tree in `layout/sheet.ts`).
-  - `layout/nodes.ts` — `createEquipmentSheetFactory(prefix)`, the per-instance factory.
-  - `layout/sheet.ts` — `buildEquipmentSheet(prefix)`, assembling the section nodes.
-    **The weight-source sections (`equipped`, `backpack`, `money`, `storage`) are built before
-    `buildHeader`, which takes them as its `WeightSources` so the header's weight fields can
-    derive from their atoms.**
-  - `layout/sections/header.ts` — `buildHeader(factory, weightSources)`: character name, the
-    identity line, and the carry-capacity/carry-weight/storage-weight line. **Carry capacity** is a
-    `computedInputNode` (Strength × 15) gated on its own `enableCarryCapacityCalculation` star-check.
-    **Carry weight** and **storage weight** are `computedInputNode`s both gated on the shared
-    `enableWeightCalculation` star-check, deriving from the `WeightSources` sections (reading their
-    row/coin atoms by reference, not by id): carry weight sums every equipped + backpack item weight
-    (each row's encoded count × its weight) and — while `money.enableMoneyWeightCalculation` is on —
-    adds the coin weight; storage weight sums `count × weight` over all storage rows. **Encumbrance** is
-    also a `computedInputNode` gated on `enableWeightCalculation`, showing the `encumbranceLabel`
-    message for the carry weight against Strength. Each reverts to a manual input when its check is off.
-  - `layout/generators.ts` — `buildItemRows(inputNode, config)`, the shared EQUIPPED/BACKPACK row
-    builder (the two lists are identical grids in different columns): one `{item, weight}` row (a wide
-    item name and a thin weight) below each grey divider, skipping any prefilled-header rows, returned
-    as `{rows}`. Its `ItemListConfig` carries each list's id prefix, the two column edges, and its
-    skip-rows set. (Storage's row builder stays in its own section — a different 3-column structure.)
-  - `layout/sections/equipped.ts` / `backpack.ts` — `buildEquipped`/`buildBackpack(factory)`: thin
-    wrappers calling `buildItemRows` with their column config (equipped also skips the prefilled-header
-    rows). These rows have no dedicated count column — a per-row count is instead **encoded in the item
-    text** (a trailing "| N" or leading "N |"; see `parseItemCount`) and multiplied by the row weight
-    for the carry-weight total.
-  - `layout/sections/money.ts` — `buildMoney(factory)`: the five coin-count fields (platinum, gold,
-    electrum, silver, copper) plus the `enableMoneyWeightCalculation` star-check.
-  - `layout/sections/storage.ts` — `buildStorage(factory)`: the two side-by-side storage groups
-    (`leftRows`/`rightRows`), each row a `{count, item, weight}` node triple.
-  - `logic/formulas/formulas.ts` — **pure**, unit-tested equipment math: `carryCapacity` (Strength ×
-    15), `totalWeight` (sum of item weights, empty = 0), `coinWeight` (summed coins × 0.02 lb/coin),
-    `parseItemCount` (the count encoded in an item's text — trailing "| N" or leading "N |", trailing
-    wins — or null), `totalItemWeight` (sum of each row's encoded count (or 1) × weight),
-    `totalStorageWeight` (sum of each row's `count × weight`, empty = 0), and `encumbranceLabel` (the
-    standard/variant encumbrance message past 5×/10×/15× Strength, empty below that or Strength unknown).
-  - `EquipmentPage.tsx` — the component (same shape as `CharacterInfoPage.tsx`).
+- `App` holds the jotai store in state inside a `<Provider>` and exposes
+  `remount()` (a fresh store) via `StorageRemountContext`, so a storage **load**
+  can swap the store and make every `atomWithStorage` atom re-read bulk-rewritten
+  `localStorage`.
+- The **library** is a grid of binder covers (`atomWithStorage('binders', …)`,
+  empty by default). A binder's `id` is a `crypto.randomUUID()` GUID
+  (`@lib/ids/newId.ts`) that survives renames and is the **storage-prefix root**
+  every one of its pages persists under.
+- A `Binder` renders per open binder, keyed by id. Its page list is a
+  **per-binder** atom (`pagesAtom(prefix)`, one cached instance per prefix, shared
+  with the library shelf). Pages are serialisable metadata (`id`, `label`, `type`,
+  `storagePrefix`); each page persists under `pagePrefix(binderPrefix, pageId)`.
+  Visited pages stay **mounted but hidden** so tab switches are instant.
+- **The active page is the app-wide location**, not per-binder state. A pure
+  `Location` type (`@lib/navigation`) captures which binder/page or markdown
+  template is open. `useNavigation` backs it with the browser History API so
+  Back/Forward work; all navigation goes through `useNavigate`.
+- Page-view zoom is the shared **`PageViewport`** scaffold: it owns the scaled
+  `.binder-view` wrapper, publishes `--page-scale` (so in-page controls can
+  counter-scale to a constant on-screen size), and holds the zoom controls. Zoom
+  is stored as a **viewport-width fraction** shared across pages so it feels
+  uniform regardless of a page's natural width.
 
-Wired into `PAGE_TYPES` as the `equipment` type ("Equipment"), resolved by
-`Binder`'s `renderPage`/`pageNaturalWidth`.
+### Page registry
 
-### MarkdownPage feature (`src/components/features/pages/MarkdownPage/`)
+`Binder/pageRegistry.tsx` is the single `Record<PageType, …>` of
+`{naturalWidth, render(prefix, active, label)}` — both rendering and width
+resolution read it, so they never drift and a new `PageType` is a compile error
+until registered. `Binder/pageTypes.ts` holds the `PageType`/`PAGE_TYPES` labels,
+kept pure so the add-tab form does not pull in the page component graph. Wiring a
+new page type = an entry in both.
 
-The `markdown` ("Notes") page type: a general-purpose WYSIWYG markdown editor a
-user can add as many times as they like per binder — the catch-all, unstructured
-tab, in contrast to the specific character sheet. Content persists as a **plain
-markdown string**, riding the existing localStorage → snapshot → providers path
-with no new persistence plumbing.
+### Templates
 
-- `markdownAtoms.ts` — `markdownAtom(prefix)`, a cached-per-prefix
-  `atomWithStorage<string>('${prefix}:markdown', '', notifyingStorage())`,
-  mirroring `binderAtoms.ts`'s cached-atom pattern; `notifyingStorage`
-  (`@lib/storage/observableStorage.ts`) is what makes edits count toward
-  dirty-detection and the snapshot.
-- `MarkdownPage.tsx` — the eager, thin page: binds the markdown atom and
-  `React.lazy`-loads `MarkdownEditor` behind a `<Suspense>`, forwarding the `active` prop
-  (whether it is the binder's shown page — `Binder` keeps every visited page mounted and
-  hides the inactive ones). It owns **no paper chrome**
-  — the editor draws its own stacked A4 sheets (see pagination below), so unlike the
-  character sheet it does not wrap in `PaperPage`. Responsibility: atom binding + lazy load.
-- `MarkdownEditor.tsx` — the lazy chunk (the editor is heavy, so it code-splits out
-  of the main bundle): builds a [Tiptap](https://tiptap.dev) v3 editor via `useEditor`
-  and renders `<EditorContent>` with the `MarkdownToolbar` and `BlockHandle`.
-  Extensions: `StarterKit` (core formatting + undo/redo history, with `link` and
-  `codeBlock` disabled — links are intentionally excluded), `Markdown`
-  (`@tiptap/markdown`, the bidirectional markdown layer — `content`/`contentType:
-  'markdown'` on load and `editor.getMarkdown()` on change), `TaskList`/`TaskItem`, the
-  `tableExtensions` (see `extensions/table/` below), `Image`, the custom `Callout`, the
-  custom `PageBreak`, and the `Pagination` extension (configured with an
-  `onPageCountChange` setter). Tiptap reads `content` only on mount
-  and reports edits via `onUpdate`; a `setContent` effect re-applies markdown that
-  changes externally (e.g. a storage load). The `active` prop gates the body-portalled
-  `MarkdownToolbar` and the `BlockHandle` — a hidden-but-mounted inactive editor
-  (`display:none`) would otherwise leak its portalled toolbar over the active page.
-  It renders the **sheet stack**: a `.md-sheets` box holding a `.md-sheet-backdrop`
-  (one `.md-sheet` div per page, count from `Pagination`) behind the overlaid
-  `<EditorContent>`. It also owns the insert-image dialog state, passing an `onRequestImage`
-  callback to the toolbar and block handle and rendering the shared `@ui/ImageUrlModal` (portalled
-  to the body, since in place it would sit inside the zoomed `.binder-view` transform; it inserts
-  at the editor's current selection on confirm). Responsibility: editor configuration + sheet-stack
-  composition + image-dialog hosting.
-  Images are by URL/paste only for
-  now — real upload needs a later storage decision (base64 bloats the snapshot).
-  The insert-image dialogue itself is the shared `@ui/ImageUrlModal` (see UI controls), reused by
-  the character-info appearance field too.
-- `MarkdownToolbar.tsx` — the formatting toolbar, all `lucide-react` icons: undo/redo, the
-  Headings dropdown, inline marks (bold/italic/underline/strikethrough), the Blocks and Lists
-  dropdowns (one `ToolbarDropdown` per non-insert `BLOCK_GROUPS` entry), then the standalone
-  `INSERT_ACTIONS` buttons (table, image, divider, page break). Active/enabled state comes from
-  `useEditorState`. Responsibility: toolbar layout.
-- `BlockActionsMenu.tsx` — the **shared searchable dropdown** both the toolbar's block groups and the
-  block-handle "+" menu render (the single block-menu implementation; the two consumers supply only a
-  trigger, the action list, and an `onRunAction`). A **Radix `Popover`** (`@radix-ui/react-popover`,
-  portalled with the same `strategy: 'fixed'` popper, so it is unaffected by the page zoom) wrapping a
-  **cmdk `Command`** (`cmdk`) that filters the actions by label (search field, keyboard navigation,
-  ARIA, empty state), marks the active block type with `is-active`, and runs the chosen action, closing
-  on select / outside / Escape (Radix owns dismissal, so no outside-click hook). Controlled `open`
-  state, so the block handle can pin the drag handle while it is open. Responsibility: the block menu.
-- `ToolbarDropdown.tsx` — one toolbar dropdown grouping a block group's actions: it builds the
-  trigger (showing the active action's icon, else the group icon) and delegates the menu to
-  `BlockActionsMenu`. Responsibility: the group trigger.
-- `BlockHandle.tsx` — the Nextcloud-style per-block hover affordance, wrapping
-  `@tiptap/extension-drag-handle-react`'s `<DragHandle>`: a drag grip to reorder blocks
-  plus a "+" button opening a `BlockActionsMenu` that inserts any
-  block. It passes floating-ui `{placement: 'left', strategy: 'fixed'}`: `left` centres
-  the handle on the block, and `fixed` anchors it to the zoomed `.binder-view` (its
-  containing block) — the only case floating-ui compensates page zoom for, so the handle
-  stays aligned at any scale and anywhere down the page (`absolute` drifts with distance
-  under zoom). The inner `.block-handle__cluster` counter-scales `--page-scale` (so the
-  handle keeps a constant on-screen size as the page zooms) on a wrapper inside the
-  handle, never on the handle itself, so it does not fight floating-ui's positioning
-  transform. Responsibility: the block handle.
-- `extensions/table/` — the Nextcloud-style table editing affordances, added as React **node views**
-  over `@tiptap/extension-table`'s nodes (the schemas are untouched, so tables still round-trip as
-  plain markdown via the `Markdown` extension; cell merge/split are deliberately unsupported since
-  plain markdown cannot represent them). `tableExtensions.ts` exports the extension array the editor
-  uses in place of `TableKit`: `Table` and both cell nodes (`TableHeader`/`TableCell`) `.extend`ed
-  with a `ReactNodeViewRenderer`, plus the unchanged `TableRow`. The menus live on the **cells**, not
-  on a row node view: a row node view is impossible to render as valid HTML (its host `<tr>` can only
-  contain `<td>`/`<th>`, never the wrapper the React renderer inserts), so the per-row menu is hosted
-  by each row's last cell instead. The cell renderers pass `{as: 'th'}`/`{as: 'td'}` so the host is
-  the real cell element and the table markup stays valid.
-  - `TableNodeView.tsx` — wraps the table in a positioned container with a bottom-edge "add row"
-    button, a right-edge "add column" button (outside the table, in the page margin), and the
-    whole-table "…" menu (delete table) in the bottom-right corner square those two edge strips
-    leave open, all revealed on table hover. The
-    body is a real `<tbody>` (`NodeViewContent as="tbody"`) holding ProseMirror's rows.
-  - `TableCellNodeView.tsx` — the one node view for both header and data cells (`node.type.name`
-    distinguishes them). It renders a per-column "…" menu on every header cell, and — on each **data**
-    row's **last** cell (`isLastCellInRow`) — the row's insert/delete-row "…" menu. Both menus are
-    absolutely overlaid on the cell, shown on hover, and (like the whole-table menu) counter-scale
-    `--page-scale` so they keep a constant on-screen size as the page zooms. (The whole-table delete
-    menu lives on the table node view, not the header row.)
-    The column/row/table menus render the shared `@ui/ActionMenu` (see UI controls).
-  - `tableActions.ts` — `TableAction` (an alias of `@ui/ActionMenu`'s `ActionMenuItem`) and the
-    `columnActions`/`rowActions`/`deleteTableActions` builders (each `{id, label, icon, destructive,
-    run}`), each placing the caret in the right cell before running the command.
-  - `tablePositions.ts` — the **pure, unit-tested** (`tablePositions.test.ts`) caret-position math:
-    `isHeaderRow`, `firstCellInnerPosition`, `isLastCellInRow` (which cell carries the row menu), and
-    `lastRowCellPosition`/`lastColumnCellPosition` (the append-at-end targets for the edge buttons).
-- `blocks/insertBlocks.ts` — `BLOCK_ACTIONS`, the **single source of truth** for the
-  block types a user can apply/insert (headings 1–6, text/paragraph, quote, the four
-  callout variants, the three list kinds, table, image, divider, page break): each is `{id, label,
-  icon, group, isActive(editor)}` plus either a `run(editor)` that applies immediately **or** a
-  `dialog` marker (currently only `'image'`) for an action that must gather input from a dialog first
-  (`icon` a `lucide-react` component). `runBlockAction(action, editor, handlers)` is the shared
-  dispatcher both consumers call — it opens the action's dialog (via a `handlers` callback) or runs
-  it — so the dialog-vs-run branch lives in one place. Two
-  projections derive from it: `BLOCK_GROUPS` buckets the dropdown groups — `heading`
-  (Headings), `block` (Blocks: text, quote, callouts), `list` (Lists) — each with a
-  default trigger label/icon; `INSERT_ACTIONS` is the flat `insert` group (table, image,
-  divider, page break), rendered as standalone toolbar buttons rather than a dropdown. The block handle's
-  "+" menu renders the flat `BLOCK_ACTIONS`, so toolbar and handle never drift.
-- `extensions/callout.ts` — the custom `Callout` Tiptap `Node` (info/success/warning/
-  danger), which round-trips as a Pandoc fenced directive (`:::callout {type=info} …
-  :::`) via `createBlockMarkdownSpec` from `@tiptap/core`.
-- `extensions/pageBreak.ts` — the custom `PageBreak` Tiptap `Node`: an atomic block
-  (a thin `.md-page-break` rule) that forces the following content onto a new sheet,
-  round-tripping as a self-closing Pandoc directive (`:::pagebreak`) via
-  `createAtomBlockMarkdownSpec`. Adds a `setPageBreak` command; registered in
-  `BLOCK_ACTIONS` as an insert action, so it reaches the toolbar and block-handle menu.
-- `extensions/pagination/pagination.ts` — the **custom pagination** extension (a
-  full custom implementation; the earlier `tiptap-pagination-plus` attempt was dropped).
-  A single ProseMirror editor flows across the stacked sheets: on each view update (rAF-
-  debounced) and `ResizeObserver` reflow it measures each top-level block's border-box height
-  and vertical margins (kept apart so the break math can collapse adjacent margins), reads
-  the live sheet geometry from the rendered backdrop + the editor column's own margins
-  (so CSS stays the single source of dimensions), computes breaks via the pure
-  `logic/pagination/` math, and applies them as decorations — a spacer **widget** filling
-  the rest of a sheet before each breaking block, plus a `md-break-before` node class for
-  the print path. It reports the sheet count through `onPageCountChange`. A decoration
-  signature guards against re-dispatch loops; measurement uses `offset*` metrics, so the
-  binder zoom (a `transform`) needs no recompute. A single block taller than one sheet
-  cannot be split and overflows its sheet (documented limitation).
-- `logic/pagination/pagination.ts` — the **pure, unit-tested** (`pagination.test.ts`)
-  break math: `computeBreaks(blocks, {contentCapacity, interSheetSkip})` decides where the
-  flow breaks (a manual-break block forces the next block to a new sheet; otherwise a
-  block breaks when its border box would overflow the current sheet) and the spacer height
-  each break needs. It **collapses adjacent block margins** the way CSS flow does (the gap
-  above a block is its top margin maxed against the previous block's bottom margin, not the
-  sum), so the used height — and every spacer — never drifts as the document grows;
-  `pageCount(breaks)` is the sheet count (always ≥ 1). No DOM/atoms/React.
-- `MarkdownPage.css` — themes the ProseMirror surface, toolbar, block handle, and
-  callouts to the parchment/serif tokens; styles the **sheet stack** (`.md-sheets`,
-  `.md-sheet-backdrop`, `.md-sheet` — each a bordered A4 sheet in the active-hue, stacked
-  with `--md-sheet-gap`; the editor column overlays them with the shared `--md-sheet-pad-*`
-  A4 margins). The stack is a **fixed physical A4 footprint** — `.md-sheets` is `--md-sheet-width`
-  wide and centred, so the on-screen sheet matches the printed page
-  exactly (same characters per line, same lines per page): the editor is true WYSIWYG and the
-  break math measures the same geometry print uses. `--md-sheet-width` is **set inline from JS**
-  (`MarkdownEditor.tsx`, `${A4_WIDTH_PX}px` from `@lib/paper/paperSize.ts`) rather than a CSS `210mm`
-  literal, so the sheet width and the zoom math (which also scales by that constant) share one source
-  and cannot drift; `MarkdownPage` exposes that width as `MarkdownPage.naturalWidth` for the zoom.
-  The binder's zoom transform scales the page up
-  for reading without changing that layout (every page's `.binder-view` shrink-wraps its fixed-width
-  sheet so the tab strip stays flush with the sheet's right edge). Its `@media print` block maps each sheet to a real printed page via CSS
-  fragmentation (hides the backdrop/spacers, un-pins the overlay, and `break-before: page`
-  on `.md-break-before`), printing under the binder's default `@page { margin: 0 }` so the
-  `210mm` sheet fills the page width unscaled — the top/side gaps come from the editor column's
-  own padding instead. Since that padding margins only the first printed page, each
-  `.md-break-before` block also carries a `padding-top: var(--md-sheet-pad-y)` to reproduce the
-  top margin on every later page (padding, unlike a margin, is not truncated at a forced break);
-  each page's bottom gap emerges from the breaks reserving the on-screen content height. The
-  toolbar and handle carry `.no-print`, so `index.css`'s print
-  rule hides them.
+Library-wide reusable templates (markdown page templates; binder templates =
+structure only), riding the same persistence path. Instantiation math is **pure
+and tested** (`logic/instantiate/`); a markdown template's body reuses the notes
+page's own atom under a `template:<id>` prefix (no new content store). References
+resolve to concrete content copies only at creation time (templates stay
+live-linked).
 
-The toolbar/handle cover Nextcloud's editor as far as Tiptap allows; Nextcloud's math,
-collapsible details, and word-count/help are omitted. `@tiptap/extension-drag-handle`
-statically imports two Yjs collaboration modules (`@tiptap/extension-collaboration`,
-`@tiptap/y-tiptap`) it only uses under live collaboration; since this app has none, both
-are aliased to tiny stubs in `src/shims/` (wired in `vite.config.ts`) to keep the Yjs
-stack out of the bundle.
+### Storage / sync
 
-### Library feature (`src/App.tsx`, `src/components/features/Library/`)
+Persistence is **not per-field**: the entire `localStorage` key space is
+snapshotted to one JSON document and hydrated back, fully decoupling sync from the
+field-node system. Organised under `src/lib/storage/`:
 
-`App` is the root: it holds the jotai store in state and renders the app inside a
-jotai `<Provider store={store}>`, exposing a `remount()` (a fresh `createStore()`)
-through `StorageRemountContext` so a storage **load** can swap the store and make
-every `atomWithStorage` atom re-read the bulk-rewritten `localStorage` (see the
-Storage feature below); `AppContent` inside the provider wires navigation and
-renders `Library`. The **library**
-holds many **binders**: a `LibraryBinderItem` is serialisable metadata (`id`,
-`label`, `hue`), where `id` is a `crypto.randomUUID()` GUID (minted by
-`src/lib/ids/newId.ts`'s `newId()`, unit-tested in `newId.test.ts`, shared with the
-binder's page ids) that survives renames and is the **storage-prefix root every
-one of the binder's pages persists under**. The binder list lives in `atomWithStorage('binders', …)`,
-**empty by default**. Which binder is open — and which page within it — is the
-app's single **location** (see the navigation hook below), persisted so a reload
-reopens the same binder and page; the library shows the grid when the location's
-binder id is empty.
+- A **pure, tested core** — snapshot create/apply/hash (`snapshot.ts`), the
+  `evaluateSync` conflict decision (revision lineage, not clocks), and the
+  provider-dependent `syncActions` decisions (enablement, save guard, autosave/
+  autoload intents) — kept apart from all side-effectful glue.
+- **Providers** behind one `StorageProvider` interface (`file`, `nextcloud`,
+  `onedrive`, `googleDrive`), each pure URL/payload builders + thin transport. The
+  two OAuth providers share one token-client and one cloud-connection lifecycle
+  hook; the shared `httpError` builder makes every failure diagnosable.
+- Migrations: append-only, **one file per version** in `src/migrations/`, never
+  edit or renumber an existing one.
+- Orchestration is `useStorage()` (+ `useAutosave`, `useAutosaveFlush`,
+  `useCloudConnection`), held in a single instance above the library/binder switch
+  via `StorageProvider`/`storageContext` so navigation does not remount it.
+  Progress/failures surface as `sonner` toasts; the hook otherwise exposes no
+  activity/error state.
+- Every persisted atom uses `notifyingStorage()` so edits count toward dirty
+  detection and the snapshot.
+- Device-local state (sync base, connections, autosave preference) lives in
+  IndedDB (`idb-keyval`), kept out of the snapshot.
+- `server/` relays/token-exchanges for the cloud providers (Nextcloud WebDAV
+  relay behind a fail-closed SSRF hostname allowlist; a confidential-client OAuth
+  relay generic over provider so the client secret never reaches the browser).
 
-`Library.tsx` shows either the **grid** — an even grid (`Library.css`, columns
-and rows equally spaced, on the same `#e9e4d8` backdrop as the page area) of
-binder **covers**. Each cover is a `LibraryBinder` (`Library/LibraryBinder.tsx`) — a hue-tinted
-rectangle with a circular placeholder
-portrait showing the name's first letter above the name (room reserved for a
-future character portrait), edit/delete `IconButton`s surfacing on
-hover; `Library` maps binders → `<LibraryBinder>` (plus one ghost `<LibraryBinder>`) and stays
-responsible for the binder collection and modal orchestration. Each cover has a
-deliberately **messy** look: loose cream **papers** poke
-out from behind it at odd angles (with shadows), and **decorative, non-functional
-binder tabs** tuck along its right edge — **the real page-tab strip markup
-(`Binder/tabs/Tabs.css`'s `.tabs` classes) reused as-is and shrunk by a plain CSS
-`scale`**, so labels/hues/overlap match the actual tabs exactly, just tiny. It
-draws **one tab per real page in the binder, in that page's stored hue and
-label**. Each cover subscribes to that binder's shared `pagesAtom`/`activePageAtom`
-(`Binder/binderAtoms.ts`, below), so the shelf stays reactive to page changes and
-reads no `localStorage` itself, and `logic/binderTabs/binderTabs.ts`'s `binderTabs` (pure,
-unit-tested in `binderTabs.test.ts`) projects the persisted page list to each tab's
-label and hue. The stable per-sheet paper
-offset/rotation comes from `logic/bookJitter/bookJitter.ts` (pure, seeded off the binder id,
-unit-tested in `bookJitter.test.ts`), so a book's mess is consistent across
-renders. When a binder is open the grid gives way to
-the `Binder` bound to that binder's id (`<Binder storagePrefix={id} onExit=…/>`,
-keyed by id so it remounts per binder). Adding/editing/deleting a binder go
-through the `Modal`-based modals in `modals/`, one component per file
-(`AddBinderModal.tsx` takes a name **and an optional "Create from" binder template**;
-`EditBinderModal.tsx` renames + recolours the spine via the shared `ui/ColorPicker`);
-deleting reuses the shared `ui/ConfirmModal`, warning all the binder's pages are
-removed. `Library.createBinder(name, fromTemplateId?)` adds the binder and, when a
-template is chosen, instantiates its structure via `instantiateBinderTemplate`
-(Templates feature) — writing `pagesAtom`/`activePageAtom` and seeding any markdown
-content — before the shelf refreshes. Default spine hues reuse the shared
-`src/lib/colors/tabHue.ts`. Adding is driven by a **ghost binder** —
-the same `LibraryBinder` markup faded to a low opacity (`.library__binder--ghost`, the
-`ghost` variant), with a plus icon in the portrait in place of a letter and the
-name "Add binder". It sits in the grid's last cell after the existing covers and
-opens `AddBinderModal`; there is no separate corner button, and an empty library
-shows just the ghost cover. A bottom-right `corner-cluster` of two `IconButton`s
-(`library__templates`) opens the **Page templates** and **Binder templates** managers
-(Templates feature).
+### UI controls
 
-### Binder feature (`src/components/features/Binder/`)
+Shared controls in `src/components/ui/`. `FieldInput` picks a control for a
+field's `type` via an **exhaustive `switch`** (an `assertNever` default makes a
+new type a compile error); every control takes the uniform
+`(field, value, onChange[, readOnly])` contract, so there is no node-shape
+dispatch. Dialogues are built on the shared `Modal` (which also carries the shared
+form styling) + a body-only form split out so a modal can swap its body in place
+without nesting a second `Modal`. Other shared pieces: `ActionMenu` (zoom-safe
+"…" dropdown), `ImagePanel`/`ImageField`/`ImageUrlModal`, `PaperPage` (the A4
+page shell, caller passes width), `ColorPicker`, `ConfirmModal`/`ConfirmBody`,
+`IconButton`. When something is used by more than one feature, extract it to `ui/`
+with a single owner, rather than copying it.
 
-`Binder` (`Binder.tsx`) is rendered per-open-binder by `Library` and takes a
-`storagePrefix` (the binder's id) and an `onExit` callback (back to the grid).
-It owns the whole page area: it renders each page the user has **visited since the
-binder opened**, each in its own `.page` wrapper (`Binder.css`, which only carries the
-drop shadow/border and reserves room for the tabs — the page content styles itself; a
-markdown page gets the `.page--bare` modifier, which drops the wrapper's border/shadow
-since each of its A4 sheets draws its own. `.binder-view` shrink-wraps its page (every
-page type renders at a fixed physical-sheet width) so the tab strip stays flush with the
-sheet). Only the active page is shown; the others are `hidden` (`display:none`) but stay
-**mounted**, so switching between this binder's tabs is instant rather than rebuilding a
-heavy editor each time — a visited-ids set grown during render (cleared when leaving the
-binder remounts it). An empty binder (no active page) shows the untitled empty page.
-These sit beside the `Tabs` strip
-(`tabs/Tabs.tsx`/`tabs/Tabs.css`), both inside a full-width `.app-shell`. The
-tab-strip components live together in a `tabs/` subfolder (`Tabs`,
-`TabControls`), with the tab modals in a nested `tabs/modals/` (`AddTabModal`,
-`EditTabModal`); they are feature-specific, so they live in the feature folder,
-not in `ui/` (tab deletion reuses the shared `ui/ConfirmModal`). The pure
-per-index tab-hue function lives in `src/lib/colors/tabHue.ts` (shared by `Binder` and
-`Library`, unit-tested in `tabHue.test.ts`). Page-view zoom lives in the shared
-**`PageViewport`** (see its feature below), which `Binder` wraps its pages and
-`Tabs` in, passing the active page's natural width (resolved by
-`pageNaturalWidth(type)`, which reads each page component's own `naturalWidth`).
+### Shared helpers
 
-The page list is **dynamic and persisted**: a `Page` is serialisable tab
-metadata (`id`, `label`, `type`, `storagePrefix`), declared with the per-binder
-atoms in `binderAtoms.ts`, and `renderPage(page, storagePrefix, active)` (in `Binder.tsx`)
-resolves it to an element by `type` — `characterSheet` → `CharacterPage` bound to
-the **binder-prefixed** storage prefix (`pagePrefix(storagePrefix, page.storagePrefix)`,
-the one `binderAtoms.ts` helper for the `${binderPrefix}:${pageId}` join every page-
-seeding site shares),
-`markdown` → a `MarkdownPage` bound to the same binder-prefixed prefix (passed `active`,
-whether it is the shown page, so a hidden-but-mounted notes tab suppresses its
-body-portalled toolbar/handle; each notes tab keeps its own persistent editor rather than
-one editor remounted per prefix), `empty` → an `EmptyPage` titled by its label. Page
-types live in `pageTypes.ts` (`PageType`, `PAGE_TYPES`). The page list is a **per-binder** atom from
-`binderAtoms.ts`'s `pagesAtom(prefix)` — `atomWithStorage('${prefix}:pages', …)`,
-one **shared, cached instance per prefix** so the binder and the library shelf read
-the same list (**empty by default** — the binder starts with no pages until the
-user adds one) — so each binder keeps an isolated namespace. The **active page is
-the app-wide location** (see the navigation hook below), not a per-binder atom;
-`binderAtoms.ts` also owns `activePageAtom(prefix)`
-(`atomWithStorage('${prefix}:activePage', …)`), but only as **last-viewed-page
-memory** — `Binder` writes the shown page to it so the library can reopen the
-binder at that page (the library reads the id straight from that shared atom). Page
-navigation (opening a binder, selecting a tab, adding
-or deleting a page) goes through `useNavigate`, so each move is a browser-history
-entry. The zoom is stored as a **viewport-width fraction**
-(`usePageScale`'s `atomWithStorage('pageWidthFraction', …)`) shared across binders:
-the page occupies that fraction of the viewport regardless of its natural width, so
-zoom feels uniform across page types and syncs identically across devices. The hook
-derives the `scale` (`fraction × viewportWidth / naturalWidthPx`) and clamps the
-fraction to a fit ceiling measured from the scaled wrapper's layout width (the page
-plus its tab-strip/margin chrome), so it never overflows the viewport.
-`EmptyPage`
-(`features/pages/EmptyPage/`) is both the stand-in for an `empty`-type page and the
-page shown when the binder has no active page (`Binder` renders `<EmptyPage/>`
-untitled in that case). The `empty` type is default-only — it is not offered in
-the add-page menu (`PAGE_TYPES`), only used as the stand-in described above.
-
-Adding a page is driven from `TabControls` (below), which opens `AddTabModal`
-(`tabs/modals/AddTabModal.tsx`) — a proper modal (not `window.prompt`) asking for a
-**name** and a **type**, and (when the type is `markdown`) an optional **Template**
-(Blank + the markdown templates; see the Templates feature). `AddTabModal` is just
-`Modal` + `AddTabForm` (`tabs/modals/AddTabForm.tsx`, the body-only form) — and likewise
-`EditTabModal` is `Modal` + `EditTabForm` (`tabs/modals/EditTabForm.tsx`) — split so a
-dialogue swapping its body in place (the binder-template tab editor) can show the
-add/edit form without nesting a second `Modal`. On submit
-`Binder.createPage(name, type, markdownTemplateId?)` mints the id via
-`src/lib/ids/newId.ts`'s `newId()` (the shared GUID helper, unit-tested in
-`newId.test.ts`) — an opaque id decoupled from the name so it survives renames;
-that id is also the page's `storagePrefix`, and the new page becomes active. A
-markdown page created from a template seeds its content via
-`seedMarkdownContent` (Templates feature) from that template's live body.
-
-`TabControls` (`tabs/TabControls.tsx`/`.css`) is a vertical cluster of round
-`IconButton`s in the gutter right of the tab strip, plus a **Back to library**
-button (calls `onExit`) pinned to the top-left viewport corner. The **Add page**
-button is always shown (adding is the only way to add a page — there is no "+"
-tab); the edit, delete, and **Print** buttons act on the **active** tab and
-appear only when one is active (`hasActive`; Print calls `window.print()`).
-Zoom is handled by the shared `PageViewport` (its `ViewControls`, a bottom-left
-cluster); see that feature below. A `@media print` block in `Binder.css` hides the
-tab strip and controls and zeroes the margins so only the page content prints. Editing opens `EditTabModal.tsx` (in
-`tabs/modals/`, built on the shared `Modal`): it renames the label (the
-id/`storagePrefix` and stored fields are untouched) and recolours the tab `hue`
-via the shared `ui/ColorPicker`, both in one dialogue; deletion opens the shared
-`ui/ConfirmModal`. `Binder` owns the handlers (`createPage`, and
-`editPage`/`deletePage`, which patch or drop the active page in the persisted
-list; delete then activates a neighbour).
-
-`Tabs` is the binder-style tab strip anchored to the page's right edge:
-labels rotated 90° CCW (`writing-mode: vertical-rl` + 180° rotation), one muted
-paper-tab hue per tab index. The strip sits flush against the page's right edge
-(the page reserves its width); the active tab is lifted with a drop shadow. Tabs can be
-dragged vertically to reorder (transform-based, so displaced tabs glide via the CSS
-`transform` transition); the drag also navigates to the tab (its click fires as normal),
-and drops are committed via `onReorder(from, to)` (`Binder` reorders and persists the
-`pages` list).
-
-### PageViewport feature (`src/components/features/PageViewport/`)
-
-`PageViewport` (`PageViewport.tsx` + `.css`) is the **shared page-view zoom
-scaffold** extracted from `Binder` so every page surface zooms identically. Props:
-`naturalWidth` and `children`. It owns the `.binder-view` wrapper (scaled to a
-persisted fraction of the viewport via `usePageScale(naturalWidth)`, and publishing
-that scale as the `--page-scale` custom property so an in-page control can
-counter-scale by `calc(1 / var(--page-scale))` to a constant on-screen size against
-the zoom transform — the markdown block handle and table "…" menus do), the transient
-`binder-view--zooming` compositor-layer promotion (`will-change: transform` toggled
-as a class on the DOM node for the ~0.3s of a scale change only — a permanent layer
-around the editable markdown surface blanks out after inactivity), and the bottom-left
-`ViewControls` cluster (`ViewControls.tsx` + `.css`, moved here from `Binder`). The
-`.binder-view*` CSS (including its `@media print` transform reset) lives in
-`PageViewport.css`. `Binder` wraps its pages + `Tabs` in it; the markdown-template
-editor (Templates feature) wraps its `MarkdownPage` in it. The caller keeps the
-`.app-shell` wrapper and sets `--sheet-border-color`.
-
-### Templates feature (`src/components/features/Templates/`)
-
-**Library-wide reusable templates**, riding the existing localStorage → snapshot →
-sync path (every atom uses `notifyingStorage()`, so no new persistence plumbing).
-Two kinds:
-
-- **Markdown (page) templates** — reusable note layouts picked when adding a Notes
-  page.
-- **Binder templates** — a reusable **structure only** (ordered tabs: type, label,
-  hue, and for a markdown tab a *reference* to a markdown template), chosen when
-  adding a binder. The markdown reference is resolved to a concrete content copy only
-  at binder-creation time, so the template stays live-linked (editing it later affects
-  only binders created afterward).
-
-- `templateTypes.ts` (pure) — `MarkdownTemplate = {id, label}` (its body lives
-  separately); `BinderTemplatePage = {id, label, type, hue, markdownTemplateId?}`;
-  `BinderTemplate = {id, label, pages}`.
-- `templateAtoms.ts` — `markdownTemplatesAtom` (`'markdownTemplates'`) and
-  `binderTemplatesAtom` (`'binderTemplates'`), both `atomWithStorage(…, [],
-  notifyingStorage())`. `templateContentPrefix(id)` = `` `template:${id}` `` — a
-  markdown template's body reuses **`markdownAtom(templateContentPrefix(id))`** (key
-  `template:<id>:markdown`), so it serialises like any notes page (no new content
-  store). `seedMarkdownContent(store, destinationPrefix, markdownTemplateId)` copies a
-  template's live body into a destination page's markdown (shared by both creation
-  paths); `clearMarkdownTemplateContent(store, id)` blanks a deleted template's body.
-- `logic/instantiate/instantiate.ts` (+ test, **pure**) —
-  `instantiateBinderTemplate(template, makeId)` → `{pages, seeds}`: concrete `Page[]`
-  (ids from the injected `makeId`, `storagePrefix === id`, order/label/type/hue
-  preserved) plus the markdown `seeds` to copy. Deterministic; no atoms/DOM/store.
-- `TemplateEditor.tsx` (+ `.css`) — the markdown-template **editor surface** (a
-  navigable location, not a binder): an `.app-shell` around
-  `<PageViewport naturalWidth={MarkdownPage.naturalWidth}>` wrapping
-  `<MarkdownPage storagePrefix={templateContentPrefix(id)} active/>`, plus
-  `StorageControls` and a top-left Back-to-library `IconButton`. No tab strip / tab
-  controls. `AppContent` renders it when `isMarkdownTemplate(location)`.
-  Both managers hold a single `Modal` whose **body swaps in place** by a `view` state
-  (list / add / rename / delete, plus `edit` for binder templates) rather than stacking
-  a dialogue on a dialogue — so add/rename/delete render `NameForm`/`ConfirmBody`
-  bodies inside the one modal, their Cancel/submit/confirm returning to the list.
-- `MarkdownTemplatesModal.tsx` — the page-templates manager: a `ManagerList` of
-  `markdownTemplatesAtom` with add/rename (`NameForm`), delete (`ConfirmBody`, also
-  `clearMarkdownTemplateContent`), and **Edit** → `navigate(markdownTemplateLocation(id))`.
-- `BinderTemplatesModal.tsx` — the binder-templates manager: a list view (`ManagerList`
-  of `binderTemplatesAtom`, add/rename/delete) whose **Edit** swaps to
-  `BinderTemplatePagesEditor` for that template.
-- `BinderTemplatePagesEditor.tsx` — the **lighter plain tab list** for one binder
-  template's `pages` (not the rotated `Tabs` strip), each row tinted to its tab hue via
-  `tabColor`/`tabBorderColor`: reorder, edit (label + hue), delete, and add. It **owns its
-  own `Modal`** (title + a top back link to the templates list), and **add/edit/delete each
-  swap that dialog body in place** — to `AddTabForm`, `EditTabForm`, and `ConfirmBody`
-  respectively, their own Cancel/submit/confirm buttons returning to the tab list — rather
-  than stacking a second modal. The add-tab form still returns the markdown-template id;
-  re-pointing a markdown tab's template = delete + re-add.
-  New-tab hue = `tabHue(pages.length)`.
-- `ManagerList.tsx` + `NameForm.tsx` + `Templates.css` — the shared list body
-  (rename/open/delete rows, sorted by `compareByLabel`, + add button) and the shared
-  single-field add/rename **body** (no `Modal` of its own), so the two managers stay
-  uniform rather than duplicating structure.
-
-Applied at creation: `Binder.createPage` seeds a new Notes page from a chosen
-markdown template; `Library.createBinder(name, fromTemplateId?)` instantiates a chosen
-binder template — `store.set(pagesAtom(id), pages)`, `seedMarkdownContent` per seed,
-`store.set(activePageAtom(id), pages[0]?.id ?? '')` (same store, no remount). A
-since-deleted markdown reference yields an empty Notes page (graceful).
-
-### Storage feature (`src/components/features/Storage/`, `src/lib/storage/`, `src/hooks/useStorage.ts`)
-
-Durable, whole-library persistence beyond `localStorage`. Persistence is **not**
-per-field: the entire `localStorage` key space is snapshotted to one JSON document
-and hydrated back, so the sync layer is fully decoupled from the field-node system.
-Phase 1 ships the pure core plus the **file provider** only (export/import); cloud
-providers land in later phases behind the same seams.
-
-The `src/lib/storage/` group is itself organised by concern: `providers/` (the
-provider registry, types, per-provider implementations, and their shared
-`httpError`), `oauth/` (the shared OAuth/token machinery — `oauthClient`,
-`oauthTokenClient`, `pkce`), `sync/` (`sync`, `syncActions`), plus `snapshot`,
-`connectionStore`, and `observableStorage` at the group root.
-
-- **Snapshot (`src/lib/storage/snapshot.ts`).** `LibrarySnapshot` (`version`,
-  `revision` GUID, `savedAt`, and `entries`: every `localStorage` key → value) with
-  `createSnapshot`/`applySnapshot` (replace, not merge; migrates then clears then
-  writes) over an injected `StorageLike`, and `snapshotHash` (a **`hash-sum`** of the
-  key-sorted entries, used for dirty detection and conflict lineage). Colocated-tested.
-- **Migrations (`src/migrations/`).** `migrations.ts` is the engine — the `Migration`
-  type, the append-only `MIGRATIONS` list, `CURRENT_VERSION` (derived from the highest
-  `to`), `runMigrations(entries, fromVersion, migrations)`, and `migrateSnapshot`
-  (rejects a snapshot newer than this app). **Each migration is its own file** in this
-  directory (`v2.ts`, …), listed in `MIGRATIONS` in ascending `to` order; append new
-  ones, never edit or renumber an existing one. `v2` is currently a live no-op
-  (identity) migration documenting the shape. Version numbers are meaningless except to
-  trigger migrations. Each file is colocated-tested (`migrations.test.ts`, `v2.test.ts`).
-- **`src/lib/storage/` group.** `sync.ts` — the pure `evaluateSync({remoteRevision,
-  baseRevision, dirty})` → `SyncStatus` conflict decision (revision lineage, not
-  clocks; full truth-table tested). `StorageProvider.ts` — the `ProviderId`,
-  `StorageTarget`, and `StorageProvider` types (phase 1 needs only
-  `connect`/`isConnected`/`save`/`load`/`readRevision`). `fileProvider.ts` — the
-  `file` provider: pure `serialiseSnapshot`/`parseSnapshot` (validated, tested) plus
-  thin File System Access API / anchor-download / hidden-input glue; `readRevision`
-  returns `null` (a file can't be probed). `nextcloudProvider.ts` — the `nextcloud`
-  provider (phase 3): pure `webdavUrl`/`webdavParentUrls` URL builders plus
-  save/load/readRevision/connect that relay one WebDAV request each through the
-  same-origin `/api/nextcloud` (Basic auth built client-side); `connect` PROPFINDs the
-  base then recursively `MKCOL`s the target's parent folders, `readRevision` GETs and
-  returns the in-file `revision` (a file is sheet-sized, so a full fetch is fine). It
-  holds the active `NextcloudConnection` in a module variable set via `adoptConnection`;
-  persistence is the caller's (see `connectionStore`). `onedriveProvider.ts` — the
-  `onedrive` provider (phase 4): a pure `contentUrl(fileName)` builder for the
-  Graph app-folder file (`me/drive/special/approot:/<fileName>:/content`, the filename
-  owned by `target.locator`) plus save/load/readRevision/connect against Microsoft Graph.
-  It holds the active
-  `OneDriveConnection` (a rotated refresh token + generic label) and a short-lived
-  in-memory access token — both held by the shared `oauthTokenClient.ts` (see below), whose
-  `withAccessToken` refreshes via `/api/oauth/microsoft/refresh`
-  (and retries once on a Graph 401), and — since Microsoft rotates the refresh token on
-  every refresh — `adoptConnection(connection, onChange?)` takes an **optional change
-  callback** so the caller persists the rotated token without the provider importing
-  `connectionStore`. `readRevision` returns the **in-file** `revision` GUID (not Graph's
-  eTag/cTag), 404→null. `googleDriveProvider.ts` — the `googleDrive` provider (phase 5):
-  save/load/readRevision/connect against the Drive v3 REST API in the app's own hidden
-  **app-data folder** (`spaces=appDataFolder`, the least-privilege `drive.appdata` scope).
-  Drive addresses files by **id**, so the provider stores the file id in the connection
-  (`GoogleDriveConnection.fileId`) and resolves it **at most once** via `ensureFileId` —
-  the stored id (no request), else a single name lookup, creating the file (multipart) when
-  absent — persisting the discovered/created id through the same `adoptConnection(…, onChange?)`
-  rotation seam OneDrive uses. `save` PATCHes the media by id (recreating once on a 404 from an
-  external delete); `readRevision` returns the **in-file** `revision` GUID. Google does not
-  rotate its refresh token, so the rotation guard is a harmless no-op. `oauthTokenClient.ts` —
-  `createOAuthTokenClient(config)`, the **shared** connection/access-token machinery both OAuth
-  providers build on (active connection + rotation callback, cached access token, relay refresh,
-  and the 401-retry `withAccessToken`); each provider makes one instance bound to its relay
-  refresh endpoint and messages, and layers only its own REST calls on top (so `adoptConnection`
-  is that instance's `adopt`). It is covered through both provider test suites. `httpError.ts` —
-  `describeHttpFailure(response, lead)`, the shared failure-message builder every cloud provider
-  throws through: a provider-specific `lead(status)` (with any credential/permission hint)
-  followed by the server's own response text (whitespace-collapsed, length-capped) so a failure
-  is diagnosable rather than an opaque status code (colocated-tested). `pkce.ts` — pure
-  PKCE/OAuth helpers
-  (`createCodeVerifier`/`createState`/`codeChallenge`/`base64UrlEncode` and the
-  generic `authorizeUrl` builder — an authorize endpoint plus provider-specific
-  `extraParams`, serving Microsoft **and** Google), tested against the RFC 7636
-  known-answer vector.
-  `oauthClient.ts` — side-effectful browser glue (untested, like `fileProvider`'s
-  picker), **generic over provider**: `runOAuth(config)` opens the sign-in popup
-  (synchronously, to keep the user gesture) and awaits the code the static per-provider
-  callback page (`public/oauth/microsoft/callback.html`, `public/oauth/google/callback.html`)
-  `postMessage`s back (state + origin + message source validated); `runMicrosoftAuth`/
-  `runGoogleAuth` are thin config builders over it, and `exchangeCode(provider, …)` posts to
-  the relay, surfacing the relay's own error detail on failure (unwrapping the token endpoint's
-  `error_description`, or naming a missing server OAuth config on a 500/404) so a failed sign-in
-  is diagnosable. `providers.ts` — the provider registry
-  (`getProvider`/`isProviderAvailable`) now registers `{file, nextcloud, onedrive, googleDrive}`,
-  so Google Drive stops showing as "coming soon". `syncActions.ts` — the **pure**
-  provider-dependent decisions (`isProbeable`, `resolveTarget`, `chooseRemoteRevision`,
-  `canSave`/`canLoad`, `saveIntent`, and the phase-6 `autosaveIntent`/`autoloadIntent`),
-  unit-tested over every `(status, probeable, …)` combination so the hook and the controls
-  can never disagree about enablement, the save guard, or when autosave/autoload fire.
-  `autosaveIntent` yields `write`/`conflict`/`idle` and `autoloadIntent` yields
-  `load`/`conflict`/`idle`; both are cloud-only (idle for the non-probeable file provider),
-  never act while disabled, and route a `diverged` status to the conflict flow rather than
-  clobbering. `resolveTarget(provider, connections)` takes a `CloudConnections` bag
-  (`{nextcloud, oneDrive, googleDrive}`) — additive as providers are added, not a per-provider
-  parameter — and owns the fixed snapshot filename (`SNAPSHOT_FILENAME = 'ttrpg-app.json'`),
-  passed to both cloud providers as `target.locator`. `connectionStore.ts` — device-local
-  `SyncState` (`baseRevision`/`baseHash`),
-  the active provider id, the `NextcloudConnection`
-  (`load`/`save`/`clearNextcloudConnection`), the `OneDriveConnection`
-  (`load`/`save`/`clearOneDriveConnection`), and the `GoogleDriveConnection`
-  (`load`/`save`/`clearGoogleDriveConnection`, storing the resolved `fileId`), and the
-  device-local **autosave preference** (`load`/`saveAutosaveEnabled`, default true — one global
-  toggle governing both autosave and autoload, not synced since it is per device) in
-  **IndexedDB** (via **`idb-keyval`**), kept out of the snapshot. `observableStorage.ts` — `notifyingStorage<Value>()`, the
-  jotai `atomWithStorage` storage **every persisted atom uses** (field nodes, binders,
-  pages, active page, location, page scale): it is the default JSON localStorage storage
-  plus a write notification, and `subscribeToStorageWrites` lets the hook recompute
-  `dirty` the moment any edit persists — not only on window focus.
-- **`useStorage()` hook.** Orchestration for the controls: resolves the active target
-  per provider via `resolveTarget`, derives `dirty`
-  (`baseHash === null ? libraryHasData() : snapshotHash(current) !== baseHash`,
-  recomputed immediately on window focus and — **debounced** (`use-debounce`'s
-  `useDebouncedCallback`, so a burst of edits hashes once) — on persisted-atom writes
-  via `subscribeToStorageWrites`) and `status`, and drives `save` (mint revision → `provider.save` → persist `SyncState`;
-  a probeable remote that is ahead/diverged routes through the conflict flow via
-  `saveIntent`), `load` (`provider.load` → `evaluateSync` → apply, or raise the conflict
-  flow on `diverged`/`localAhead`), and `resolveConflict`. For a **probeable** provider
-  (every one but `file`) it probes the remote revision through `readRevision` — on
-  mount, on `window` focus, and after each save/load — feeding the real value (not the
-  base) into `evaluateSync`, with a request-token stale guard so an out-of-order probe
-  never regresses the revision; `file` keeps the base as its stand-in remote. **A single
-  instance is held above the library/binder switch** (see `StorageProvider` below), so it
-  is not remounted — and the remote re-probed — on every navigation between the two. Switching
-  provider or (dis)connecting a cloud provider resets the sync base (a base from another
-  target is meaningless). Exposes `connectNextcloud`/`disconnectNextcloud` +
-  `nextcloudConnection`, `connectOneDrive`/`disconnectOneDrive` + `oneDriveConnection`,
-  and `connectGoogleDrive`/`disconnectGoogleDrive` + `googleDriveConnection`
-  (each `connect*` runs its OAuth flow via `exchangeCode(provider, …)`, then builds a
-  generic-labelled connection). It also exposes a **`saving`** flag — set for the whole
-  `save()` (the conflict-probe branch and the write) so the controls can disable Save while
-  a save runs, which prevents two overlapping saves from letting the id-addressed Google
-  provider create a duplicate app-data file; it is the one deliberate exception to "the hook
-  exposes no activity/error state" (toasts otherwise), gating the button rather than reporting
-  progress. The
-  near-identical cloud connect/disconnect/mount-hydrate lifecycle lives **once** in
-  `useCloudConnection(ports, actions)` (`src/hooks/`): adopt → validate → persist →
-  activate → reset base, and the inverse on disconnect; all three cloud providers route
-  through it, differing only in building their `Connection` (Nextcloud's form fields vs
-  the OAuth providers' code exchange) and in exposing their typed connection state. Its `adopt`
-  call passes the provider's own `persist` port as the rotation `onChange`, so a rotated
-  OneDrive refresh token (or a resolved Google file id) is saved through the one persister
-  (Nextcloud ignores the extra argument). After applying a load it calls the `StorageRemountContext`
-  `remount()` so atoms re-read storage. Exports that context.
-  **Autosave/autoload (phase 6).** For a cloud provider with the device-local autosave preference
-  on, the hook saves and catches up **hands-off**: a persisted-atom write schedules a longer
-  (`AUTOSAVE_DEBOUNCE_MS = 2000`) debounce that runs `autosaveIntent` and, on `write`, saves through
-  the same `save()` path (so a `diverged` remote still routes to the conflict modal, never a silent
-  overwrite); the remote probe path (`refreshRemote`, on mount/focus/post-save/post-load) runs
-  `autoloadIntent` and catches a cleanly-ahead remote up through `load()`, guarded by an
-  `autoloadInFlight` ref against overlap. `performSave` guards re-entrancy with a `savingRef` so a
-  debounced autosave and a manual save can never both write. **Durability** — every edit is written
-  to `localStorage` synchronously, so only the *remote* copy can ever lag one debounce window; the
-  small **`useAutosaveFlush`** hook (`src/hooks/`) closes that window by flushing the pending
-  autosave on `visibilitychange`→hidden and window `blur` (both page-alive, a normal uncapped fetch),
-  and on `beforeunload` (when there is unsaved work) it dispatches the save and shows the native
-  confirmation prompt, whose dwell time lets the already-issued request land. No service worker / no
-  `keepalive`; a service-worker Background Sync is the future path for completing an upload after the
-  page is truly gone. The hook also exposes `autosaveEnabled`/`setAutosaveEnabled` (persisted
-  device-local) and a one-shot `promptSettings`/`dismissSettingsPrompt` — set once after mount when
-  no provider was ever configured, so a first-time user is shown storage settings.
-- **UI (`features/Storage/`).** `StorageProvider` (mounted once in `AppContent`, above the
-  library/binder switch) holds the single `useStorage()` instance and exposes it through
-  `storageContext.ts`'s `StorageContext`/`useStorageContext()`, so navigation does not
-  remount the orchestration (re-probing the cloud remote each crossing). `StorageControls`
-  — a `corner-cluster` of
-  `IconButton`s (Settings, Load, Save) with a `placement` prop (`binder` → top-left
-  under "Back to library"; `library` → top-left), mounted by `Binder` and
-  `Library` (both reading the shared instance via `useStorageContext()`); Save/Load enablement and labels come from the pure `canSave`/`canLoad`
-  (file export/import is always enabled; a cloud provider gates **Save on local
-  `dirty`ness alone** — decoupled from the remote probe, since `save` re-checks the
-  remote and routes a conflict at click time — and **Load on `status`**).
-  Save/load progress and failures surface as **toasts** — `useStorage` calls
-  [`sonner`](https://sonner.emilkowal.ski)'s `toast` directly (a `toast.loading`
-  updated in place to `toast.success`/`toast.error`), rendered by the single
-  top-left `<Toaster/>` mounted once in `App`; the hook exposes no activity/error state.
-  Save is additionally disabled while `saving` is true. `modals/StorageSettingsModal`
-  picks the provider (unimplemented ones disabled as
-  "coming soon"); choosing a cloud provider (Nextcloud, OneDrive, or Google Drive) replaces
-  the modal
-  body with that provider's setup view (a Back button returns to the provider list), and
-  the provider becomes active only on a successful connect, not on merely opening its
-  setup. `modals/NextcloudConnectForm` collects the instance URL, username, app password
-  (with the exact Settings → Security path and a never-your-account-password warning), and
-  file path, discloses that data passes through the relay, and shows the connected
-  target with a Disconnect button. The two OAuth providers have no form fields (auth is an
-  interactive popup), so `modals/OneDriveConnectForm` and `modals/GoogleDriveConnectForm`
-  are thin wrappers over the shared `modals/CloudConnectForm` (a disclosure node + Connect
-  button calling `onConnect`, or the connected state with a Disconnect button), each
-  supplying only its label and disclosure copy (OneDrive → Microsoft sign-in, app's own
-  OneDrive folder; Google Drive → Google sign-in, app's own hidden Drive app-data folder).
-  Every connected cloud view (all three) shows the shared `modals/AutosaveToggle` — the one
-  device-local "Autosave & autoload" checkbox, its `autosaveEnabled`/`onAutosaveChange` threaded
-  from `useStorage` through `StorageSettingsModal`. `StorageControls` opens the settings modal
-  automatically when `promptSettings` is set (a never-configured device), deriving the modal's
-  open state from `settingsOpen || promptSettings` and dismissing the prompt on close.
-  `modals/ConflictModal` (shared `Modal`) offers keep
-  this device / take the other on a divergent load or a save-time conflict.
-
-### Storage api service (`server/`)
-
-A standalone Node/Hono api project (its own Yarn 4 install and `yarn.lock`,
-**not** part of the app's install — different runtime and deps: Hono + tsx),
-exposing the same-origin `/api/*` backend later storage phases extend with
-relay/OAuth routes. `server/src/` is grouped by concern: `index.ts` (the entry
-that mounts the sub-apps) and `env.ts` (the shared required-env accessor) at the
-root, the Hono sub-apps under `routes/` (`nextcloud.ts`, `oauth.ts`), and the SSRF
-guard under `security/` (`ssrf.ts`); each colocated with its `*.test.ts`.
-Phase 2 shipped a CORS lock and `GET /api/health`
-(returns `ok`); **phase 3** adds the Nextcloud WebDAV relay: `nextcloud.ts` (a
-`Hono` sub-app mounted at `/api/nextcloud`) forwards one WebDAV request per call —
-reading `x-nc-url`, `x-nc-method`, `authorization`, `depth` — rejecting a missing
-target/credential (400) or a method outside `{GET, PUT, PROPFIND, MKCOL, DELETE,
-MOVE}` (405), and refusing to follow a 3xx (502). `ssrf.ts`'s `assertAllowedTarget`
-is the SSRF control: a **fail-closed hostname allowlist** (`NEXTCLOUD_ALLOWED_HOSTS`,
-comma-separated) — in production an unset allowlist refuses every forward (503, since
-a public relay with no allowlist is an open proxy), a set one is enforced (exact,
-case-insensitive hostname match) and https is required; in development an unset
-allowlist allows any target (so a local/http Nextcloud works). No DNS/IP machinery —
-a pure hostname string match. Both are colocated-tested (`ssrf.test.ts`,
-`nextcloud.test.ts`, run by the app's root Vitest). **Phase 4** adds the
-confidential-client OAuth relay: `oauth.ts` (a `Hono` sub-app mounted at `/api/oauth`),
-generic over provider — `configFor(provider)` resolves the fixed token endpoint and
-`clientId`/`clientSecret`/`redirectUri` from env vars (`microsoft` via `MS_*`,
-`google` via `GOOGLE_*` (phase 5)). A shared `resolveConfig` maps a genuinely unknown provider
-to **404** but a known provider whose env is missing/blank to **500** (a server
-misconfiguration, so it is not mistaken for an unknown provider — the client surfaces this as a
-missing-config hint). `POST /:provider/exchange`
-(`{code, codeVerifier}`) and `POST /:provider/refresh` (`{refreshToken}`) forward a
-form-encoded grant to the token endpoint and return only `{access_token, refresh_token,
-expires_in}`, 400 on a missing field or an upstream failure (with the token endpoint's error
-`detail`) — the client secret never
-reaches the browser. No SSRF guard (the token endpoints are fixed constants).
-`env.ts`'s `env(name, fallback?)` is the required-env accessor (throws when unset).
-Both are colocated-tested (`oauth.test.ts`, `env.test.ts`). Run the three-container dev stack
-with `docker compose up`: the
-`proxy` (nginx, `nginx.dev.conf`) serves the app at `http://localhost:8080`,
-forwarding `/` to the Vite dev server (`web`) and `/api/*` to this service
-(`api`). `vite.config.ts` gates `hmr.clientPort` on `DOCKER=true` so HMR works
-through the proxy in-container without breaking a direct host `yarn dev`. Docker
-is additive — host `yarn` workflows are unchanged.
-
-### UI controls (`src/components/ui/`)
-
-`FieldInput` picks the control for a field's `type` via `control()`, an **exhaustive**
-`switch` (an `assertNever` default makes a new type a compile error): `NumericInput`,
-`AutoFitInput` (text), `AutoFitTextarea`, `CheckInput`, `ImageField` (image), and
-`ImageTextareaField` (imageTextarea). Every control takes the uniform
-`(field, value, onChange[, readOnly])` contract, so there is no node-shape dispatch —
-image fields are plain string `InputNode`s like any other. `FieldForeignObject`
-positions any control in SVG coordinate space. Writable fields two-way bind to
-their atom (and go read-only when their optional `readOnlyAtom` is true); derived
-fields subscribe read-only.
-
-`AutoFitTextarea` is `FieldForeignObject` + `SheetTextarea` — `SheetTextarea` is the
-bare auto-fitting `<textarea>` (no `foreignObject`), reused by `ImageTextareaField`
-so it can host the textarea inside its own wrapper without nesting foreign objects.
-
-`ImagePanel` is the shared image surface (no `foreignObject` of its own): it shows the
-image when a URL is set, otherwise its `fallback`, with an always-present "…" `ActionMenu`
-(pinned top-right, counter-scaling `--page-scale` to a constant on-screen size) to
-add/change/remove the image via `ImageUrlModal`. Its `shape` prop (default `rectangle`)
-letter-boxes the image into the footprint (`object-fit: contain`); `circle` instead fills
-the footprint clipped to a disc (`object-fit: cover`, `border-radius: 50%`) with the menu
-floating over it, so it matches a circular traced frame. `ImageField` wraps it in a
-`FieldForeignObject` with no fallback (empty drop target), passing its definition's `shape`;
-`ImageTextareaField` wraps it with a `SheetTextarea` fallback and decodes/encodes the combined
-text+URL value through `imageTextareaValue.ts`.
-
-`ActionMenu` is the shared "…" dropdown (Radix `DropdownMenu`, portalled/fixed so it
-is zoom-safe): props are `label`, `actions` (`ActionMenuItem[]` — `{id, label, icon,
-destructive?, run}`), and `align`. Used by the markdown table menus and the appearance
-field. It owns `ActionMenu.css`, the `.menu`/`.menu__list`/`.menu__item` base the
-markdown block/toolbar menus also build on (so `MarkdownEditor.tsx` imports it).
-
-`ImageUrlModal` / `ImageUrlForm` — the shared insert-image dialogue (shared `Modal` +
-body-only form, mirroring `AddTabModal`/`AddTabForm`): a single URL field validated
-with `@lib/url/httpUrl.ts`'s `isHttpUrl` (http(s) only), its Insert button disabled
-until the URL is valid. Reused by the markdown editor and the appearance field.
-
-`PaperPage` is the shared white, A4-proportioned document-style page shell (its
-one style, so it never drifts): `EmptyPage`, the `CharacterPage` loading state,
-and the `MarkdownPage` loading state wrap their content in it. It owns no width of
-its own — the caller passes `width` (its physical page width in CSS px, from
-`@lib/paper/paperSize.ts`, the same source the zoom uses), so it is a fixed sheet
-footprint the binder view can shrink-wrap, and an optional `className` for a
-per-caller look (the markdown loading sheet adds the hued sheet border/shadow —
-shared with `.md-sheet` via one grouped CSS rule so the two can't drift).
-
-`Modal` is the shared dialogue shell: a titled box over a dimmed backdrop that
-closes on a backdrop click or Escape, with callers supplying the body. It also
-carries the **shared form styling** every dialogue uses so they stay uniform —
-`.modal__body` (the flex column), `.modal__field` (a labelled input/select), and
-`.modal__actions` with `.modal__btn` buttons (`--primary`/`--danger` variants,
-styled purely by class so a variant never loses a specificity battle), plus
-`.modal__prompt` for a confirmation/prompt paragraph. Every add/edit/confirm
-dialogue is built on it, supplying only its own form markup, and each shares the
-name-field state and trim/guard submit via the `useNameForm` hook (`src/hooks/`).
-
-`ColorPicker` is the shared hue picker used by the binder and tab edit modals: a
-hue slider, preset swatches, and a live-preview swatch. Props are `hue`,
-`onChange`, `presets` (the preset hues), and `preview` (a hue → CSS-colour
-function). The preview functions come from `src/lib/colors/hueColors.ts` (the same
-functions the components use), so the binder spine's and paper tab's tones stay
-distinct **and** the preview never drifts from what the component renders. Its
-picker styling lives in `ColorPicker.css`.
-
-`ConfirmModal` is the shared `Modal`-based confirmation dialog (used for deleting
-binders and tabs). Props are `title`, `message`, `confirmLabel`, an optional
-`variant` (`primary`/`danger`), `onConfirm`, and `onCancel`. Its message-plus-actions
-**body** is `ConfirmBody` (same props minus `title`), split out so a modal that swaps
-its body in place (the template managers) can show a confirmation without nesting a
-second `Modal`; `ConfirmModal` is just `Modal` + `ConfirmBody`.
-
-`IconButton` is the shared round, Material-style button: an icon at rest with a
-floating text-label pill that fades in on hover/focus. Props are `icon`, `label`
-(used as both the pill text and the accessible name), an optional `onClick`, an
-optional `labelSide` (`left`/`right`), `variant` (`default`/`danger`), `size`
-(`small`/`default`/`large`), `appearance`
-(`raised` with chrome, or `flat` as a plain icon in a list/menu), and `disabled`;
-it forwards a ref and spreads any
-other native button attributes, so it can back a Radix `asChild` trigger (e.g.
-the shared `ActionMenu` "…" menu). Callers control
-stacking via the surrounding container so the pill can sit above neighbours (e.g.
-`Binder`'s `TabControls` gives its cluster a high `z-index`).
-
-### Shared helpers (`src/lib`, `src/hooks`)
-
-Framework-agnostic pure helpers live in `src/lib`, **grouped by concern into
-subfolders**, each module colocated with its `*.test.ts`: `fields/fieldNodes.ts`
-(the field-node factory), `fields/imageTextareaValue.ts` (the pure
-parse/serialize codec for an `imageTextarea` field's combined text+URL value),
-`colors/tabHue.ts` (the per-index tab/binder hue),
-`colors/hueColors.ts` (the hue → CSS-colour functions for the binder spine and
-paper tabs — `binderSpineLight`/`binderSpineDark`/`binderSpineColor`, `tabColor`,
-and `tabBorderColor` (the active tab's hued page border) — the **single source of
-truth** shared between the modal previews and the components, which consume them as
-inline CSS custom properties so the colours never drift from the CSS; `Binder` sets
-`tabBorderColor(active tab hue)` as the inherited `--sheet-border-color` that the
-`.page` wrapper and the markdown sheets share), `ids/newId.ts`
-(`newId()`, the one `crypto.randomUUID()` GUID helper for both binder and page
-ids), `navigation/navigation.ts` (the pure `Location` type — which
-binder is open and which page is active, or which markdown template is open in its
-editor surface — with `libraryLocation`/`markdownTemplateLocation`/`isLibrary`/
-`isMarkdownTemplate`/`sameLocation`), and `paper/paperSize.ts`
-(`millimetresToPixels` and the `A4_WIDTH_PX`/`A5_WIDTH_PX` physical page widths in
-CSS px — the single source for page footprints, used by the page components' widths
-and the zoom math), `sorting/compareByLabel.ts` (the shared case-insensitive
-`label`-order comparator every binder/template list and dropdown sorts with), and
-`url/httpUrl.ts` (`isHttpUrl`, validating an http(s) image URL). The
-`storage/` subfolder is the whole-library persistence group (below). Shared React hooks live in
-`src/hooks`: `useAutoFitFontSize(ref, value, maxFontSize, axis)` (the
-shrink-to-fit loop behind `AutoFitInput`/`AutoFitTextarea`, owning
-`DEFAULT_FONT_SIZE`/`MIN_FONT_SIZE`), `usePageScale(naturalWidthPx)` (the persisted
-page-view zoom as a viewport-width fraction — derives the scale from the page's
-natural width, with step controls and a measured viewport-fit ceiling —
-consumed by `PageViewport`), `useNameForm(initialName, onSubmit)` (the name-field state,
-mount-focus, and trim/guard submit shared by every add/edit dialogue), and
-`useNavigation.ts` (the app's location, backed by the
-browser History API so Back/Forward step between visited binders and pages):
-`useLocation()` reads the persisted `location` atom, `useNavigate()` moves to a
-location and pushes a history entry, and `useNavigationHistory()` — called once in
-`AppContent` — seeds and applies Back/Forward via `popstate`. `useStorage()` owns
-the storage orchestration (see the Storage feature above) and exports
-`StorageRemountContext`; `useCloudConnection(ports, actions)` owns the connect/
-disconnect/mount-hydrate lifecycle shared by every cloud provider; `useAutosaveFlush(ports)`
-owns the `visibilitychange`/`blur`/`beforeunload` listeners that flush a pending autosave
-before the page goes inactive (all with the Storage feature). (The whole-library persistence
-pure helpers live under
-`src/lib/storage/` (which now also holds `snapshot.ts`) and `src/migrations/`, also documented
-with the Storage feature.)
+Pure helpers go in `src/lib/<concern>/` (never a flat pile at the `lib/` root),
+colocated with their tests. Shared React hooks go in `src/hooks/`. A helper used
+by more than one feature belongs here, as the single source of truth — e.g.
+hue→colour functions (`@lib/colors/hueColors.ts`) consumed as inline CSS custom
+properties by both components and their modal previews so colours can't drift;
+physical page widths (`@lib/paper/paperSize.ts`) as the one source for footprints
+and zoom math.
 
 ## Conventions
 
@@ -1054,14 +266,13 @@ All code documentation is concise and purpose-driven.
   for, not how it works internally. Leave out branching, edge cases, and
   reasoning.
 - **State purpose, not consumers** — a doc comment describes what the thing is
-  for, not who calls it or where its value is used. Those are distinct: the
-  purpose stays true as callers come and go, so naming consumers both dates the
-  comment and leaks another module's concern into it. Write "the active tab's
-  hued page border", not "the border colour `Binder` sets on `.page` and the
-  markdown sheets".
-- **Use `/** */` docblocks** of 120 characters wide for the doc comment on any type, function,
-  component, class, or file-overview header — always the multiline form, even
-  for a one-line description:
+  for, not who calls it or where its value is used. The purpose stays true as
+  callers come and go; naming consumers both dates the comment and leaks another
+  module's concern into it. Write "the active tab's hued page border", not "the
+  border colour `Binder` sets on `.page`".
+- **Use `/** */` docblocks** of 120 characters wide for the doc comment on any
+  type, function, component, class, or file-overview header — always the
+  multiline form, even for a one-line description:
 
   ```ts
   /**
@@ -1079,21 +290,22 @@ All code documentation is concise and purpose-driven.
 
 Any logic separable from layout must be separated from it, written in a
 functional style (pure functions — values in, values out; no side effects), and
-unit tested. `logic/formulas/formulas.ts` + `formulas.test.ts` is the model: rules math
-lives apart from field definitions, and layout wires the pure functions in via
-`derivedNode`.
+unit tested. `logic/formulas/formulas.ts` + `formulas.test.ts` is the model: rules
+math lives apart from field definitions, and layout wires the pure functions in
+via `derivedNode`. The same split applies everywhere (pagination, instantiation,
+sync decisions, …): pure tested core, thin glue.
 
 ### Styling
 
 Global tokens and utilities live in `src/index.css` on `:root`: the type/parchment
-palette (`--font-serif`, `--color-parchment`/`-paper`/`-ink`/`-text`/`-border`) and
-the stacking scale (`--z-page`/`-controls`/`-modal`). Component CSS references these
-rather than re-hardcoding the shared font, colours, or z-index numbers. Two shared
-utility classes also live there: `.corner-cluster` (a fixed vertical control stack;
-callers add only the corner insets) and `.no-print` (chrome hidden under
-`@media print`) — prefer them over per-file copies. Hue-derived colours are **not**
-CSS literals: the components set them as inline custom properties computed by
-`src/lib/colors/hueColors.ts`, the same source the modal previews use (see above).
+palette (`--font-serif`, `--color-parchment`/`-paper`/`-ink`/`-text`/`-border`)
+and the stacking scale (`--z-page`/`-controls`/`-modal`). Component CSS references
+these rather than re-hardcoding the shared font, colours, or z-index numbers. Two
+shared utility classes also live there: `.corner-cluster` (a fixed vertical
+control stack; callers add only the corner insets) and `.no-print` (chrome hidden
+under `@media print`) — prefer them over per-file copies. Hue-derived colours are
+**not** CSS literals: components set them as inline custom properties computed by
+`src/lib/colors/hueColors.ts`, the same source the modal previews use.
 
 ### File & directory naming
 
@@ -1103,61 +315,55 @@ CSS literals: the components set them as inline custom properties computed by
 - **Folders not named after a component** (groupings): plural camelCase
   (`sections/`, `logic/` — treat an established name like `logic` as its own
   plural).
-- **`lib/` and `logic/` are organised into subfolders**, not a flat pile of files.
-  In `logic/` each module gets its own folder holding it and its colocated test
-  (`logic/formulas/formulas.ts` + `formulas.test.ts`). In `lib/` modules are
-  grouped by concern (`colors/`, `fields/`, `ids/`, `navigation/`, `paper/`, `sorting/`, `url/`, `storage/` — and
-  `storage/` is further split into `providers/`, `oauth/`, `sync/`). A concern
-  folder may hold one or several modules; put a new pure helper in the matching
+- **`lib/` and `logic/` are organised into subfolders**, not a flat pile. In
+  `logic/` each module gets its own folder holding it and its colocated test. In
+  `lib/` modules are grouped by concern. Put a new pure helper in the matching
   concern folder (or a new one) rather than at the `lib/` root.
 
 ### Naming: no unapproved abbreviations
 
 Every name you introduce must be spelled out in full — function parameters,
-lambda/callback.html parameters, local variables (`let`/`const`), type/interface
-properties, and the names of components, types, classes, interfaces, functions,
-files, and directories alike. **Abbreviating or using a shorthand always requires
-the user's approval first**, and they will usually prefer the full word (`factory`
-over `f`, `element` over `el`, `options` over `opts`, `definition` over `def`,
-`index` over `i`, `centerX` over `cx`, `inputReference` over `inputRef`,
-`proficiencyBonusValue` over `profBonus`). Do not introduce a new abbreviation on
-your own; propose the full name, and only shorten it if the user asks. The sole
-exception is any abbreviation already listed under **Common abbreviations** below
-— those are pre-approved and may be used freely.
+lambda/callback parameters, local variables, type/interface properties, and the
+names of components, types, classes, interfaces, functions, files, and
+directories alike. **Abbreviating or using a shorthand always requires the user's
+approval first**, and they will usually prefer the full word (`factory` over `f`,
+`element` over `el`, `options` over `opts`, `definition` over `def`, `index` over
+`i`, `centerX` over `cx`, `inputReference` over `inputRef`). Do not introduce a
+new abbreviation on your own; propose the full name, and only shorten it if the
+user asks. The sole exception is any abbreviation under **Common abbreviations**
+below — those are pre-approved.
 
-When the user does accept a particular abbreviation, add it to that list in the
-same change so it stays approved going forward.
+When the user accepts a particular abbreviation, add it to that list in the same
+change so it stays approved going forward.
 
 #### Common abbreviations
 
 - `DC` — Difficulty Class (D&D 5e).
 - `AC` — Armor Class (D&D 5e).
-- `i` — loop counter, in `for`/`while` loop bodies only (use `index` for iterator-callback parameters).
+- `i` — loop counter, in `for`/`while` loop bodies only (use `index` for
+  iterator-callback parameters).
 - `config` / `Config` — configuration (e.g. `AbilityConfig`).
 
 ### General
 
 - Add or change a field only in its `layout/sections/*` module; never duplicate a
   field id. Within a section builder, cross-field logic reads fields by reference
-  off the typed tree (e.g. `abilities.wisdom.skills.perception.bonus.atom`), not by
-  id lookup.
+  off the typed tree (e.g. `abilities.wisdom.skills.perception.bonus.atom`), not
+  by id lookup.
 - Keep rules math in `logic/formulas/formulas.ts` pure and tested; wire it via
   `derivedNode`.
 - TS is strict-ish: `noUnusedLocals`/`noUnusedParameters`, `verbatimModuleSyntax`
   (use `import type` for types), and `.ts`/`.tsx` extensions are included in
   imports.
 - **Path aliases** (defined once in `tsconfig.app.json` `paths` and mirrored in
-  `vite.config.ts` `resolve.alias`) shorten cross-directory imports: `@ui/*` →
-  `src/components/ui`, `@features/*` → `src/components/features`, `@pages/*` →
-  `src/components/features/pages` (the page features — `CharacterPage`, `MarkdownPage`,
-  `EmptyPage`), `@hooks/*` →
-  `src/hooks`, `@lib/*` → `src/lib`, `@type/*` → `src/type` (singular `@type`,
-  since TypeScript reserves the `@types/` namespace). Prefer an alias over a
-  `../../…` chain that climbs out of the current directory; keep same-directory
-  imports relative (`./Foo.css`). Adding a new alias means updating **both** files.
-- In `src/lib/` and `logic/`, declare named functions with the `function`
-  keyword, not `const` arrow lambdas (arrows are fine for inline callbacks). UI
-  components elsewhere keep their existing arrow/`function` style.
+  `vite.config.ts` `resolve.alias`): `@ui/*`, `@features/*`, `@pages/*`,
+  `@hooks/*`, `@lib/*`, `@type/*` (singular `@type`, since TypeScript reserves the
+  `@types/` namespace). Prefer an alias over a `../../…` chain that climbs out of
+  the current directory; keep same-directory imports relative. Adding a new alias
+  means updating **both** files.
+- In `src/lib/` and `logic/`, declare named functions with the `function` keyword,
+  not `const` arrow lambdas (arrows are fine for inline callbacks). UI components
+  elsewhere keep their existing arrow/`function` style.
 
 ## Positioning helper skills
 
@@ -1165,14 +371,11 @@ Placing overlays against the artwork is aided by project skills: `locate-svg-lab
 (text labels), `locate-svg-circle` (single value circle), `locate-svg-checks`
 (round tick-boxes). They require the dev server running with the SVG inlined.
 
-## Notes
-
-- `public` hold folders with source artwork assets.
-
 ## Keeping this file current
 
-When you change anything this file describes — build/scripts, the field-node
-architecture, the layout/logic module structure, UI controls, or the
-conventions above — update the relevant section **in the same change**. This
-applies to any architectural part of the app, not just the field-node system.
-If you add a new feature directory or a new section module, document it here.
+When you change anything this file describes — build/scripts, the core patterns,
+the directory/module structure, or the conventions above — update the relevant
+section **in the same change**. This file documents **patterns, not a file
+inventory**: when you add a feature or module that follows an existing pattern,
+you do not need to catalogue it here; document it only when it introduces or
+changes a pattern, a convention, or a cross-cutting architectural decision.

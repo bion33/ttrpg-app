@@ -86,7 +86,7 @@ function topLevelPositions(view: EditorView): number[] {
  * Builds the pagination decorations (a spacer widget plus a print break-marker class before each breaking block) and
  * the sheet count, from the current measurements and the live sheet geometry.
  */
-function buildPagination(view: EditorView, geometry: SheetGeometry): {decorations: DecorationSet; count: number} {
+function buildPagination(view: EditorView, geometry: SheetGeometry): { decorations: DecorationSet; count: number } {
     const blocks = measureBlocks(view)
     const breaks = computeBreaks(blocks, geometry)
     const positions = topLevelPositions(view)
@@ -106,7 +106,9 @@ function buildPagination(view: EditorView, geometry: SheetGeometry): {decoration
 
 // A stable signature of the computed decorations, so the view only re-dispatches when the pagination actually changes.
 function signature(decorations: DecorationSet, count: number): string {
-    const parts = decorations.find().map((decoration) => `${decoration.from}:${(decoration as {spec: {key?: string}}).spec.key ?? 'n'}`)
+    const parts = decorations.find().map((decoration) => `${decoration.from}:${(decoration as {
+        spec: { key?: string }
+    }).spec.key ?? 'n'}`)
     return `${count}|${parts.join(',')}`
 }
 
@@ -118,7 +120,10 @@ export const Pagination = Extension.create<PaginationOptions>({
     name: 'pagination',
 
     addOptions() {
-        return {onPageCountChange: () => {}}
+        return {
+            onPageCountChange: () => {
+            }
+        }
     },
 
     addProseMirrorPlugins() {

@@ -1,4 +1,4 @@
-import {Node, createAtomBlockMarkdownSpec, mergeAttributes} from '@tiptap/core'
+import {createAtomBlockMarkdownSpec, mergeAttributes, Node} from '@tiptap/core'
 
 declare module '@tiptap/core' {
     interface Commands<ReturnType> {

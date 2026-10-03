@@ -43,20 +43,20 @@ export function parseItemCount(text: string): number | null {
  * The total weight (in pounds) of item rows whose count is encoded in the item text: each row's encoded count (or 1 when
  * none) times its per-item weight, empties as zero.
  */
-export function totalItemWeight(rows: Array<{item: string; weight: number | null}>): number {
+export function totalItemWeight(rows: Array<{ item: string; weight: number | null }>): number {
     return rows.reduce<number>((sum, row) => sum + (parseItemCount(row.item) ?? 1) * (row.weight ?? 0), 0)
 }
 
 /**
  * The total weight (in pounds) of stacked storage rows: each row's count times its per-item weight, empties as zero.
  */
-export function totalStorageWeight(rows: Array<{count: number | null; weight: number | null}>): number {
+export function totalStorageWeight(rows: Array<{ count: number | null; weight: number | null }>): number {
     return rows.reduce<number>((sum, row) => sum + (row.count ?? 0) * (row.weight ?? 0), 0)
 }
 
 /**
- * The encumbrance message for a carry weight against a Strength score: the standard/variant levels past 5×, 10×, and 15×
- * Strength, or an empty string when unencumbered or Strength is unknown.
+ * The encumbrance message for a carry weight against a Strength score: 'Unencumbered' up to 5× Strength, then the
+ * variant-rule levels past 5×, 10×, and 15× Strength, or an empty string only when Strength is unknown.
  */
 export function encumbranceLabel(carryWeight: number, strength: number | null): string {
     if (strength === null) return ''

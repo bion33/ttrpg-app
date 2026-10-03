@@ -17,7 +17,7 @@ interface MarkdownTemplatesModalProps {
 }
 
 // Which sub-view fills the modal body: the list, or the add/rename/delete form for a template.
-type View = {kind: 'list'} | {kind: 'add'} | {kind: 'rename'; id: string} | {kind: 'delete'; id: string}
+type View = { kind: 'list' } | { kind: 'add' } | { kind: 'rename'; id: string } | { kind: 'delete'; id: string }
 
 /**
  * The markdown-templates manager: lists the templates with add, rename, delete, and edit (opening the template's editor
@@ -38,7 +38,10 @@ function MarkdownTemplatesModal({onClose}: MarkdownTemplatesModalProps) {
     }
 
     function renameTemplate(label: string) {
-        setTemplates((previous) => previous.map((template) => (template.id === targetId ? {...template, label} : template)))
+        setTemplates((previous) => previous.map((template) => (template.id === targetId ? {
+            ...template,
+            label
+        } : template)))
         backToList()
     }
 
@@ -58,7 +61,8 @@ function MarkdownTemplatesModal({onClose}: MarkdownTemplatesModalProps) {
     if (view.kind === 'rename' && target) {
         return (
             <Modal title="Rename template" onClose={onClose}>
-                <NameForm initialName={target.label} submitLabel="Save" onSubmit={renameTemplate} onCancel={backToList}/>
+                <NameForm initialName={target.label} submitLabel="Save" onSubmit={renameTemplate}
+                          onCancel={backToList}/>
             </Modal>
         )
     }

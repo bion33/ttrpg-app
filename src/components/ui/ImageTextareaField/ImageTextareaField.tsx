@@ -28,7 +28,10 @@ function ImageTextareaField({field, value, onChange}: ImageTextareaFieldProps) {
                 imageUrl={imageUrl}
                 onChangeImage={(url) => onChange(serializeImageTextareaValue({text, imageUrl: url}))}
                 fallback={<SheetTextarea field={field} value={text}
-                    onChange={(next) => onChange(serializeImageTextareaValue({text: next, imageUrl}))}/>}
+                                         onChange={(next) => onChange(serializeImageTextareaValue({
+                                             text: next,
+                                             imageUrl
+                                         }))}/>}
             />
         </FieldForeignObject>
     )

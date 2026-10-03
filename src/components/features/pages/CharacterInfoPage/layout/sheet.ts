@@ -1,6 +1,5 @@
-import {collectNodes} from '@lib/fields/fieldNodes.ts'
+import {collectNodes, createSheetFactory} from '@lib/fields/fieldNodes.ts'
 import type {FieldNode} from '@type/FieldNode.ts'
-import {createInfoSheetFactory} from './nodes.ts'
 import {buildAllies} from './sections/allies.ts'
 import {buildAppearance} from './sections/appearance.ts'
 import {buildCompanion} from './sections/companion.ts'
@@ -22,7 +21,7 @@ export interface InfoSheet {
  * list. Call once per sheet instance (memoized per prefix in the component).
  */
 export function buildInfoSheet(storagePrefix: string): InfoSheet {
-    const factory = createInfoSheetFactory(storagePrefix)
+    const factory = createSheetFactory(storagePrefix)
     const header = buildHeader(factory)
     const appearance = buildAppearance(factory)
     const allies = buildAllies(factory)

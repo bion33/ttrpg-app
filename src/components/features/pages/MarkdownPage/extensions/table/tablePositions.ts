@@ -25,8 +25,8 @@ export function isLastCellInRow(doc: ProseMirrorNode, cellPosition: number): boo
 }
 
 // The rows of a table paired with the document position each one starts at.
-function rowEntries(table: ProseMirrorNode, tablePosition: number): {node: ProseMirrorNode; position: number}[] {
-    const rows: {node: ProseMirrorNode; position: number}[] = []
+function rowEntries(table: ProseMirrorNode, tablePosition: number): { node: ProseMirrorNode; position: number }[] {
+    const rows: { node: ProseMirrorNode; position: number }[] = []
     let offset = tablePosition + 1
     table.forEach((row) => {
         rows.push({node: row, position: offset})

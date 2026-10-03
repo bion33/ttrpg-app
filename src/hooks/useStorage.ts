@@ -6,14 +6,7 @@ import {applySnapshot, createSnapshot, snapshotHash} from '@lib/storage/snapshot
 import type {ProviderId} from '@lib/storage/providers/StorageProvider.ts'
 import {getProvider} from '@lib/storage/providers/providers.ts'
 import {evaluateSync, type SyncStatus} from '@lib/storage/sync/sync.ts'
-import {
-    autoloadIntent,
-    autosaveIntent,
-    chooseRemoteRevision,
-    isProbeable,
-    resolveTarget,
-    saveIntent,
-} from '@lib/storage/sync/syncActions.ts'
+import {chooseRemoteRevision, isProbeable, resolveTarget, saveIntent} from '@lib/storage/sync/syncActions.ts'
 import {subscribeToStorageWrites} from '@lib/storage/observableStorage.ts'
 import type {SyncState} from '@lib/storage/connectionStore.ts'
 import {
@@ -33,10 +26,7 @@ import {
     saveOneDriveConnection,
     saveSyncState,
 } from '@lib/storage/connectionStore.ts'
-import {
-    adoptConnection as adoptNextcloud,
-    type NextcloudConnection
-} from '@lib/storage/providers/nextcloudProvider.ts'
+import {adoptConnection as adoptNextcloud, type NextcloudConnection} from '@lib/storage/providers/nextcloudProvider.ts'
 import {adoptConnection as adoptOneDrive, type OneDriveConnection} from '@lib/storage/providers/onedriveProvider.ts'
 import {
     adoptConnection as adoptGoogleDrive,
@@ -44,8 +34,9 @@ import {
 } from '@lib/storage/providers/googleDriveProvider.ts'
 import {exchangeCode, runGoogleAuth, runMicrosoftAuth} from '@lib/storage/oauth/oauthClient.ts'
 import {type CloudConnectionPorts, useCloudConnection} from './useCloudConnection.ts'
-import {useAutosaveFlush} from './useAutosaveFlush.ts'
+import {useAutosave} from './useAutosave.ts'
 import {newId} from '@lib/ids/newId.ts'
+import {errorMessage} from '@lib/errors/errorMessage.ts'
 
 /**
  * The callback that swaps the app's jotai store so `atomWithStorage` atoms re-read the bulk-rewritten localStorage
@@ -62,9 +53,6 @@ export interface ConflictPrompt {
 
 // How long to wait after the last persisted-atom write before recomputing dirty, so rapid edits (typing) hash once.
 const DIRTY_DEBOUNCE_MS = 200
-
-// How long edits must settle before an automatic save fires; longer than the dirty recompute so typing writes once.
-const AUTOSAVE_DEBOUNCE_MS = 2000
 
 /** The storage state and actions the controls consume. */
 export interface UseStorage {
@@ -147,11 +135,6 @@ function isCancel(error: unknown): boolean {
     return error instanceof DOMException && error.name === 'AbortError'
 }
 
-// The message to surface for a caught save/load error.
-function messageFor(error: unknown, fallback: string): string {
-    return error instanceof Error ? error.message : fallback
-}
-
 /**
  * Orchestrates whole-library persistence for the controls: resolves the active provider's target, probes a cloud
  * remote's revision (with a stale guard), derives dirty/status, saves and loads through the provider, and drives the
@@ -169,13 +152,12 @@ export function useStorage(): UseStorage {
     const [promptSettings, setPromptSettings] = useState(false)
     // Incremented on each probe so an out-of-order resolution can be discarded (never regress to a stale revision).
     const probeToken = useRef(0)
-    // Guard refs, written only from callbacks: the in-flight save (so a debounced autosave and a manual save can never
-    // both write) and the in-flight autoload (so overlapping probes launch only one catch-up load).
+    // The in-flight manual-save guard, written only from callbacks, so a debounced autosave and a manual save can never
+    // both write.
     const savingRef = useRef(false)
-    const autoloadInFlight = useRef(false)
-    // Holds the latest load(), updated in an effect below, so autoload (fired from the probe path) invokes the current
-    // load without load having to be defined before the probe.
-    const loadRef = useRef<() => Promise<void>>(async () => {
+    // Holds the autosave engine's autoload trigger, set in an effect below, so the probe path (defined before the engine)
+    // can fire autoload through a stable ref without the engine having to precede it.
+    const maybeAutoloadRef = useRef<(revision: string | null, token: number) => void>(() => {
     })
 
     // Mirrors the saving flag into a ref alongside the state, so programmatic writes can guard re-entrancy synchronously.
@@ -243,22 +225,6 @@ export function useStorage(): UseStorage {
         }
     }, [hydrateNextcloud, hydrateOneDrive, hydrateGoogleDrive])
 
-    // When autoload is enabled and a fresh probe shows the remote cleanly ahead (or diverged), catches this device up by
-    // routing through load() — which cleanly applies a remoteAhead remote and raises the conflict modal on a diverged
-    // one, never discarding local edits. Best-effort: a probe failure simply skips it, and the manual Load stays.
-    const maybeAutoload = useCallback((revision: string | null, token: number) => {
-        if (!target || autoloadInFlight.current || conflict) return
-        const {baseRevision} = syncState
-        const remoteRevision = chooseRemoteRevision({probeable, probedRevision: revision, baseRevision})
-        const remoteStatus = evaluateSync({remoteRevision, baseRevision, dirty: deriveDirty(syncState)})
-        if (autoloadIntent({status: remoteStatus, probeable, enabled: autosaveEnabled}) === 'idle') return
-        if (probeToken.current !== token) return
-        autoloadInFlight.current = true
-        void loadRef.current().finally(() => {
-            autoloadInFlight.current = false
-        })
-    }, [target, probeable, syncState, autosaveEnabled, conflict])
-
     // Probes the current cloud target's remote revision; the file provider keeps the base as its stand-in remote, so a
     // stale probe on a non-probeable provider is never read (chooseRemoteRevision ignores it) and needs no clearing here.
     const refreshRemote = useCallback(async () => {
@@ -268,11 +234,12 @@ export function useStorage(): UseStorage {
             const revision = await getProvider(provider).readRevision(target)
             if (probeToken.current !== token) return
             setProbedRevision(revision)
-            maybeAutoload(revision, token)
+            // Hand the fresh probe to the autosave engine (through a stable ref), which decides whether to autoload.
+            maybeAutoloadRef.current(revision, token)
         } catch {
             if (probeToken.current === token) setProbedRevision(null)
         }
-    }, [provider, probeable, target, maybeAutoload])
+    }, [provider, probeable, target])
 
     const recomputeDirty = useCallback(() => setDirty(deriveDirty(syncState)), [syncState])
     // Rapid edits (typing) each persist, so coalesce their dirty recompute — a full-storage hash — to one settled run.
@@ -332,7 +299,7 @@ export function useStorage(): UseStorage {
                 if (toastId !== undefined) toast.dismiss(toastId)
                 return
             }
-            toast.error(messageFor(caught, 'Save failed.'), {id: toastId})
+            toast.error(errorMessage(caught, 'Save failed.'), {id: toastId})
         } finally {
             setSavingFlag(false)
         }
@@ -352,7 +319,7 @@ export function useStorage(): UseStorage {
                     return
                 }
             } catch (caught) {
-                toast.error(messageFor(caught, 'Save failed.'))
+                toast.error(errorMessage(caught, 'Save failed.'))
                 return
             } finally {
                 setSavingFlag(false)
@@ -360,33 +327,6 @@ export function useStorage(): UseStorage {
         }
         await performSave(silent)
     }, [target, provider, status, probeable, performSave, setSavingFlag])
-
-    // Runs one automatic save from the freshest inputs: idle when nothing to write, else routes through save() so a
-    // 'write' persists and a 'conflict' raises the conflict modal — never a silent overwrite. Guarded against firing
-    // while a save runs or a conflict is already open.
-    const runAutosave = useCallback(async () => {
-        if (savingRef.current || conflict || !target) return
-        if (autosaveIntent({status, probeable, enabled: autosaveEnabled, dirty}) === 'idle') return
-        await save(true)
-    }, [conflict, target, status, probeable, autosaveEnabled, dirty, save])
-
-    // A separate, longer debounce than the dirty recompute, so edits settle before an automatic save writes.
-    const autosaveDebounced = useDebouncedCallback(() => void runAutosave(), AUTOSAVE_DEBOUNCE_MS)
-
-    // Cancels the pending autosave debounce and writes immediately; the page-inactive triggers call this to flush before
-    // the tab is hidden or torn down.
-    const flushAutosave = useCallback(() => {
-        autosaveDebounced.cancel()
-        void runAutosave()
-    }, [autosaveDebounced, runAutosave])
-
-    // Whether there is unsaved work a clean write could flush, which gates the before-unload confirmation nag.
-    const hasPendingWrite = useCallback(
-        () => target !== null && autosaveIntent({status, probeable, enabled: autosaveEnabled, dirty}) === 'write',
-        [target, status, probeable, autosaveEnabled, dirty],
-    )
-
-    useAutosaveFlush({hasPendingWrite, flush: flushAutosave})
 
     const load = useCallback(async () => {
         if (!target) return
@@ -417,24 +357,20 @@ export function useStorage(): UseStorage {
                 toast.dismiss(toastId)
                 return
             }
-            toast.error(messageFor(caught, 'Load failed.'), {id: toastId})
+            toast.error(errorMessage(caught, 'Load failed.'), {id: toastId})
         }
     }, [target, provider, syncState, applyLoaded])
 
-    // Keep the load ref current after each commit, so autoload (fired from the probe path) calls the latest load.
-    useEffect(() => {
-        loadRef.current = load
+    // The hands-off autosave/autoload engine: debounces edits into automatic saves, flushes before the page goes
+    // inactive, and catches a cleanly-ahead remote up via maybeAutoload (called from the probe path through the ref).
+    const {maybeAutoload} = useAutosave({
+        status, probeable, dirty, target, conflict, autosaveEnabled, syncState, savingRef, probeToken, save, load,
+        deriveDirty,
     })
-
-    // Schedule an autosave after edits settle: a persisted-atom write starts the (longer) autosave debounce, coalescing a
-    // burst of edits into one write. Cancel it on cleanup so a pending save never fires against a torn-down instance.
+    // Keep the probe path's autoload trigger current after each render, so it fires the latest decision/load.
     useEffect(() => {
-        const unsubscribe = subscribeToStorageWrites(autosaveDebounced)
-        return () => {
-            unsubscribe()
-            autosaveDebounced.cancel()
-        }
-    }, [autosaveDebounced])
+        maybeAutoloadRef.current = maybeAutoload
+    })
 
     const resolveConflict = useCallback(async (choice: 'keepLocal' | 'takeOther') => {
         const pending = conflict

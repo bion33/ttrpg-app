@@ -4,7 +4,8 @@ import {atomWithStorage} from 'jotai/utils'
 import {notifyingStorage} from '@lib/storage/observableStorage.ts'
 import type {FieldDefinition} from '@type/FieldDefinition.ts'
 import type {DerivedNode, FieldNode, FieldValue, InputNode, NodeTree} from '@type/FieldNode.ts'
-import type {CheckFieldDefinition} from "@type/CheckFieldDefinition.ts";
+import type {CheckFieldDefinition} from '@type/CheckFieldDefinition.ts'
+import type {NumericFieldDefinition} from '@type/NumericFieldDefinition.ts'
 
 /**
  * A generic system for overlaying form fields on artwork, backed by jotai atoms.
@@ -56,6 +57,14 @@ export function createFieldFactory(storagePrefix: string) {
     }
 
     /**
+     * Builds a writable, persisted number field node from its numeric definition (carrying `signed`), so no cast is
+     * needed for a signed input.
+     */
+    function numericNode(definition: NumericFieldDefinition): InputNode<number | null> {
+        return inputNode(definition)
+    }
+
+    /**
      * Builds a field that shows a computed value while `enabled` holds, and is an editable and persisted input otherwise.
      */
     function computedInputNode<T extends FieldValue>(
@@ -74,13 +83,31 @@ export function createFieldFactory(storagePrefix: string) {
         return {definition, atom: value, readOnlyAtom: enabled}
     }
 
-    return {inputNode, checkNode, computedInputNode}
+    return {inputNode, checkNode, numericNode, computedInputNode}
 }
 
 /**
- * Builds a read-only field node whose value is computed from other atoms.
+ * The node builders one sheet is assembled from, bound to a single storage-key prefix so every field shares that
+ * localStorage namespace. `derivedNode` needs no prefix but travels with the others for convenience.
  */
-export function derivedNode<T extends FieldValue>(definition: FieldDefinition, read: (get: Getter) => T): DerivedNode<T> {
+export type SheetFactory = ReturnType<typeof createFieldFactory> & { derivedNode: typeof derivedNode }
+
+/**
+ * Builds the node factory for one sheet instance. Call once per sheet (per storage prefix); the section builders draw
+ * their `inputNode`/`checkNode`/`numericNode`/`computedInputNode`/`derivedNode` from the returned factory.
+ */
+export function createSheetFactory(storagePrefix: string): SheetFactory {
+    return {...createFieldFactory(storagePrefix), derivedNode}
+}
+
+/**
+ * Builds a read-only field node whose value is computed from other atoms. Generic over the definition type, so a
+ * `NumericFieldDefinition` (carrying `signed`) type-checks inline without a cast.
+ */
+export function derivedNode<T extends FieldValue, Definition extends FieldDefinition = FieldDefinition>(
+    definition: Definition,
+    read: (get: Getter) => T,
+): DerivedNode<T> {
     return {
         definition,
         readOnly: true,

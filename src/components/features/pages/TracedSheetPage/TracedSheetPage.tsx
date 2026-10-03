@@ -5,7 +5,7 @@ import './TracedSheetPage.css'
 import FieldInput from '@ui/FieldInput/FieldInput'
 import PaperPage from '@ui/PaperPage/PaperPage'
 import LoadingSpinner from '@ui/LoadingSpinner/LoadingSpinner'
-import {A4_WIDTH_PX, A4_ASPECT_RATIO} from '@lib/paper/paperSize.ts'
+import {A4_ASPECT_RATIO, A4_WIDTH_PX} from '@lib/paper/paperSize.ts'
 import type {FieldNode} from '@type/FieldNode.ts'
 
 // The natural (unscaled) on-screen width every traced sheet renders at: a physical A4 page, the footprint zoom scales.
@@ -30,7 +30,15 @@ interface TracedSheetPageProps {
  * Renders a traced character-sheet page: fetches and injects the artwork SVG, pads its viewBox to a true A4 footprint,
  * and overlays the given fields in the artwork's own coordinate space.
  */
-function TracedSheetPage({svgUrl, artworkWidth, artworkHeight, fields, fieldOverlays, errorHeading, errorBody}: TracedSheetPageProps) {
+function TracedSheetPage({
+                             svgUrl,
+                             artworkWidth,
+                             artworkHeight,
+                             fields,
+                             fieldOverlays,
+                             errorHeading,
+                             errorBody
+                         }: TracedSheetPageProps) {
     const [artworkMarkup, setArtworkMarkup] = useState<string | null>(null)
     const [loadFailed, setLoadFailed] = useState(false)
 
@@ -87,8 +95,10 @@ function TracedSheetPage({svgUrl, artworkWidth, artworkHeight, fields, fieldOver
                         // Wrap the overlay in its own foreignObject so it shares the fields' compositing layer: Chromium
                         // paints every foreignObject above native SVG when printing, so a bare overlay would sink beneath
                         // the field foreignObjects. The nested svg re-enters the artwork's coordinate space.
-                        <foreignObject x={0} y={-verticalPadding} width={artworkWidth} height={sheetHeight} pointerEvents="none">
-                            <svg viewBox={viewBox} width="100%" height="100%" style={{overflow: 'visible'}} xmlns="http://www.w3.org/2000/svg">
+                        <foreignObject x={0} y={-verticalPadding} width={artworkWidth} height={sheetHeight}
+                                       pointerEvents="none">
+                            <svg viewBox={viewBox} width="100%" height="100%" style={{overflow: 'visible'}}
+                                 xmlns="http://www.w3.org/2000/svg">
                                 {fieldOverlays[node.definition.id]}
                             </svg>
                         </foreignObject>

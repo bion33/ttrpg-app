@@ -1,6 +1,6 @@
 import type {Getter} from 'jotai'
 import {halfSpeed} from '@pages/CharacterPage/logic/formulas/formulas.ts'
-import type {SheetFactory} from '@pages/CharacterPage/layout/nodes.ts'
+import type {SheetFactory} from '@lib/fields/fieldNodes.ts'
 
 /**
  * Builds the combat fields (armor class, speeds, hit points, conditions), the hit-dice block, and the death saves.

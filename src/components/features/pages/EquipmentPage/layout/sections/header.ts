@@ -1,10 +1,16 @@
-import type {EquipmentSheetFactory} from '@pages/EquipmentPage/layout/nodes.ts'
+import type {SheetFactory} from '@lib/fields/fieldNodes.ts'
 import type {buildEquipped} from '@pages/EquipmentPage/layout/sections/equipped.ts'
 import type {buildBackpack} from '@pages/EquipmentPage/layout/sections/backpack.ts'
 import type {buildMoney} from '@pages/EquipmentPage/layout/sections/money.ts'
 import type {buildStorage} from '@pages/EquipmentPage/layout/sections/storage.ts'
 import type {Getter} from 'jotai'
-import {carryCapacity, coinWeight, encumbranceLabel, totalItemWeight, totalStorageWeight} from '@pages/EquipmentPage/logic/formulas/formulas.ts'
+import {
+    carryCapacity,
+    coinWeight,
+    encumbranceLabel,
+    totalItemWeight,
+    totalStorageWeight
+} from '@pages/EquipmentPage/logic/formulas/formulas.ts'
 
 /**
  * The sections whose weights the header's weight calculations sum: the equipped/backpack item rows, the money coins, and
@@ -21,8 +27,22 @@ interface WeightSources {
  * Builds the header fields: character name, class/level, and identity line. Carry weight is calculated from the item and
  * money weights, and storage weight from the storage rows, while the weight-calculation check is enabled.
  */
-export function buildHeader({inputNode, checkNode, computedInputNode}: EquipmentSheetFactory, {equipped, backpack, money, storage}: WeightSources) {
-    const strength = inputNode({id: 'strength', x: 360, y: 64, width: 146, height: 22, type: 'number', fontSize: 18, textAlign: 'left'})
+export function buildHeader({inputNode, checkNode, computedInputNode}: SheetFactory, {
+    equipped,
+    backpack,
+    money,
+    storage
+}: WeightSources) {
+    const strength = inputNode({
+        id: 'strength',
+        x: 360,
+        y: 64,
+        width: 146,
+        height: 22,
+        type: 'number',
+        fontSize: 18,
+        textAlign: 'left'
+    })
     const enableCarryCapacityCalculation = checkNode({
         id: 'enableCarryCapacityCalculation',
         x: 609.34,

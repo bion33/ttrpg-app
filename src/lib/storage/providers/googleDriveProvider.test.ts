@@ -2,7 +2,12 @@ import {afterEach, describe, expect, it, vi} from 'vitest'
 import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {GoogleDriveConnection} from './googleDriveProvider.ts'
 import {adoptConnection, googleDriveProvider} from './googleDriveProvider.ts'
-import {serialiseSnapshot} from './fileProvider.ts'
+import {
+    extractMetadata,
+    serialiseInvalidatedMetadata,
+    serialiseMetadata,
+    serialiseSnapshot,
+} from '@lib/storage/snapshotCodec.ts'
 
 const connection: GoogleDriveConnection = {refreshToken: 'refresh-0', label: 'Google Drive'}
 
@@ -34,45 +39,52 @@ afterEach(() => {
 })
 
 describe('googleDriveProvider', () => {
-    it('creates the file (multipart) when no id is stored and the name lookup finds nothing, persisting the id', async () => {
+    it('creates both the sidecar and body files when none exist, persisting both ids', async () => {
         const onChange = vi.fn()
         adoptConnection(connection, onChange)
         vi.stubGlobal('fetch', vi.fn()
-            .mockResolvedValueOnce(refreshResponse())                              // token
-            .mockResolvedValueOnce(listResponse([]))                               // name lookup: absent
-            .mockResolvedValueOnce(new Response(JSON.stringify({id: 'new-file'}), {status: 200}))) // create
+            .mockResolvedValueOnce(refreshResponse())                                             // token
+            .mockResolvedValueOnce(listResponse([]))                                             // sidecar lookup: absent
+            .mockResolvedValueOnce(new Response(JSON.stringify({id: 'meta-file'}), {status: 200})) // create sidecar (marker)
+            .mockResolvedValueOnce(listResponse([]))                                             // body lookup: absent
+            .mockResolvedValueOnce(new Response(JSON.stringify({id: 'new-file'}), {status: 200}))  // create body
+            .mockResolvedValueOnce(new Response(null, {status: 200})))                             // PATCH sidecar (real)
         await googleDriveProvider.save(target, snapshot)
 
-        const [createUrl, createInit] = vi.mocked(fetch).mock.calls[2]
-        expect(createUrl).toBe(`${UPLOAD_API}/files?uploadType=multipart&fields=id`)
-        expect(createInit?.method).toBe('POST')
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({metadataFileId: 'meta-file'}))
         expect(onChange).toHaveBeenCalledWith(expect.objectContaining({fileId: 'new-file'}))
     })
 
-    it('updates (media PATCH) when an id is stored', async () => {
-        adoptConnection({...connection, fileId: 'file-1'})
+    it('invalidates the sidecar, then overwrites body, then writes the describing sidecar, in order', async () => {
+        adoptConnection({...connection, fileId: 'file-1', metadataFileId: 'meta-1'})
         vi.stubGlobal('fetch', vi.fn()
             .mockResolvedValueOnce(refreshResponse())
-            .mockResolvedValueOnce(new Response(null, {status: 200})))
+            .mockResolvedValueOnce(new Response(null, {status: 200}))  // PATCH sidecar (marker)
+            .mockResolvedValueOnce(new Response(null, {status: 200}))  // PATCH body
+            .mockResolvedValueOnce(new Response(null, {status: 200}))) // PATCH sidecar (real)
         await googleDriveProvider.save(target, snapshot)
 
-        const [url, init] = vi.mocked(fetch).mock.calls[1]
-        expect(url).toBe(`${UPLOAD_API}/files/file-1?uploadType=media`)
-        expect(init?.method).toBe('PATCH')
-        expect(init?.body).toBe(serialiseSnapshot(snapshot))
+        const bodies = vi.mocked(fetch).mock.calls.slice(1).map(([url, init]) => ({url, body: init?.body}))
+        expect(bodies).toEqual([
+            {url: `${UPLOAD_API}/files/meta-1?uploadType=media`, body: serialiseInvalidatedMetadata()},
+            {url: `${UPLOAD_API}/files/file-1?uploadType=media`, body: serialiseSnapshot(snapshot)},
+            {url: `${UPLOAD_API}/files/meta-1?uploadType=media`, body: serialiseMetadata(extractMetadata(snapshot))},
+        ])
     })
 
-    it('clears the stored id and recreates when the id-addressed PATCH 404s', async () => {
+    it('clears the stored body id and recreates when the body PATCH 404s', async () => {
         const onChange = vi.fn()
-        adoptConnection({...connection, fileId: 'stale'}, onChange)
+        adoptConnection({...connection, fileId: 'stale', metadataFileId: 'meta-1'}, onChange)
         vi.stubGlobal('fetch', vi.fn()
-            .mockResolvedValueOnce(refreshResponse())               // token
-            .mockResolvedValueOnce(new Response(null, {status: 404})) // PATCH: gone
-            .mockResolvedValueOnce(listResponse([]))                 // re-lookup: absent
-            .mockResolvedValueOnce(new Response(JSON.stringify({id: 'file-2'}), {status: 200}))) // recreate
+            .mockResolvedValueOnce(refreshResponse())                                          // token
+            .mockResolvedValueOnce(new Response(null, {status: 200}))                           // PATCH sidecar (marker)
+            .mockResolvedValueOnce(new Response(null, {status: 404}))                           // PATCH body: gone
+            .mockResolvedValueOnce(listResponse([]))                                           // body re-lookup: absent
+            .mockResolvedValueOnce(new Response(JSON.stringify({id: 'file-2'}), {status: 200})) // recreate body
+            .mockResolvedValueOnce(new Response(null, {status: 200})))                          // PATCH sidecar (real)
         await googleDriveProvider.save(target, snapshot)
 
-        expect(onChange).toHaveBeenLastCalledWith(expect.objectContaining({fileId: 'file-2'}))
+        expect(onChange).toHaveBeenCalledWith(expect.objectContaining({fileId: 'file-2'}))
     })
 
     it('returns null on load when no file exists', async () => {
@@ -95,17 +107,40 @@ describe('googleDriveProvider', () => {
         expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2)
     })
 
-    it('reads the in-file revision, and returns null when the file is absent or disconnected', async () => {
+    it('reads the revision from the stored sidecar id without fetching the body', async () => {
+        adoptConnection({...connection, fileId: 'file-1', metadataFileId: 'meta-1'})
+        vi.stubGlobal('fetch', vi.fn()
+            .mockResolvedValueOnce(refreshResponse())
+            .mockResolvedValueOnce(new Response(serialiseMetadata(extractMetadata(snapshot)), {status: 200})))
+        expect(await googleDriveProvider.readRevision(target)).toBe('rev-42')
+        expect(vi.mocked(fetch).mock.calls[1][0]).toBe(`${DRIVE_API}/files/meta-1?alt=media`)
+        expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2)
+    })
+
+    it('falls back to the body revision when no sidecar file exists', async () => {
         adoptConnection({...connection, fileId: 'file-1'})
         vi.stubGlobal('fetch', vi.fn()
             .mockResolvedValueOnce(refreshResponse())
-            .mockResolvedValueOnce(new Response(serialiseSnapshot(snapshot), {status: 200})))
+            .mockResolvedValueOnce(listResponse([]))                                         // sidecar lookup: absent
+            .mockResolvedValueOnce(new Response(serialiseSnapshot(snapshot), {status: 200}))) // body by stored id
         expect(await googleDriveProvider.readRevision(target)).toBe('rev-42')
+    })
 
+    it('falls back to the body revision when the sidecar holds the invalidation marker', async () => {
+        adoptConnection({...connection, fileId: 'file-1', metadataFileId: 'meta-1'})
+        vi.stubGlobal('fetch', vi.fn()
+            .mockResolvedValueOnce(refreshResponse())
+            .mockResolvedValueOnce(new Response(serialiseInvalidatedMetadata(), {status: 200})) // mid-save marker
+            .mockResolvedValueOnce(new Response(serialiseSnapshot(snapshot), {status: 200})))    // body by stored id
+        expect(await googleDriveProvider.readRevision(target)).toBe('rev-42')
+    })
+
+    it('returns null when neither sidecar nor body exists, and when disconnected', async () => {
         adoptConnection(connection)
         vi.stubGlobal('fetch', vi.fn()
             .mockResolvedValueOnce(refreshResponse())
-            .mockResolvedValueOnce(listResponse([])))
+            .mockResolvedValueOnce(listResponse([]))  // sidecar lookup: absent
+            .mockResolvedValueOnce(listResponse([]))) // body lookup: absent
         expect(await googleDriveProvider.readRevision(target)).toBeNull()
 
         adoptConnection(null)

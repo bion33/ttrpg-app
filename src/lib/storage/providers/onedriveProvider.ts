@@ -1,6 +1,14 @@
 import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {StorageProvider, StorageTarget} from './StorageProvider.ts'
-import {parseSnapshot, serialiseSnapshot} from './fileProvider.ts'
+import {
+    extractMetadata,
+    metadataLocator,
+    parseSnapshot,
+    serialiseInvalidatedMetadata,
+    serialiseMetadata,
+    serialiseSnapshot,
+} from '@lib/storage/snapshotCodec.ts'
+import {readRevisionWithFallback} from './revisionProbe.ts'
 import {createOAuthTokenClient} from '@lib/storage/oauth/oauthTokenClient.ts'
 import {describeHttpFailure} from './httpError.ts'
 
@@ -63,13 +71,20 @@ export const onedriveProvider: StorageProvider = {
     },
 
     async save(target: StorageTarget, snapshot: LibrarySnapshot) {
-        const response = await withAccessToken((token) =>
-            fetch(contentUrl(target.locator), {
-                method: 'PUT',
-                headers: {authorization: `Bearer ${token}`, 'content-type': 'application/json'},
-                body: serialiseSnapshot(snapshot),
-            }))
-        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+        const put = async (fileName: string, content: string) => {
+            const response = await withAccessToken((token) =>
+                fetch(contentUrl(fileName), {
+                    method: 'PUT',
+                    headers: {authorization: `Bearer ${token}`, 'content-type': 'application/json'},
+                    body: content,
+                }))
+            if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+        }
+        // Invalidate the sidecar first, so a later-failing write never leaves it describing a stale revision; a probe
+        // then falls back to the body. Then the body, then the sidecar describing it.
+        await put(metadataLocator(target.locator), serialiseInvalidatedMetadata())
+        await put(target.locator, serialiseSnapshot(snapshot))
+        await put(metadataLocator(target.locator), serialiseMetadata(extractMetadata(snapshot)))
     },
 
     async load(target: StorageTarget) {
@@ -82,12 +97,13 @@ export const onedriveProvider: StorageProvider = {
 
     async readRevision(target: StorageTarget) {
         if (!tokenClient.getConnection()) return null
-        const response = await withAccessToken((token) =>
-            fetch(contentUrl(target.locator), {headers: {authorization: `Bearer ${token}`}}))
-        // No file yet (e.g. right after a fresh connect); mirror the file-absent case as null rather than throwing.
-        if (response.status === 404) return null
-        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
         // The in-file revision GUID (not Graph's eTag/cTag) is what save() mints and compares against.
-        return parseSnapshot(await response.text()).revision
+        return readRevisionWithFallback(async (locator) => {
+            const response = await withAccessToken((token) =>
+                fetch(contentUrl(locator), {headers: {authorization: `Bearer ${token}`}}))
+            if (response.status === 404) return null
+            if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+            return response.text()
+        }, target.locator)
     },
 }

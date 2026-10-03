@@ -1,23 +1,9 @@
 /**
- * Pure D&D 5e rules math. No atoms, no React, no storage - just values in,
- * values out - so every rule here is unit-testable in isolation. Atoms merely
- * wire these functions to field values (see layout/sections/abilities.ts).
+ * Pure D&D 5e rules math specific to the character sheet. No atoms, no React, no storage - just values in, values out -
+ * so every rule here is unit-testable in isolation. Atoms merely wire these functions to field values (see
+ * layout/sections/abilities.ts). Shared ability-score math lives in `@lib/dnd/abilities.ts`; signed-number formatting
+ * in `@lib/number/formatModifier.ts`.
  */
-
-/**
- * The D&D 5e ability modifier for an ability score.
- */
-export function abilityModifier(score: number): number {
-    return Math.floor((score - 10) / 2)
-}
-
-/**
- * The ability modifier for a (possibly blank) base score and optional extra points, or null when both are blank.
- */
-export function abilityModifierValue(score: number | null, extra: number | null = null): number | null {
-    if (score === null && extra === null) return null
-    return abilityModifier((score ?? 0) + (extra ?? 0))
-}
 
 /**
  * The D&D 5e skill (or saving-throw) bonus for an ability modifier, given proficiency and expertise.
@@ -25,13 +11,6 @@ export function abilityModifierValue(score: number | null, extra: number | null 
 export function skillBonus(modifier: number, proficiencyBonus: number, proficient: boolean, expertise: boolean): number {
     if (!proficient) return modifier
     return modifier + (expertise ? proficiencyBonus * 2 : proficiencyBonus)
-}
-
-/**
- * Formats a modifier with an explicit leading sign.
- */
-export function formatModifier(modifier: number): string {
-    return modifier >= 0 ? `+${modifier}` : `${modifier}`
 }
 
 /**

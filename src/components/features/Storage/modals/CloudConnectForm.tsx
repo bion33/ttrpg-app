@@ -1,5 +1,6 @@
 import {type ReactNode, useState} from 'react'
-import AutosaveToggle from './AutosaveToggle.tsx'
+import ConnectedView from './ConnectedView.tsx'
+import {errorMessage} from '@lib/errors/errorMessage.ts'
 
 /**
  * Props for the shared cloud connect view: whether a connection exists, the connected label, the provider-specific
@@ -38,24 +39,13 @@ function CloudConnectForm({
 
     if (connected) {
         return (
-            <div className="modal__body">
-                <p className="modal__prompt">Connected to {connectedLabel}.</p>
-                <AutosaveToggle enabled={autosaveEnabled} onChange={onAutosaveChange}/>
-                <div className="modal__actions">
-                    <button
-                        type="button"
-                        className="modal__btn modal__btn--danger-outline"
-                        disabled={busy}
-                        onClick={() => {
-                            setBusy(true)
-                            void onDisconnect().finally(() => setBusy(false))
-                        }}
-                    >
-                        Disconnect
-                    </button>
-                    <button type="button" className="modal__btn modal__btn--primary" onClick={onClose}>Done</button>
-                </div>
-            </div>
+            <ConnectedView
+                label={connectedLabel}
+                autosaveEnabled={autosaveEnabled}
+                onAutosaveChange={onAutosaveChange}
+                onDisconnect={onDisconnect}
+                onClose={onClose}
+            />
         )
     }
 
@@ -65,7 +55,7 @@ function CloudConnectForm({
         try {
             await onConnect()
         } catch (caught) {
-            setError(caught instanceof Error ? caught.message : connectErrorFallback)
+            setError(errorMessage(caught, connectErrorFallback))
         } finally {
             setBusy(false)
         }

@@ -1,5 +1,5 @@
-import {useRef} from 'react'
 import type {ReactNode} from 'react'
+import {useRef} from 'react'
 import * as Popover from '@radix-ui/react-popover'
 import {Command} from 'cmdk'
 import type {Editor} from '@tiptap/core'
@@ -26,8 +26,10 @@ interface BlockActionsMenuProps {
  * The searchable dropdown shared by the toolbar's block groups and the block handle's "+" menu: a Radix `Popover`
  * (portalled and zoom-safe) wrapping a cmdk `Command` that filters the actions by label and runs the chosen one.
  */
-function BlockActionsMenu({editor, actions, trigger, open, onOpenChange, onRunAction, align = 'start',
-                              searchPlaceholder = 'Search', markActive = true}: BlockActionsMenuProps) {
+function BlockActionsMenu({
+                              editor, actions, trigger, open, onOpenChange, onRunAction, align = 'start',
+                              searchPlaceholder = 'Search', markActive = true
+                          }: BlockActionsMenuProps) {
     const inputReference = useRef<HTMLInputElement>(null)
 
     function select(action: BlockAction) {
@@ -40,7 +42,7 @@ function BlockActionsMenu({editor, actions, trigger, open, onOpenChange, onRunAc
             <Popover.Trigger asChild>{trigger}</Popover.Trigger>
             <Popover.Portal>
                 <Popover.Content className="menu block-menu" align={align} sideOffset={4}
-                                 // Focus the search field on open and keep the caret in the editor on close.
+                    // Focus the search field on open and keep the caret in the editor on close.
                                  onOpenAutoFocus={(event) => {
                                      event.preventDefault()
                                      inputReference.current?.focus()

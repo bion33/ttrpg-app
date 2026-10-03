@@ -1,4 +1,4 @@
-import {Node, createBlockMarkdownSpec, mergeAttributes} from '@tiptap/core'
+import {createBlockMarkdownSpec, mergeAttributes, Node} from '@tiptap/core'
 
 /**
  * The four callout kinds, matching Nextcloud's info/success/warning/danger notices.

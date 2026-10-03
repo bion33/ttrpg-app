@@ -14,15 +14,23 @@ interface MarkdownToolbarProps {
 }
 
 // The inline marks, kept here (not in insertBlocks) since the block-insert menu does not apply marks.
-const MARKS: {id: string; icon: ReactNode; name: string; run: (editor: Editor) => void}[] = [
-    {id: 'bold', icon: <Bold size={16} strokeWidth={2.75}/>, name: 'Bold',
-        run: (editor) => editor.chain().focus().toggleBold().run()},
-    {id: 'italic', icon: <Italic size={16}/>, name: 'Italic',
-        run: (editor) => editor.chain().focus().toggleItalic().run()},
-    {id: 'underline', icon: <Underline size={16}/>, name: 'Underlined',
-        run: (editor) => editor.chain().focus().toggleUnderline().run()},
-    {id: 'strike', icon: <Strikethrough size={16}/>, name: 'Strikethrough',
-        run: (editor) => editor.chain().focus().toggleStrike().run()},
+const MARKS: { id: string; icon: ReactNode; name: string; run: (editor: Editor) => void }[] = [
+    {
+        id: 'bold', icon: <Bold size={16} strokeWidth={2.75}/>, name: 'Bold',
+        run: (editor) => editor.chain().focus().toggleBold().run()
+    },
+    {
+        id: 'italic', icon: <Italic size={16}/>, name: 'Italic',
+        run: (editor) => editor.chain().focus().toggleItalic().run()
+    },
+    {
+        id: 'underline', icon: <Underline size={16}/>, name: 'Underlined',
+        run: (editor) => editor.chain().focus().toggleUnderline().run()
+    },
+    {
+        id: 'strike', icon: <Strikethrough size={16}/>, name: 'Strikethrough',
+        run: (editor) => editor.chain().focus().toggleStrike().run()
+    },
 ]
 
 // The Headings dropdown sits before the marks; the rest (Blocks, Lists) follow them.
@@ -47,7 +55,8 @@ function MarkdownToolbar({editor, onRequestImage}: MarkdownToolbarProps) {
     // Renders a group's dropdown, feeding it the live active flag of each of its actions.
     function renderGroup(group: (typeof BLOCK_GROUPS)[number]) {
         return (
-            <ToolbarDropdown key={group.id} editor={editor} label={group.label} icon={group.icon} actions={group.actions}
+            <ToolbarDropdown key={group.id} editor={editor} label={group.label} icon={group.icon}
+                             actions={group.actions}
                              activeStates={group.actions.map((action) => state.blocks[action.id])}/>
         )
     }

@@ -1,5 +1,5 @@
 import type {FieldNode} from '@type/FieldNode.ts'
-import type {InfoSheetFactory} from '@pages/CharacterInfoPage/layout/nodes.ts'
+import type {SheetFactory} from '@lib/fields/fieldNodes.ts'
 
 // ---- INTERNAL CONSTANTS ----
 
@@ -21,14 +21,22 @@ const TRAIT_BOXES = ['ideals', 'bonds', 'flaws']
  * and the stacked ideals/bonds/flaws boxes), and the character details area. All coordinates are in the artwork's
  * viewBox units (see FieldDefinition).
  */
-export function buildInfo({inputNode}: InfoSheetFactory) {
+export function buildInfo({inputNode}: SheetFactory) {
     const traitBoxes = TRAIT_BOXES.map((id, index) => traitBox(inputNode, id, index))
 
     return {
         backstory: inputNode({id: 'backstory', x: 44, y: 510, width: 224, height: 498, type: 'textarea', fontSize: 12}),
 
         personality: {
-            personalityTraits: inputNode({id: 'personalityTraits', x: 296, y: 498, width: 230, height: 64, type: 'textarea', fontSize: 12}),
+            personalityTraits: inputNode({
+                id: 'personalityTraits',
+                x: 296,
+                y: 498,
+                width: 230,
+                height: 64,
+                type: 'textarea',
+                fontSize: 12
+            }),
             traitBoxes,
         },
 
@@ -41,7 +49,7 @@ export function buildInfo({inputNode}: InfoSheetFactory) {
 /**
  * The textarea for the trait box at the given position (0-based, top to bottom).
  */
-function traitBox(inputNode: InfoSheetFactory['inputNode'], id: string, index: number): FieldNode {
+function traitBox(inputNode: SheetFactory['inputNode'], id: string, index: number): FieldNode {
     return inputNode({
         id,
         x: TRAIT_BOX_X,

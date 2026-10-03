@@ -2,7 +2,7 @@ import type {createStore} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
 import {notifyingStorage} from '@lib/storage/observableStorage.ts'
 import {markdownAtom} from '@pages/MarkdownPage/markdownAtoms.ts'
-import type {MarkdownTemplate, BinderTemplate} from './templateTypes.ts'
+import type {BinderTemplate, MarkdownTemplate} from './templateTypes.ts'
 
 // The jotai store a seeding operation reads from and writes to.
 type Store = ReturnType<typeof createStore>

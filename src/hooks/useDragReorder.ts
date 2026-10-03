@@ -39,7 +39,7 @@ export interface DragReorder {
 export function useDragReorder(count: number, onReorder: (from: number, to: number) => void): DragReorder {
     const elementReferences = useRef<(HTMLElement | null)[]>([])
     const dragReference = useRef<DragReference | null>(null)
-    const [drag, setDrag] = useState<{fromIndex: number; tops: number[]} | null>(null)
+    const [drag, setDrag] = useState<{ fromIndex: number; tops: number[] } | null>(null)
     const [dragOffset, setDragOffset] = useState(0)
     const [target, setTarget] = useState(0)
     const [committing, setCommitting] = useState(false)

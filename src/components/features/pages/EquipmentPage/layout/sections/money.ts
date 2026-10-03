@@ -1,11 +1,11 @@
-import type {EquipmentSheetFactory} from '@pages/EquipmentPage/layout/nodes.ts'
+import type {SheetFactory} from '@lib/fields/fieldNodes.ts'
 
 /**
  * Builds the money fields: the coin counts (platinum, gold, electrum, silver, copper) above their printed labels.
  *
  * All coordinates are in the artwork's viewBox units (see FieldDefinition).
  */
-export function buildMoney({inputNode, checkNode}: EquipmentSheetFactory) {
+export function buildMoney({inputNode, checkNode}: SheetFactory) {
     return {
         enableMoneyWeightCalculation: checkNode({
             id: 'enableMoneyWeightCalculation',

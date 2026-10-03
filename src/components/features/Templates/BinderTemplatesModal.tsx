@@ -17,11 +17,11 @@ interface BinderTemplatesModalProps {
 
 // Which sub-view fills the modal body: the list, the add/rename/delete form, or one template's tab editor.
 type View =
-    | {kind: 'list'}
-    | {kind: 'add'}
-    | {kind: 'rename'; id: string}
-    | {kind: 'delete'; id: string}
-    | {kind: 'edit'; id: string}
+    | { kind: 'list' }
+    | { kind: 'add' }
+    | { kind: 'rename'; id: string }
+    | { kind: 'delete'; id: string }
+    | { kind: 'edit'; id: string }
 
 /**
  * The binder-templates manager: a list of reusable binder structures (add, rename, delete, edit) whose sub-views swap
@@ -40,7 +40,10 @@ function BinderTemplatesModal({onClose}: BinderTemplatesModalProps) {
     }
 
     function renameTemplate(label: string) {
-        setTemplates((previous) => previous.map((template) => (template.id === targetId ? {...template, label} : template)))
+        setTemplates((previous) => previous.map((template) => (template.id === targetId ? {
+            ...template,
+            label
+        } : template)))
         backToList()
     }
 
@@ -59,7 +62,8 @@ function BinderTemplatesModal({onClose}: BinderTemplatesModalProps) {
     if (view.kind === 'rename' && target) {
         return (
             <Modal title="Rename template" onClose={onClose}>
-                <NameForm initialName={target.label} submitLabel="Save" onSubmit={renameTemplate} onCancel={backToList}/>
+                <NameForm initialName={target.label} submitLabel="Save" onSubmit={renameTemplate}
+                          onCancel={backToList}/>
             </Modal>
         )
     }

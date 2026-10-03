@@ -6,7 +6,11 @@ import {Paragraph} from '@tiptap/extension-paragraph'
 import {Text} from '@tiptap/extension-text'
 import type {Node as ProseMirrorNode} from '@tiptap/pm/model'
 import {
-    cellInnerPosition, firstCellInnerPosition, isLastCellInRow, lastColumnCellPosition, lastRowCellPosition,
+    cellInnerPosition,
+    firstCellInnerPosition,
+    isLastCellInRow,
+    lastColumnCellPosition,
+    lastRowCellPosition,
 } from './tablePositions.ts'
 
 const schema = getSchema([Document, Paragraph, Text, Table, TableRow, TableHeader, TableCell])

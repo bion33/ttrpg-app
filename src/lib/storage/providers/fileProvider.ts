@@ -1,41 +1,9 @@
 import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {StorageProvider, StorageTarget} from './StorageProvider.ts'
+import {parseSnapshot, serialiseSnapshot} from '@lib/storage/snapshotCodec.ts'
 
 // The default filename offered when saving, and the accept filter when opening.
 const DEFAULT_FILENAME = 'ttrpg-app.json'
-
-/**
- * Serialises a snapshot to the JSON text written to an exported file (pretty-printed for a human-readable file).
- */
-export function serialiseSnapshot(snapshot: LibrarySnapshot): string {
-    return JSON.stringify(snapshot, null, 2)
-}
-
-/**
- * Parses and validates exported JSON text back into a snapshot, throwing a clear error when the shape is not a valid
- * library file.
- */
-export function parseSnapshot(text: string): LibrarySnapshot {
-    let value: unknown
-    try {
-        value = JSON.parse(text)
-    } catch {
-        throw new Error('This file is not valid JSON.')
-    }
-    if (!isSnapshot(value)) throw new Error('This file is not a valid library export.')
-    return value
-}
-
-// Narrows unknown parsed JSON to a LibrarySnapshot by checking every field's type.
-function isSnapshot(value: unknown): value is LibrarySnapshot {
-    if (typeof value !== 'object' || value === null) return false
-    const candidate = value as Record<string, unknown>
-    if (typeof candidate.version !== 'number') return false
-    if (typeof candidate.revision !== 'string') return false
-    if (typeof candidate.savedAt !== 'string') return false
-    if (typeof candidate.entries !== 'object' || candidate.entries === null) return false
-    return Object.values(candidate.entries as Record<string, unknown>).every((entry) => typeof entry === 'string')
-}
 
 // True when the error is the user dismissing a native file picker (a cancel), not a real failure to surface.
 function isPickerCancel(error: unknown): boolean {

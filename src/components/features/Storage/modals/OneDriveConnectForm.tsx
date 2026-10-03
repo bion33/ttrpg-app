@@ -32,7 +32,7 @@ function OneDriveConnectForm({
                 <>
                     You'll sign in with your Microsoft account in a popup window. This app never sees or stores which
                     account you choose. A sign-in token is kept <strong>in this browser only</strong> (cleared with site
-                    data), and the access it grants does not allow to read / write to the rest of your drive.
+                    data), and the access it grants does not allow it to read or write to the rest of your drive.
                 </>
             }
             onConnect={onConnect}

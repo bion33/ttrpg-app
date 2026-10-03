@@ -1,8 +1,6 @@
-import type {InfoSheetFactory} from '@pages/CharacterInfoPage/layout/nodes.ts'
-import type {FieldNode} from '@type/FieldNode.ts'
-import type {NumericFieldDefinition} from '@type/NumericFieldDefinition.ts'
-import type {AbilityConfig, AbilityNodes} from '@pages/CharacterPage/layout/sections/abilities.ts'
-import {abilityModifierValue} from '@pages/CharacterPage/logic/formulas/formulas.ts'
+import type {SheetFactory} from '@lib/fields/fieldNodes.ts'
+import type {DerivedNode, FieldNode, InputNode} from '@type/FieldNode.ts'
+import {abilityModifierValue} from '@lib/dnd/abilities.ts'
 
 // Shared geometry for the companion name/species/size fields: they share a bottom edge (the thin rule above the
 // labels) and sizing, and tile horizontally across that rule, divided at the SPECIES and SIZE label starts.
@@ -38,14 +36,18 @@ const ATTACK_BONUS_WIDTH = 22
 const ATTACK_BONUS_GAP = 6
 const ATTACK_EFFECT_WIDTH = ATTACK_WIDTH - ATTACK_BONUS_GAP - ATTACK_BONUS_WIDTH + (ATTACK_X - ATTACK_BONUS_X)
 
-// The companion's two ability-block nodes: the base score and its derived modifier, reusing the main sheet's node types
-// (the companion has no extra, saving-throw, or skill fields).
-type CompanionAbilityNodes = Pick<AbilityNodes<AbilityConfig>, 'score' | 'modifier'>
+// The companion's two ability-block nodes: the editable base score and its derived modifier (the companion has no
+// extra, saving-throw, or skill fields).
+type CompanionAbilityNodes = { score: InputNode<number | null>; modifier: DerivedNode<number | null> }
 
 /**
  * One companion ability block's layout anchors: the centres of its score and modifier circles in the traced artwork.
  */
-type CompanionAbility = {name: string; scoreCenter: {x: number; y: number}; modifierCenter: {x: number; y: number}}
+type CompanionAbility = {
+    name: string;
+    scoreCenter: { x: number; y: number };
+    modifierCenter: { x: number; y: number }
+}
 
 // The companion ability blocks. Each row (beside its STR/DEX/CON/INT/WIS label) has a small score circle on the left
 // and a larger modifier circle overlapping it on the right; the centres are read from the traced artwork.
@@ -69,7 +71,7 @@ const MODIFIER_FONT_SIZE = 18
  * Builds one companion ability block: the editable score centred in its small circle and the read-only modifier,
  * derived from that score via the shared 5e rule, centred in its larger circle.
  */
-function abilityBlock(factory: InfoSheetFactory, ability: CompanionAbility): CompanionAbilityNodes {
+function abilityBlock(factory: SheetFactory, ability: CompanionAbility): CompanionAbilityNodes {
     const score = factory.inputNode({
         id: `${ability.name}Score`,
         x: ability.scoreCenter.x - SCORE_WIDTH / 2,
@@ -80,7 +82,7 @@ function abilityBlock(factory: InfoSheetFactory, ability: CompanionAbility): Com
         fontSize: SCORE_FONT_SIZE,
     })
 
-    const modifier = factory.derivedNode<number | null>(
+    const modifier = factory.derivedNode(
         {
             id: `${ability.name}Modifier`,
             x: ability.modifierCenter.x - MODIFIER_WIDTH / 2,
@@ -90,7 +92,7 @@ function abilityBlock(factory: InfoSheetFactory, ability: CompanionAbility): Com
             type: 'number',
             fontSize: MODIFIER_FONT_SIZE,
             signed: true,
-        } as NumericFieldDefinition,
+        },
         (get) => abilityModifierValue(get(score.atom)),
     )
 
@@ -101,16 +103,42 @@ function abilityBlock(factory: InfoSheetFactory, ability: CompanionAbility): Com
  * One companion attack row (1-based). An odd row is a single text box ('attackN'); an even row splits the box into a
  * signed numeric bonus ('attackBonusN') and a text effect ('attackEffectN') sharing its width, ATTACK_GAP apart.
  */
-function attackRow(inputNode: InfoSheetFactory['inputNode'], row: number): FieldNode[] {
+function attackRow(factory: SheetFactory, row: number): FieldNode[] {
+    const {inputNode, numericNode} = factory
     const y = ATTACK_Y + ATTACK_GAP / 2 + (row - 1) * ATTACK_ROW_STEP
 
     if (row % 2 === 1) {
-        return [inputNode({id: `attack${row}`, x: ATTACK_X, y, width: ATTACK_WIDTH, height: ATTACK_HEIGHT, type: 'text', fontSize: 12})]
+        return [inputNode({
+            id: `attack${row}`,
+            x: ATTACK_X,
+            y,
+            width: ATTACK_WIDTH,
+            height: ATTACK_HEIGHT,
+            type: 'text',
+            fontSize: 12
+        })]
     }
 
     return [
-        inputNode({id: `attackBonus${row}`, x: ATTACK_BONUS_X, y, width: ATTACK_BONUS_WIDTH, height: ATTACK_HEIGHT, type: 'number', signed: true, fontSize: 10}),
-        inputNode({id: `attackEffect${row}`, x: ATTACK_BONUS_X + ATTACK_BONUS_WIDTH + ATTACK_GAP, y, width: ATTACK_EFFECT_WIDTH, height: ATTACK_HEIGHT, type: 'text', fontSize: 12}),
+        numericNode({
+            id: `attackBonus${row}`,
+            x: ATTACK_BONUS_X,
+            y,
+            width: ATTACK_BONUS_WIDTH,
+            height: ATTACK_HEIGHT,
+            type: 'number',
+            signed: true,
+            fontSize: 10
+        }),
+        inputNode({
+            id: `attackEffect${row}`,
+            x: ATTACK_BONUS_X + ATTACK_BONUS_WIDTH + ATTACK_GAP,
+            y,
+            width: ATTACK_EFFECT_WIDTH,
+            height: ATTACK_HEIGHT,
+            type: 'text',
+            fontSize: 12
+        }),
     ]
 }
 
@@ -119,12 +147,12 @@ function attackRow(inputNode: InfoSheetFactory['inputNode'], row: number): Field
  * their printed labels, the square AC/HP/SPEED stat inputs, and the ability score/modifier circles. All coordinates are
  * in the artwork's viewBox units.
  */
-export function buildCompanion(factory: InfoSheetFactory) {
+export function buildCompanion(factory: SheetFactory) {
     const {inputNode} = factory
     return {
         abilities: Object.fromEntries(
             COMPANION_ABILITIES.map((ability) => [ability.name, abilityBlock(factory, ability)]),
-        ) as {[A in typeof COMPANION_ABILITIES[number] as A['name']]: CompanionAbilityNodes},
+        ) as { [A in typeof COMPANION_ABILITIES[number] as A['name']]: CompanionAbilityNodes },
 
         header: {
             name: inputNode({
@@ -187,7 +215,7 @@ export function buildCompanion(factory: InfoSheetFactory) {
             }),
         },
 
-        attacks: Array.from({length: ATTACK_ROW_COUNT}, (_, index) => attackRow(inputNode, index + 1)),
+        attacks: Array.from({length: ATTACK_ROW_COUNT}, (_, index) => attackRow(factory, index + 1)),
 
         details: inputNode({
             id: 'details',

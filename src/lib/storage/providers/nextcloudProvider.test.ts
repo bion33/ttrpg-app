@@ -2,7 +2,13 @@ import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
 import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {NextcloudConnection} from './nextcloudProvider.ts'
 import {adoptConnection, nextcloudProvider, webdavParentUrls, webdavUrl} from './nextcloudProvider.ts'
-import {serialiseSnapshot} from './fileProvider.ts'
+import {
+    extractMetadata,
+    metadataLocator,
+    serialiseInvalidatedMetadata,
+    serialiseMetadata,
+    serialiseSnapshot,
+} from '@lib/storage/snapshotCodec.ts'
 
 const connection: NextcloudConnection = {
     baseUrl: 'https://cloud.example.com/',
@@ -66,12 +72,18 @@ describe('nextcloudProvider relay', () => {
         expect(headers.authorization).toBe(`Basic ${btoa('ada lovelace:app-pass')}`)
     })
 
-    it('PUTs the serialised snapshot on save', async () => {
+    it('invalidates the sidecar, then PUTs the body, then PUTs the describing sidecar, in order', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, {status: 201})))
         await nextcloudProvider.save(target, snapshot)
-        const [, init] = vi.mocked(fetch).mock.calls[0]
-        expect((init?.headers as Record<string, string>)['x-nc-method']).toBe('PUT')
-        expect(init?.body).toBe(serialiseSnapshot(snapshot))
+        const calls = vi.mocked(fetch).mock.calls.map(([, init]) => {
+            const headers = init?.headers as Record<string, string>
+            return {method: headers['x-nc-method'], url: headers['x-nc-url'], body: init?.body}
+        })
+        expect(calls).toEqual([
+            {method: 'PUT', url: metadataLocator(target.locator), body: serialiseInvalidatedMetadata()},
+            {method: 'PUT', url: target.locator, body: serialiseSnapshot(snapshot)},
+            {method: 'PUT', url: metadataLocator(target.locator), body: serialiseMetadata(extractMetadata(snapshot))},
+        ])
     })
 
     it('returns null on a 404 load', async () => {
@@ -84,9 +96,31 @@ describe('nextcloudProvider relay', () => {
         expect(await nextcloudProvider.load(target)).toEqual(snapshot)
     })
 
-    it('reads the in-file revision, and null on 404', async () => {
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(serialiseSnapshot(snapshot), {status: 200})))
+    it('reads the revision from the small sidecar without fetching the body', async () => {
+        const fetchMock = vi.fn().mockResolvedValue(
+            new Response(serialiseMetadata(extractMetadata(snapshot)), {status: 200}))
+        vi.stubGlobal('fetch', fetchMock)
         expect(await nextcloudProvider.readRevision(target)).toBe('rev-42')
+        expect(fetchMock).toHaveBeenCalledTimes(1)
+        expect((fetchMock.mock.calls[0][1]?.headers as Record<string, string>)['x-nc-url'])
+            .toBe(metadataLocator(target.locator))
+    })
+
+    it('falls back to the body revision when the sidecar is absent', async () => {
+        vi.stubGlobal('fetch', vi.fn()
+            .mockResolvedValueOnce(new Response(null, {status: 404}))                       // sidecar missing
+            .mockResolvedValueOnce(new Response(serialiseSnapshot(snapshot), {status: 200}))) // body
+        expect(await nextcloudProvider.readRevision(target)).toBe('rev-42')
+    })
+
+    it('falls back to the body revision when the sidecar holds the invalidation marker', async () => {
+        vi.stubGlobal('fetch', vi.fn()
+            .mockResolvedValueOnce(new Response(serialiseInvalidatedMetadata(), {status: 200}))  // mid-save marker
+            .mockResolvedValueOnce(new Response(serialiseSnapshot(snapshot), {status: 200})))     // body
+        expect(await nextcloudProvider.readRevision(target)).toBe('rev-42')
+    })
+
+    it('returns null when neither sidecar nor body exists', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, {status: 404})))
         expect(await nextcloudProvider.readRevision(target)).toBeNull()
     })

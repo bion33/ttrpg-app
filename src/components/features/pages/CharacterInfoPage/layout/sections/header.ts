@@ -1,10 +1,10 @@
-import type {InfoSheetFactory} from '@pages/CharacterInfoPage/layout/nodes.ts'
+import type {SheetFactory} from '@lib/fields/fieldNodes.ts'
 
 /**
  * Builds the character-info header fields: character name and the physical-description grid (age/height/weight over
  * eyes/skin/hair), laid out over the same header artwork as the character sheet.
  */
-export function buildHeader({inputNode}: InfoSheetFactory) {
+export function buildHeader({inputNode}: SheetFactory) {
     return {
         characterName: inputNode({
             id: 'characterName',
