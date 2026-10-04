@@ -1,0 +1,21 @@
+.info-page {
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background: var(--color-parchment);
+}
+
+/* The library button pinned to the top-left corner (the `.corner-cluster` utility provides the fixed stacking). */
+.info-page__home {
+    top: 1.5rem;
+    left: 1.5rem;
+}
+
+.info-page__sheet {
+    max-width: 100%;
+    border: 1px solid var(--color-border);
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 12px rgb(0 0 0 / 0.12);
+}

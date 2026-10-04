@@ -13,6 +13,7 @@ import {tabHue} from '@lib/colors/tabHue.ts'
 import {compareByLabel} from '@lib/sorting/compareByLabel.ts'
 import {newId} from '@lib/ids/newId.ts'
 import IconButton from '@ui/IconButton/IconButton'
+import RouteLink from '@ui/RouteLink/RouteLink.tsx'
 import ConfirmModal from '@ui/ConfirmModal/ConfirmModal'
 import AddBinderModal from './modals/AddBinderModal.tsx'
 import EditBinderModal from './modals/EditBinderModal.tsx'
@@ -138,6 +139,11 @@ function Library() {
             </div>
 
             <StorageControls placement="library"/>
+
+            <nav className="library__legal no-print">
+                <RouteLink route="privacy" className="library__legal-link">Privacy</RouteLink>
+                <RouteLink route="terms" className="library__legal-link">Terms</RouteLink>
+            </nav>
 
             <div className="library__templates corner-cluster no-print">
                 <IconButton icon={<SquareDashedText/>} label="Page templates" labelSide="left"

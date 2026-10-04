@@ -16,6 +16,26 @@
     right: 1.5rem;
 }
 
+/* Discreet links to the legal pages, pinned to the bottom-left viewport corner; printing hides them via `.no-print`. */
+.library__legal {
+    position: fixed;
+    z-index: var(--z-controls);
+    bottom: 1.5rem;
+    left: 1.5rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.library__legal-link {
+    font-size: 0.875rem;
+    color: var(--color-muted);
+    text-decoration: none;
+}
+
+.library__legal-link:hover {
+    text-decoration: underline;
+}
+
 /* The binders in a grid whose column gap equals its row gap; columns are as many 9rem covers as fit each row. */
 .library__grid {
     display: grid;

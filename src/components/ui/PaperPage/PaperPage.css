@@ -21,6 +21,20 @@
     margin: 0 0 1rem;
 }
 
+.paper-page h2 {
+    margin-top: 1.75rem;
+    color: var(--color-ink);
+}
+
 .paper-page p {
     margin: 0 0 1rem;
+}
+
+.paper-page ul {
+    margin: 0 0 1rem;
+    padding-left: 1.25rem;
+}
+
+.paper-page a {
+    color: var(--color-ink);
 }
