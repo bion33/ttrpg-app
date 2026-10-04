@@ -57,9 +57,13 @@ export async function saveActiveProvider(id: ProviderId | null): Promise<void> {
     await set(ACTIVE_PROVIDER_KEY, id, store)
 }
 
-/** The stored Nextcloud connection (instance URL, credentials, path), or null when none is connected. */
+/** The stored Nextcloud connection (share link + path), or null when none is connected or it predates the share model. */
 export async function loadNextcloudConnection(): Promise<NextcloudConnection | null> {
-    return (await get<NextcloudConnection>(NEXTCLOUD_KEY, store)) ?? null
+    const stored = await get<NextcloudConnection>(NEXTCLOUD_KEY, store)
+    // Drop a connection saved before the share-link model (no shareUrl) so the user reconnects rather than loading a
+    // broken one.
+    if (!stored || typeof stored.shareUrl !== 'string') return null
+    return stored
 }
 
 /** Persists the Nextcloud connection after a successful connect. */

@@ -61,4 +61,11 @@ describe('nextcloud relay', () => {
         expect((init?.headers as Record<string, string>).authorization).toBe('Basic dXNlcjpwdw==')
         expect(init?.redirect).toBe('manual')
     })
+
+    it('forwards the X-Requested-With header to the upstream when present', async () => {
+        const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, {status: 207}))
+        await request({...AUTH, 'x-nc-method': 'PROPFIND', 'x-requested-with': 'XMLHttpRequest'})
+        expect((fetchMock.mock.calls[0][1]?.headers as Record<string, string>)['x-requested-with'])
+            .toBe('XMLHttpRequest')
+    })
 })

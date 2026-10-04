@@ -96,7 +96,7 @@ interface. Every provider saves and loads that same whole-library snapshot.
 | Provider  | Auth | Where the file lives | Path configurable? |
 |---|---|---|---|
 | File (import / export)  | none | a file you pick each save/load | **yes** |
-| Nextcloud  | app password (Basic) | anywhere in your Nextcloud Files | **yes** |
+| Nextcloud  | public share link (share token) | the shared folder (path within it) | **yes** |
 | OneDrive | OAuth (Microsoft), least-privilege | the app's own OneDrive folder (`Apps/<app>/`) | **no** |
 | Google Drive | OAuth (Google) | app data folder | **no** |
 
@@ -105,12 +105,12 @@ interface. Every provider saves and loads that same whole-library snapshot.
 This is a **security** difference, not an inconsistency, and it follows directly
 from how each provider authenticates:
 
-- **Nextcloud uses a Basic-auth app password.** That credential is already
-  all-or-nothing for your account's Files — it can read and write anywhere you can.
-  Restricting the app to a fixed path would add **no** security (the credential
-  itself grants full access regardless), so the app lets you name any path and keep
-  your sync file wherever you like. You scope access by scoping the app password on
-  the server; the app never holds more than that one credential.
+- **Nextcloud uses a public share link.** You create a public share of a folder
+  (with create/edit/delete enabled) and the app holds only that share's token — never
+  your username or account password. The share **is** the scope: the token can only
+  ever touch the shared folder, so letting you name a path *within* it adds
+  flexibility without widening access. You scope access by choosing which folder to
+  share; the app never holds a credential to the rest of your Files.
 
 - **OneDrive uses OAuth, which lets us request a *narrow* token.** We deliberately
   request only `Files.ReadWrite.AppFolder` — a scope confined to the application's

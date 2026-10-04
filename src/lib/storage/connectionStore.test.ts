@@ -1,5 +1,5 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {get} from 'idb-keyval'
+import {get, set} from 'idb-keyval'
 import {
     clearGoogleDriveConnection,
     clearNextcloudConnection,
@@ -32,9 +32,7 @@ vi.mock('idb-keyval', () => {
 })
 
 const connection: NextcloudConnection = {
-    baseUrl: 'https://cloud.example.com',
-    username: 'ada',
-    appPassword: 'app-pass',
+    shareUrl: 'https://cloud.example.com/s/kFy9Lek5sm928xP',
     path: 'personal/ttrpg-app.json',
     label: 'cloud.example.com > personal/ttrpg-app.json',
 }
@@ -65,6 +63,12 @@ describe('Nextcloud connection store', () => {
     it('clears a stored connection', async () => {
         await saveNextcloudConnection(connection)
         await clearNextcloudConnection()
+        expect(await loadNextcloudConnection()).toBeNull()
+    })
+
+    it('drops a connection saved before the share-link model (no shareUrl)', async () => {
+        await set('nextcloudConnection', {baseUrl: 'https://cloud.example.com', username: 'ada', appPassword: 'x'},
+            'store' as never)
         expect(await loadNextcloudConnection()).toBeNull()
     })
 })

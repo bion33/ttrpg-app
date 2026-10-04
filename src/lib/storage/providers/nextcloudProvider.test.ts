@@ -11,9 +11,7 @@ import {
 } from '@lib/storage/snapshotCodec.ts'
 
 const connection: NextcloudConnection = {
-    baseUrl: 'https://cloud.example.com/',
-    username: 'ada lovelace',
-    appPassword: 'app-pass',
+    shareUrl: 'https://cloud.example.com/s/kFy9Lek5sm928xP',
     path: 'personal/ttrpg-app.json',
     label: 'cloud.example.com > personal/ttrpg-app.json',
 }
@@ -42,9 +40,9 @@ afterEach(() => {
 })
 
 describe('webdavUrl', () => {
-    it('encodes the username and path segments and normalises slashes', () => {
+    it('builds the public-share WebDAV url from the share token and path segments', () => {
         expect(webdavUrl(connection)).toBe(
-            'https://cloud.example.com/remote.php/dav/files/ada%20lovelace/personal/ttrpg-app.json',
+            'https://cloud.example.com/public.php/dav/files/kFy9Lek5sm928xP/personal/ttrpg-app.json',
         )
     })
 })
@@ -52,7 +50,7 @@ describe('webdavUrl', () => {
 describe('webdavParentUrls', () => {
     it('lists ancestor collections in order for a nested path', () => {
         expect(webdavParentUrls(connection)).toEqual([
-            'https://cloud.example.com/remote.php/dav/files/ada%20lovelace/personal',
+            'https://cloud.example.com/public.php/dav/files/kFy9Lek5sm928xP/personal',
         ])
     })
 
@@ -62,14 +60,15 @@ describe('webdavParentUrls', () => {
 })
 
 describe('nextcloudProvider relay', () => {
-    it('sends the target, method, and Basic auth header to the relay', async () => {
+    it('sends the target, method, Basic share-token auth, and the X-Requested-With header to the relay', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(serialiseSnapshot(snapshot), {status: 200})))
         await nextcloudProvider.load(target)
         const headers = firstCallHeaders()
         expect(vi.mocked(fetch).mock.calls[0][0]).toBe('/api/nextcloud')
         expect(headers['x-nc-url']).toBe(target.locator)
         expect(headers['x-nc-method']).toBe('GET')
-        expect(headers.authorization).toBe(`Basic ${btoa('ada lovelace:app-pass')}`)
+        expect(headers.authorization).toBe(`Basic ${btoa('kFy9Lek5sm928xP:')}`)
+        expect(headers['x-requested-with']).toBe('XMLHttpRequest')
     })
 
     it('invalidates the sidecar, then PUTs the body, then PUTs the describing sidecar, in order', async () => {
@@ -127,7 +126,7 @@ describe('nextcloudProvider relay', () => {
 
     it('surfaces a readable error on 401', async () => {
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, {status: 401})))
-        await expect(nextcloudProvider.load(target)).rejects.toThrow(/credentials/)
+        await expect(nextcloudProvider.load(target)).rejects.toThrow(/share link/)
     })
 
     it('walks parent collections with MKCOL, tolerating existing ones, on connect', async () => {

@@ -12,7 +12,7 @@ export const nextcloud = new Hono()
 
 nextcloud.post('/', async (context) => {
     const target = context.req.header('x-nc-url')
-    const authorization = context.req.header('authorization') // Basic user:appPassword, built client-side
+    const authorization = context.req.header('authorization') // Basic shareToken:(empty), built client-side
     const method = (context.req.header('x-nc-method') ?? 'GET').toUpperCase()
 
     if (!target || !authorization) return context.text('Missing target URL or credentials', 400)
@@ -31,6 +31,9 @@ nextcloud.post('/', async (context) => {
     if (depth) headers.depth = depth
     const contentType = context.req.header('content-type')
     if (contentType) headers['content-type'] = contentType
+    // Public shares reject non-GET WebDAV requests without this header, so forward it when the client sends it.
+    const requestedWith = context.req.header('x-requested-with')
+    if (requestedWith) headers['x-requested-with'] = requestedWith
 
     const body = method === 'GET' ? undefined : await context.req.arrayBuffer()
     const upstream = await fetch(url, {method, headers, body, redirect: 'manual'})

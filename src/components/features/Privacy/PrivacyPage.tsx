@@ -22,10 +22,9 @@ function PrivacyPage() {
                     <strong>File</strong>: the snapshot is downloaded to your device.
                 </li>
                 <li>
-                    <strong>Nextcloud</strong>: the snapshot is uploaded to the Nextcloud server whose address you
-                    enter, using credentials you provide. How that data is handled depends entirely on the policies
-                    of the NextCloud host you choose. Requests pass through this app's server only to reach your host,
-                    of which no data is kept.
+                    <strong>Nextcloud</strong>: the snapshot is uploaded to the Nextcloud instance of the public share link you provide.
+                    How the data is handled depends entirely on the policies of that Nextcloud instance.
+                    Requests pass through this app's server only to reach your host, of which no data is kept.
                 </li>
                 <li>
                     <strong>

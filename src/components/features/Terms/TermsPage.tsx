@@ -30,8 +30,7 @@ function TermsPage() {
             </p>
             <ul>
                 <li>
-                    <strong>Nextcloud</strong>: your use is governed by the terms and policies of the Nextcloud host you
-                    choose.
+                    <strong>Nextcloud</strong>: your use is governed by the terms and policies of the Nextcloud instance you choose.
                 </li>
                 <li>
                     <strong>

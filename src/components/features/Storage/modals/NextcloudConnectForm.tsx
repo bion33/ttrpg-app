@@ -1,5 +1,6 @@
 import {type SyntheticEvent, useState} from 'react'
 import type {NextcloudConnection} from '@lib/storage/providers/nextcloudProvider.ts'
+import {parseShareUrl} from '@lib/storage/providers/nextcloudShare.ts'
 import ConnectedView from './ConnectedView.tsx'
 import {errorMessage} from '@lib/errors/errorMessage.ts'
 
@@ -16,25 +17,23 @@ interface NextcloudConnectFormProps {
     onAutosaveChange: (enabled: boolean) => void
 }
 
-// Builds the display label for a connection ("host / path"), falling back to the raw URL if it cannot be parsed.
-function buildLabel(baseUrl: string, path: string): string {
+// Builds the display label for a connection ("host > path"), falling back to the raw URL if it cannot be parsed.
+function buildLabel(shareUrl: string, path: string): string {
     try {
-        return `${new URL(baseUrl).hostname} > ${path}`
+        return `${new URL(shareUrl).hostname} > ${path}`
     } catch {
-        return `${baseUrl} > ${path}`
+        return `${shareUrl} > ${path}`
     }
 }
 
 /**
- * The Nextcloud connection form inside the storage settings modal: collects the instance URL, username, app password,
- * and file path (each with guidance on where to find it), or shows the connected target with a Disconnect button.
+ * The Nextcloud connection form inside the storage settings modal: collects a public-share link and the file path
+ * within the shared folder, or shows the connected target with a Disconnect button.
  */
 function NextcloudConnectForm({
                                   connection, onConnect, onDisconnect, onClose, autosaveEnabled, onAutosaveChange,
                               }: NextcloudConnectFormProps) {
-    const [baseUrl, setBaseUrl] = useState('')
-    const [username, setUsername] = useState('')
-    const [appPassword, setAppPassword] = useState('')
+    const [shareUrl, setShareUrl] = useState('')
     const [path, setPath] = useState('ttrpg-app.json')
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -53,16 +52,21 @@ function NextcloudConnectForm({
 
     const submit = async (event: SyntheticEvent) => {
         event.preventDefault()
-        const trimmedUrl = baseUrl.trim().replace(/\/+$/, '')
+        const trimmedUrl = shareUrl.trim()
         const trimmedPath = path.trim()
-        if (!trimmedUrl || !username.trim() || !appPassword || !trimmedPath) return
+        if (!trimmedUrl || !trimmedPath) return
         setError(null)
+        // Reject a malformed share link before attempting to connect.
+        try {
+            parseShareUrl(trimmedUrl)
+        } catch (caught) {
+            setError(errorMessage(caught, 'Not a valid Nextcloud share link.'))
+            return
+        }
         setBusy(true)
         try {
             await onConnect({
-                baseUrl: trimmedUrl,
-                username: username.trim(),
-                appPassword,
+                shareUrl: trimmedUrl,
                 path: trimmedPath,
                 label: buildLabel(trimmedUrl, trimmedPath),
             })
@@ -76,43 +80,25 @@ function NextcloudConnectForm({
     return (
         <form className="modal__body" onSubmit={submit}>
             <label className="modal__field">
-                <span>Instance URL</span>
+                <span>Share link</span>
                 <input
                     type="url"
-                    placeholder="https://cloud.example.com"
-                    value={baseUrl}
-                    onChange={(event) => setBaseUrl(event.target.value)}
+                    placeholder="https://cloud.example.com/s/…"
+                    value={shareUrl}
+                    onChange={(event) => setShareUrl(event.target.value)}
                 />
-                <small className="storage-connect__hint">The address you open Nextcloud at, e.g.
-                    https://cloud.example.com</small>
-            </label>
-
-            <label className="modal__field">
-                <span>Username</span>
-                <input type="text" value={username} onChange={(event) => setUsername(event.target.value)}/>
-                <small className="storage-connect__hint">Your Nextcloud login name.</small>
-            </label>
-
-            <label className="modal__field">
-                <span>App password</span>
-                <input type="password" value={appPassword} onChange={(event) => setAppPassword(event.target.value)}/>
                 <small className="storage-connect__hint">
-                    In Nextcloud click on Account &gt; Personal Settings &gt; Security, and scroll down to create a new
-                    app password. Do <strong>not</strong> use your account password.
+                    In Nextcloud, share a folder as a public link with <strong>Allow editing</strong> (create, edit, and
+                    delete) enabled, then paste the link here.
                 </small>
             </label>
 
             <label className="modal__field">
                 <span>File path</span>
                 <input type="text" value={path} onChange={(event) => setPath(event.target.value)}/>
-                <small className="storage-connect__hint">Path to a file inside your Nextcloud Files. It's created if it
+                <small className="storage-connect__hint">Path to a file inside the shared folder. It's created if it
                     doesn't exist.</small>
             </label>
-
-            <p className="modal__prompt">
-                Your instance URL, app password, and character data pass through this app's relay server on every save
-                and load.
-            </p>
 
             {error && <p className="storage-connect__error">{error}</p>}
 

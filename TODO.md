@@ -1,6 +1,5 @@
 # TODO
 
-- Nextcloud via link share
 - Image upload?
 
 # FUTURE-ME HANDOVER

@@ -14,7 +14,7 @@ const app = new Hono()
 app.use('/api/*', cors({
     origin: process.env.APP_ORIGIN ?? '*',
     allowMethods: ['GET', 'POST'],
-    allowHeaders: ['content-type', 'authorization', 'x-nc-url', 'x-nc-method', 'depth'],
+    allowHeaders: ['content-type', 'authorization', 'x-nc-url', 'x-nc-method', 'depth', 'x-requested-with'],
 }))
 
 app.get('/api/health', (context) => context.text('ok'))

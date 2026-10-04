@@ -18,9 +18,7 @@ import {
 const ALL_STATUSES: SyncStatus[] = ['upToDate', 'localAhead', 'remoteAhead', 'diverged', 'noRemote', 'remoteMissing']
 
 const connection: NextcloudConnection = {
-    baseUrl: 'https://cloud.example.com',
-    username: 'ada',
-    appPassword: 'secret',
+    shareUrl: 'https://cloud.example.com/s/kFy9Lek5sm928xP',
     path: 'personal/ttrpg-app.json',
     label: 'cloud.example.com > personal/ttrpg-app.json',
 }
@@ -48,7 +46,7 @@ describe('resolveTarget', () => {
     it('builds a Nextcloud target from the connection', () => {
         expect(resolveTarget('nextcloud', {...NO_CONNECTIONS, nextcloud: connection})).toEqual({
             provider: 'nextcloud',
-            locator: 'https://cloud.example.com/remote.php/dav/files/ada/personal/ttrpg-app.json',
+            locator: 'https://cloud.example.com/public.php/dav/files/kFy9Lek5sm928xP/personal/ttrpg-app.json',
             label: 'cloud.example.com > personal/ttrpg-app.json',
         })
     })

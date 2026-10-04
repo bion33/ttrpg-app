@@ -10,15 +10,14 @@ import {
 } from '@lib/storage/snapshotCodec.ts'
 import {readRevisionWithFallback} from './revisionProbe.ts'
 import {describeHttpFailure} from './httpError.ts'
+import {parseShareUrl} from './nextcloudShare.ts'
 
 /**
- * A Nextcloud connection: the instance URL, credentials (username + a scoped app password), the library file's path
- * under the user's WebDAV root, and a display label. Held in memory and persisted device-locally in IndexedDB.
+ * A Nextcloud connection: a public-share link, the library file's path within the shared folder, and a display label.
+ * Held in memory and persisted device-locally in IndexedDB.
  */
 export interface NextcloudConnection {
-    baseUrl: string
-    username: string
-    appPassword: string
+    shareUrl: string
     path: string
     label: string
 }
@@ -31,10 +30,10 @@ function pathSegments(path: string): string[] {
     return path.split('/').map((segment) => segment.trim()).filter((segment) => segment !== '').map(encodeURIComponent)
 }
 
-// The user's WebDAV files root, e.g. https://cloud.example.com/remote.php/dav/files/user (no trailing slash).
+// The shared folder's public WebDAV root, e.g. https://cloud.example.com/public.php/dav/files/TOKEN (no trailing slash).
 function webdavRoot(connection: NextcloudConnection): string {
-    const base = connection.baseUrl.replace(/\/+$/, '')
-    return `${base}/remote.php/dav/files/${encodeURIComponent(connection.username)}`
+    const {origin, token} = parseShareUrl(connection.shareUrl)
+    return `${origin}/public.php/dav/files/${encodeURIComponent(token)}`
 }
 
 /**
@@ -59,9 +58,10 @@ export function webdavParentUrls(connection: NextcloudConnection): string[] {
     return urls
 }
 
-// The HTTP Basic authorization header value for a connection, built from the username and app password.
+// The HTTP Basic authorization header value for a connection: the share token as the username, with an empty password.
 function authHeader(connection: NextcloudConnection): string {
-    return `Basic ${btoa(`${connection.username}:${connection.appPassword}`)}`
+    const {token} = parseShareUrl(connection.shareUrl)
+    return `Basic ${btoa(`${token}:`)}`
 }
 
 // Forwards one WebDAV request through the same-origin relay, tagging the target, method, credentials, and optional depth.
@@ -76,15 +76,17 @@ async function relay(
         'x-nc-url': url,
         'x-nc-method': method,
         authorization: authHeader(connection),
+        // Nextcloud's public WebDAV endpoint rejects non-GET requests that lack this header with 401.
+        'x-requested-with': 'XMLHttpRequest',
     }
     if (depth !== undefined) headers.depth = depth
     if (body !== undefined) headers['content-type'] = 'application/json'
     return fetch('/api/nextcloud', {method: 'POST', headers, body})
 }
 
-// A readable error message for a failed relay response, calling out the common bad-credentials case.
+// A readable error message for a failed relay response, calling out the common rejected-share case.
 function describeFailure(status: number): string {
-    if (status === 401) return 'Nextcloud rejected the credentials. Check the username and app password.'
+    if (status === 401) return 'Nextcloud rejected the share link. Check the link and that the share allows editing.'
     return `Nextcloud request failed (${status}).`
 }
 
