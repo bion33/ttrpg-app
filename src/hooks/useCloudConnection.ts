@@ -38,6 +38,8 @@ export interface CloudConnection<Connection> {
 
     disconnect(): Promise<void>
 
+    reset(): Promise<void>
+
     hydrate(): Promise<void>
 }
 
@@ -101,11 +103,25 @@ export function useCloudConnection<Connection>(
         }
     }, [ports, actions])
 
+    // Clears this provider's stored connection and adopted state without touching the active provider, so another
+    // provider can become the sole connected one. Unlike disconnect, it leaves the active provider and sync base alone.
+    const reset = useCallback(async () => {
+        if (inFlight.current) return
+        inFlight.current = true
+        ports.adopt(null)
+        try {
+            await ports.clear()
+        } finally {
+            if (mounted.current) setConnection(null)
+            inFlight.current = false
+        }
+    }, [ports])
+
     const hydrate = useCallback(async () => {
         const stored = await ports.load()
         ports.adopt(stored, ports.persist)
         if (mounted.current) setConnection(stored)
     }, [ports])
 
-    return {connection, connect, disconnect, hydrate}
+    return {connection, connect, disconnect, reset, hydrate}
 }

@@ -406,27 +406,45 @@ export function useStorage(): UseStorage {
     // Dismisses the first-run settings prompt, so the auto-shown settings modal fires at most once per session.
     const dismissSettingsPrompt = useCallback(() => setPromptSettings(false), [])
 
-    // Runs the interactive Microsoft sign-in, exchanges the code for tokens, and connects with a generic label.
+    // Clears every cloud provider's stored connection except the one just connected, so only one cloud provider is ever
+    // connected at a time and switching clouds leaves no stale connection behind.
+    const resetOtherClouds = useCallback(async (keep: ProviderId) => {
+        await Promise.all([
+            keep === 'nextcloud' ? Promise.resolve() : nextcloud.reset(),
+            keep === 'onedrive' ? Promise.resolve() : onedrive.reset(),
+            keep === 'googleDrive' ? Promise.resolve() : googleDrive.reset(),
+        ])
+    }, [nextcloud, onedrive, googleDrive])
+
+    // Connects Nextcloud, then clears the other cloud providers so it becomes the sole connected one.
+    const connectNextcloud = useCallback(async (connection: NextcloudConnection) => {
+        await nextcloud.connect(connection)
+        await resetOtherClouds('nextcloud')
+    }, [nextcloud, resetOtherClouds])
+
+    // Runs the interactive Microsoft sign-in, exchanges the code for tokens, connects, then clears the other clouds.
     const connectOneDrive = useCallback(async () => {
         const {code, verifier} = await runMicrosoftAuth()
         const tokens = await exchangeCode('microsoft', code, verifier)
         if (!tokens.refresh_token) throw new Error('Microsoft did not return a refresh token.')
         await onedrive.connect({refreshToken: tokens.refresh_token, label: 'OneDrive'})
-    }, [onedrive])
+        await resetOtherClouds('onedrive')
+    }, [onedrive, resetOtherClouds])
 
-    // Runs the interactive Google sign-in, exchanges the code for tokens, and connects with a generic label.
+    // Runs the interactive Google sign-in, exchanges the code for tokens, connects, then clears the other clouds.
     const connectGoogleDrive = useCallback(async () => {
         const {code, verifier} = await runGoogleAuth()
         const tokens = await exchangeCode('google', code, verifier)
         if (!tokens.refresh_token) throw new Error('Google did not return a refresh token.')
         await googleDrive.connect({refreshToken: tokens.refresh_token, label: 'Google Drive'})
-    }, [googleDrive])
+        await resetOtherClouds('googleDrive')
+    }, [googleDrive, resetOtherClouds])
 
     return {
         status, dirty, provider, save, load, conflict, resolveConflict, setProvider, saving,
         autosaveEnabled, setAutosaveEnabled, promptSettings, dismissSettingsPrompt,
         nextcloudConnection: nextcloud.connection,
-        connectNextcloud: nextcloud.connect,
+        connectNextcloud,
         disconnectNextcloud: nextcloud.disconnect,
         oneDriveConnection: onedrive.connection,
         connectOneDrive,

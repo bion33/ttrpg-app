@@ -216,7 +216,10 @@ field-node system. Organised under `src/lib/storage/`:
 - **Providers** behind one `StorageProvider` interface (`file`, `nextcloud`,
   `onedrive`, `googleDrive`), each pure URL/payload builders + thin transport. The
   two OAuth providers share one token-client and one cloud-connection lifecycle
-  hook; the shared `httpError` builder makes every failure diagnosable.
+  hook; the shared `httpError` builder makes every failure diagnosable. **At most
+  one cloud provider is connected at a time**: connecting one clears the other
+  clouds' stored connections (`useCloudConnection.reset`, orchestrated in
+  `useStorage`), so switching clouds leaves no stale connection behind.
 - Migrations: append-only, **one file per version** in `src/migrations/`, never
   edit or renumber an existing one.
 - Orchestration is `useStorage()` (+ `useAutosave`, `useAutosaveFlush`,
