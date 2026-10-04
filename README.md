@@ -45,6 +45,48 @@ anonymous `node_modules` volumes can otherwise go stale). Docker is additive —
 `yarn dev`, `yarn build`, `yarn lint`, and `yarn test` still run directly on the
 host unchanged, so the container isn't needed for normal local work.
 
+## Deploy to production
+
+Docker Compose above is **dev only** (it runs `yarn dev` with HMR). For production,
+`scripts/package-prod.sh` builds the client and bundles it with the server into a
+tarball you copy to the target machine and extract.
+
+### Build the artifact
+
+```bash
+# On the build machine. Create the root .env.prod FIRST — see the warning below.
+scripts/package-prod.sh            # writes build/ttrpg-app-prod-<timestamp>.tar.gz
+scripts/package-prod.sh /some/dir  # or choose the output directory
+```
+
+The tarball contains `web/` (the built static SPA), the `server/` source and its
+install manifests, and a `DEPLOY.md` with the target-machine steps. It carries **no
+secrets**: it excludes `node_modules` (installed on the target) and every `.env`
+(the server's env is set in its production environment).
+
+> **The client's `VITE_*` values are baked into `web/` at build time**, from the
+> root `.env.prod` (Vite loads it for `--mode prod`; `server/.env` is never read for
+> the client build). Create `.env.prod` from `.env.example` with the production OAuth
+> client ids and `https://…` redirect URIs before running the script — it aborts if
+> the file is missing. These values are public by design; they cannot be changed on
+> the target without rebuilding.
+
+### On the target machine
+
+Extract the tarball, then follow its bundled `DEPLOY.md`. In short:
+
+1. **Server** — in `server/`, `npx corepack@latest yarn install --immutable`, then
+   run `yarn start` under a process manager (systemd, pm2, …), with the server's env
+   (`APP_ORIGIN`, `NEXTCLOUD_ALLOWED_HOSTS`, the `MS_*` / `GOOGLE_*` OAuth
+   credentials and `https://…` callback URIs) set in its production environment;
+   `server/.env.example` is the template. It listens on `PORT` (default `3000`).
+2. **Reverse proxy** — serve `web/` statically with an SPA fallback to
+   `index.html`, and forward `/api/*` (and `/oauth/*`) to the server process. TLS is
+   required: the OAuth providers reject non-`https` redirect URIs off localhost.
+3. **OAuth registrations** — add the production `https://…/oauth/{microsoft,google}/callback.html`
+   URIs to the Entra and Google Cloud app registrations (see Storage below for the
+   dev URIs they sit alongside).
+
 ## Storage
 
 Persistence is not per-field: the whole `localStorage` key space is snapshotted to

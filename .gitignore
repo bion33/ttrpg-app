@@ -31,3 +31,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Production artifacts (scripts/package-prod.sh)
+/build

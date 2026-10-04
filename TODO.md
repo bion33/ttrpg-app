@@ -1,8 +1,7 @@
 # TODO
 
-- Image upload?
 - Nextcloud via link share
-- Deploy
+- Image upload?
 
 # FUTURE-ME HANDOVER
 

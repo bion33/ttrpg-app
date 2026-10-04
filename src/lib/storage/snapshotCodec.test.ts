@@ -27,7 +27,11 @@ describe('serialiseSnapshot / parseSnapshot', () => {
     })
 
     it('throws when a required field is missing', () => {
-        expect(() => parseSnapshot(JSON.stringify({version: 1, revision: 'r', savedAt: 'now'}))).toThrow(/valid library/)
+        expect(() => parseSnapshot(JSON.stringify({
+            version: 1,
+            revision: 'r',
+            savedAt: 'now'
+        }))).toThrow(/valid library/)
     })
 
     it('throws when an entry value is not a string', () => {
