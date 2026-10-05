@@ -27,12 +27,13 @@ import {instantiateBinderTemplate} from '@features/Templates/logic/instantiate/i
 
 /**
  * A binder in the library: an opaque id (also the storage-prefix root every one of its pages persists under), a
- * display label, and the hue of its spine on the shelf.
+ * display label, the hue of its spine on the shelf, and an optional portrait image (a remote URL or local image path).
  */
 interface LibraryBinderItem {
     id: string
     label: string
     hue: number
+    portrait?: string
 }
 
 /** The user's binders, loaded from and persisted to storage. Empty until the user adds one. */
@@ -54,6 +55,7 @@ function LibraryShelfBinder({binder, onOpen, onEdit, onDelete}: {
         <LibraryBinder
             hue={binder.hue}
             label={binder.label}
+            portrait={binder.portrait}
             jitterSeed={binder.id}
             // Decorative tabs mirror the binder's real pages (first four only), in their stored hue/label.
             tabs={binderTabs(pages).slice(0, 4)}
@@ -102,12 +104,13 @@ function Library() {
         setAdding(false)
     }
 
-    // Renames and recolours the binder being edited (its id and stored pages are unchanged).
-    function saveBinder(name: string, hue: number) {
+    // Renames, recolours, and re-portraits the binder being edited (its id and stored pages are unchanged).
+    function saveBinder(name: string, hue: number, portrait: string) {
         setBinders((previous) => previous.map((binder) => (binder.id === editing?.id ? {
             ...binder,
             label: name,
-            hue
+            hue,
+            portrait: portrait || undefined
         } : binder)))
         setEditing(null)
     }
@@ -157,7 +160,8 @@ function Library() {
 
             {adding && <AddBinderModal onCreate={createBinder} onCancel={() => setAdding(false)}/>}
             {editing && (
-                <EditBinderModal initialLabel={editing.label} initialHue={editing.hue} onSave={saveBinder}
+                <EditBinderModal initialLabel={editing.label} initialHue={editing.hue}
+                                 initialPortrait={editing.portrait ?? ''} onSave={saveBinder}
                                  onCancel={() => setEditing(null)}/>
             )}
             {deleting && (

@@ -156,6 +156,14 @@
     font-size: 4.25rem;
     font-weight: 700;
     box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+/* A chosen portrait image filling the circular portrait, cropped to cover it. */
+.library__portrait-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 /* The binder name across the cover foot: always reserves two lines (so the portrait never shifts) and force-wraps long

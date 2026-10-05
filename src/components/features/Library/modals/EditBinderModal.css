@@ -1,0 +1,60 @@
+/* The top row of the edit-binder dialogue: the name field and portrait actions on the left, the portrait on the right. */
+.edit-binder__portrait-field {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+/* The name field filling the space left of the portrait. */
+.edit-binder__name-column {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Positioning context so the remove button can sit over the portrait's top-right corner. */
+.edit-binder__portrait-wrap {
+    position: relative;
+    flex: none;
+}
+
+/* The flat remove button overlapping the portrait's top-right corner; hidden until the portrait is hovered or the
+   button itself is focused. */
+.icon-button.edit-binder__portrait-remove {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.5rem;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.edit-binder__portrait-wrap:hover .edit-binder__portrait-remove,
+.icon-button.edit-binder__portrait-remove:focus-visible {
+    opacity: 1;
+}
+
+/* Circular portrait preview that opens the image-source form; shows the chosen image or the name's first letter. */
+.edit-binder__portrait {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 5rem;
+    height: 5rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #f3e7d3;
+    color: var(--color-ink);
+    font-family: var(--font-serif);
+    font-size: 2.25rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+}
+
+.edit-binder__portrait-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}

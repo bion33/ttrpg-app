@@ -3,16 +3,19 @@ import {Pencil, Plus, Trash2} from 'lucide-react'
 import './Library.css'
 import '@features/Binder/tabs/Tabs.css'
 import IconButton from '@ui/IconButton/IconButton'
+import {useImageSource} from '@hooks/useImageSource.ts'
 import {bookJitter} from './logic/bookJitter/bookJitter.ts'
 import {binderSpineDark, binderSpineLight, tabColor} from '@lib/colors/hueColors.ts'
 
 /**
- * Props for one library binder cover: its spine hue and label, the seed for its stable paper mess, the decorative page
- * tabs to show, the open handler, and (for real binders) the edit/delete actions. `ghost` renders the faded add cover.
+ * Props for one library binder cover: its spine hue and label, an optional portrait image, the seed for its stable
+ * paper mess, the decorative page tabs to show, the open handler, and (for real binders) the edit/delete actions.
+ * `ghost` renders the faded add cover.
  */
 interface LibraryBinderProps {
     hue: number
     label: string
+    portrait?: string
     jitterSeed: string
     tabs?: { hue: number; label: string }[]
     onOpen: () => void
@@ -22,11 +25,12 @@ interface LibraryBinderProps {
 }
 
 /**
- * One binder cover on the library shelf: loose papers behind a hue-tinted cover with a portrait placeholder, its page
- * tabs, and hover actions; the `ghost` variant is the faded "Add binder" cover.
+ * One binder cover on the library shelf: loose papers behind a hue-tinted cover with a portrait (the chosen image, or
+ * the name's first letter), its page tabs, and hover actions; the `ghost` variant is the faded "Add binder" cover.
  */
-function LibraryBinder({hue, label, jitterSeed, tabs, onOpen, onEdit, onDelete, ghost = false}: LibraryBinderProps) {
+function LibraryBinder({hue, label, portrait, jitterSeed, tabs, onOpen, onEdit, onDelete, ghost = false}: LibraryBinderProps) {
     const jitter = bookJitter(jitterSeed)
+    const portraitSource = useImageSource(portrait ?? '')
     return (
         <div className={`library__binder${ghost ? ' library__binder--ghost' : ''}`}
              style={{'--spine-light': binderSpineLight(hue), '--spine-dark': binderSpineDark(hue)} as CSSProperties}>
@@ -55,7 +59,11 @@ function LibraryBinder({hue, label, jitterSeed, tabs, onOpen, onEdit, onDelete, 
             )}
             <button type="button" className="library__cover" onClick={onOpen}>
                 <span className="library__portrait" aria-hidden="true">
-                    {ghost ? <Plus/> : label.trim().charAt(0).toUpperCase()}
+                    {ghost
+                        ? <Plus/>
+                        : portraitSource
+                            ? <img className="library__portrait-image" src={portraitSource} alt=""/>
+                            : label.trim().charAt(0).toUpperCase()}
                 </span>
                 <span className="library__cover-name">{label}</span>
             </button>
