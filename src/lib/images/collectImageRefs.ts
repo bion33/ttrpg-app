@@ -5,6 +5,19 @@ import {isImagePath} from './imageKey.ts'
 // images are collected alongside field values.
 const MARKDOWN_IMAGE = /!\[[^\]]*]\(([^)\s]+)\)/g
 
+// Recovers the underlying string an entry holds: a snapshot value is the JSON-encoded form localStorage stores, so a
+// field's path, an image-or-textarea value, and a markdown body all arrive quote-wrapped and must be decoded before
+// scanning. A non-string entry (an object/array, e.g. the binders list) carries no image reference, so it is dropped;
+// a value that is not valid JSON is scanned as-is.
+function decodeEntry(value: string): string {
+    try {
+        const parsed: unknown = JSON.parse(value)
+        return typeof parsed === 'string' ? parsed : ''
+    } catch {
+        return value
+    }
+}
+
 // Adds every stored image path found in one value to the accumulating set: the value verbatim (a plain image field),
 // the image inside an image-or-textarea JSON value, and any markdown image targets (a notes body). Matches only exact
 // `images/…` paths, so an arbitrary markdown or text body is never itself mistaken for a path.
@@ -26,7 +39,7 @@ function collectFromValue(value: string, into: Set<string>): void {
 export function collectImageRefs(entries: Record<string, string>): Set<string> {
     const referenced = new Set<string>()
     for (const value of Object.values(entries)) {
-        collectFromValue(value, referenced)
+        collectFromValue(decodeEntry(value), referenced)
     }
     return referenced
 }
