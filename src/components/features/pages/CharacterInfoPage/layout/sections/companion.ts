@@ -218,7 +218,7 @@ export function buildCompanion(factory: SheetFactory) {
         attacks: Array.from({length: ATTACK_ROW_COUNT}, (_, index) => attackRow(factory, index + 1)),
 
         details: inputNode({
-            id: 'details',
+            id: 'companionDetails',
             x: 556,
             y: 804,
             width: 214,

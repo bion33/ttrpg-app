@@ -171,6 +171,43 @@ async function readMedia(fileName: string, slot: FileIdSlot): Promise<string | n
     return response.text()
 }
 
+// Finds an app-data file's id by its exact name, or null when absent. Unlike ensureFileId this caches nothing, so it
+// suits the open-ended set of image files (whose names are their full relative `images/…` paths).
+async function findFileByName(fileName: string): Promise<string | null> {
+    const query = new URLSearchParams({
+        spaces: 'appDataFolder',
+        q: `name='${fileName}'`,
+        fields: 'files(id)',
+        pageSize: '1',
+    })
+    const response = await withAccessToken((token) =>
+        fetch(`${DRIVE_API}/files?${query.toString()}`, {headers: {authorization: `Bearer ${token}`}}))
+    if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+    const {files} = await response.json() as { files: { id: string }[] }
+    return files[0]?.id ?? null
+}
+
+// Creates an app-data binary file named `fileName` holding `bytes` (metadata + media in one multipart POST); the body
+// is assembled as a Blob so raw bytes pass through intact.
+async function createBinaryFile(fileName: string, bytes: Blob): Promise<void> {
+    const boundary = 'ttrpg-image-boundary'
+    const metadata = {name: fileName, parents: ['appDataFolder']}
+    const preamble =
+        `--${boundary}\r\n`
+        + 'Content-Type: application/json; charset=UTF-8\r\n\r\n'
+        + `${JSON.stringify(metadata)}\r\n`
+        + `--${boundary}\r\n`
+        + `Content-Type: ${bytes.type || 'application/octet-stream'}\r\n\r\n`
+    const body = new Blob([preamble, bytes, `\r\n--${boundary}--\r\n`])
+    const response = await withAccessToken((token) =>
+        fetch(`${UPLOAD_API}/files?uploadType=multipart&fields=id`, {
+            method: 'POST',
+            headers: {authorization: `Bearer ${token}`, 'content-type': `multipart/related; boundary=${boundary}`},
+            body,
+        }))
+    if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+}
+
 /**
  * The Google Drive storage provider: saves, loads, and probes the whole-library JSON in the app's own hidden Drive
  * app-data folder via the Drive v3 REST API, refreshing the access token as needed. The file is addressed by id (stored
@@ -212,5 +249,56 @@ export const googleDriveProvider: StorageProvider = {
             (locator) => readMedia(locator, locator === target.locator ? 'fileId' : 'metadataFileId'),
             target.locator,
         )
+    },
+
+    async listImages() {
+        // The flat app-data folder names each image by its full relative path, so list and keep the `images/` ones.
+        const query = new URLSearchParams({
+            spaces: 'appDataFolder',
+            q: "name contains 'images/'",
+            fields: 'files(name)',
+            pageSize: '1000',
+        })
+        const response = await withAccessToken((token) =>
+            fetch(`${DRIVE_API}/files?${query.toString()}`, {headers: {authorization: `Bearer ${token}`}}))
+        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+        const {files} = await response.json() as { files: { name: string }[] }
+        return files.map((file) => file.name).filter((name) => name.startsWith('images/'))
+    },
+
+    async putImage(_target, path: string, bytes: Blob) {
+        const existing = await findFileByName(path)
+        // Overwrite the media of an existing file, else create it; a 404 on patch means it was externally deleted.
+        if (existing) {
+            const response = await withAccessToken((token) =>
+                fetch(`${UPLOAD_API}/files/${existing}?uploadType=media`, {
+                    method: 'PATCH',
+                    headers: {authorization: `Bearer ${token}`, 'content-type': bytes.type || 'application/octet-stream'},
+                    body: bytes,
+                }))
+            if (response.ok) return
+            if (response.status !== 404) throw new Error(await describeHttpFailure(response, describeFailure))
+        }
+        await createBinaryFile(path, bytes)
+    },
+
+    async getImage(_target, path: string) {
+        const fileId = await findFileByName(path)
+        if (!fileId) return null
+        const response = await withAccessToken((token) =>
+            fetch(`${DRIVE_API}/files/${fileId}?alt=media`, {headers: {authorization: `Bearer ${token}`}}))
+        if (response.status === 404) return null
+        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+        return response.blob()
+    },
+
+    async deleteImage(_target, path: string) {
+        const fileId = await findFileByName(path)
+        if (!fileId) return
+        const response = await withAccessToken((token) =>
+            fetch(`${DRIVE_API}/files/${fileId}`, {method: 'DELETE', headers: {authorization: `Bearer ${token}`}}))
+        // Already gone is success for a delete.
+        if (response.status === 404) return
+        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
     },
 }

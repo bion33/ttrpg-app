@@ -191,6 +191,17 @@
     height: auto;
 }
 
+/* A local image still resolving (or missing) from the OPFS: a neutral inline placeholder standing in for the image. */
+.md-image__placeholder {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8125rem;
+    color: var(--color-text);
+    background: var(--color-parchment);
+    border: 1px dashed var(--color-border);
+    border-radius: 0.25rem;
+}
+
 .markdown-page__content hr {
     border: none;
     border-top: 1px solid var(--color-border);

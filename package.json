@@ -28,6 +28,7 @@
     "@tiptap/react": "^3.31.4",
     "@tiptap/starter-kit": "^3.31.4",
     "cmdk": "^1.1.1",
+    "fflate": "^0.8.3",
     "hash-sum": "^2.0.0",
     "idb-keyval": "^6.3.0",
     "jotai": "^3.0.0",

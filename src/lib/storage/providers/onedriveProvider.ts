@@ -45,6 +45,20 @@ export function contentUrl(fileName: string): string {
     return `${GRAPH_BASE}/me/drive/special/approot:/${fileName}:/content`
 }
 
+/**
+ * The Graph URL for the app-folder item at a relative path (the item itself, for delete), as opposed to its content.
+ */
+export function itemUrl(path: string): string {
+    return `${GRAPH_BASE}/me/drive/special/approot:/${path}`
+}
+
+/**
+ * The Graph URL listing the children of the app-folder's `images` subfolder.
+ */
+export function imageChildrenUrl(): string {
+    return `${GRAPH_BASE}/me/drive/special/approot:/images:/children?$select=name,file`
+}
+
 // A readable error message for a failed Graph response.
 function describeFailure(status: number): string {
     if (status === 401 || status === 403) return 'OneDrive rejected the request. Reconnect in storage settings.'
@@ -105,5 +119,41 @@ export const onedriveProvider: StorageProvider = {
             if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
             return response.text()
         }, target.locator)
+    },
+
+    async listImages() {
+        const response = await withAccessToken((token) =>
+            fetch(imageChildrenUrl(), {headers: {authorization: `Bearer ${token}`}}))
+        // No images folder yet means no remote images.
+        if (response.status === 404) return []
+        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+        const {value} = await response.json() as { value: { name: string; file?: unknown }[] }
+        return value.filter((entry) => entry.file !== undefined).map((entry) => `images/${entry.name}`)
+    },
+
+    async putImage(_target, path: string, bytes: Blob) {
+        const response = await withAccessToken((token) =>
+            fetch(contentUrl(path), {
+                method: 'PUT',
+                headers: {authorization: `Bearer ${token}`, 'content-type': bytes.type || 'application/octet-stream'},
+                body: bytes,
+            }))
+        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+    },
+
+    async getImage(_target, path: string) {
+        const response = await withAccessToken((token) =>
+            fetch(contentUrl(path), {headers: {authorization: `Bearer ${token}`}}))
+        if (response.status === 404) return null
+        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+        return response.blob()
+    },
+
+    async deleteImage(_target, path: string) {
+        const response = await withAccessToken((token) =>
+            fetch(itemUrl(path), {method: 'DELETE', headers: {authorization: `Bearer ${token}`}}))
+        // Already gone is success for a delete.
+        if (response.status === 404) return
+        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
     },
 }

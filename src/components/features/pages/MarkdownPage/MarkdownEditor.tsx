@@ -7,16 +7,16 @@ import StarterKit from '@tiptap/starter-kit'
 import {Markdown} from '@tiptap/markdown'
 import {TaskList} from '@tiptap/extension-task-list'
 import {TaskItem} from '@tiptap/extension-task-item'
-import {Image} from '@tiptap/extension-image'
 import '@ui/ActionMenu/ActionMenu.css'
 import './MarkdownPage.css'
 import {Callout} from './extensions/callout.ts'
+import {Image} from './extensions/image/image.ts'
 import {PageBreak} from './extensions/pageBreak.ts'
 import {Pagination} from './extensions/pagination/pagination.ts'
 import {tableExtensions} from './extensions/table/tableExtensions.ts'
 import MarkdownToolbar from './MarkdownToolbar.tsx'
 import BlockHandle from './BlockHandle.tsx'
-import ImageUrlModal from '@ui/ImageUrlModal/ImageUrlModal.tsx'
+import ImageSourceModal from '@ui/ImageSourceModal/ImageSourceModal.tsx'
 
 /**
  * Props for the markdown editor: the markdown to show (read on mount, and re-applied if it changes externally, e.g. a
@@ -76,9 +76,9 @@ function MarkdownEditor({markdown, onChange, active}: MarkdownEditorProps) {
             {/* Portalled to the body like the toolbar: rendered in place it would sit inside the zoomed, page-tall
                 `.binder-view` transform, which confines its fixed backdrop to the editor and scales it. */}
             {imageDialogOpen && createPortal(
-                <ImageUrlModal
-                    onInsert={(url) => {
-                        editor.chain().focus().setImage({src: url}).run()
+                <ImageSourceModal
+                    onInsert={(value) => {
+                        editor.chain().focus().setImage({src: value}).run()
                         setImageDialogOpen(false)
                     }}
                     onCancel={() => setImageDialogOpen(false)}

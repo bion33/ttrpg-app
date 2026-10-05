@@ -44,6 +44,32 @@ export function webdavUrl(connection: NextcloudConnection): string {
 }
 
 /**
+ * Builds the absolute WebDAV URL of an image at a relative path (e.g. `images/hero-a1.png`), placing the images folder
+ * beside the library file — in the library file's own parent directory, not at the share root.
+ */
+export function imageUrl(connection: NextcloudConnection, path: string): string {
+    const parent = pathSegments(connection.path).slice(0, -1)
+    return [webdavRoot(connection), ...parent, ...pathSegments(path)].join('/')
+}
+
+// Matches each WebDAV `<href>` element's text, regardless of the server's namespace prefix (`d:href`, `D:href`, …).
+const WEBDAV_HREF = /<[a-z0-9]*:?href>([^<]*)<\/[a-z0-9]*:?href>/gi
+
+/**
+ * Extracts the relative `images/<name>` paths from a WebDAV PROPFIND multi-status body, dropping the collection's own
+ * entry; tolerates a body with no image entries (returns none).
+ */
+export function parseImageListing(xml: string): string[] {
+    const paths: string[] = []
+    for (const match of xml.matchAll(WEBDAV_HREF)) {
+        // A file href ends in `/images/<name>`; the images collection's own href ends in `/images/` and is skipped.
+        const file = decodeURIComponent(match[1]).match(/\/images\/([^/]+)$/)
+        if (file) paths.push(`images/${file[1]}`)
+    }
+    return paths
+}
+
+/**
  * The ordered ancestor collection URLs of the target's parent path (e.g. `a`, then `a/b` for `a/b/library.json`), for
  * the recursive MKCOL walk; empty when the file sits directly at the WebDAV root.
  */
@@ -64,14 +90,16 @@ function authHeader(connection: NextcloudConnection): string {
     return `Basic ${btoa(`${token}:`)}`
 }
 
-// Forwards one WebDAV request through the same-origin relay, tagging the target, method, credentials, and optional depth.
-async function relay(
-    method: string,
-    url: string,
-    connection: NextcloudConnection,
-    body?: string,
-    depth?: string,
-): Promise<Response> {
+// Optional per-request relay settings: a body (text or binary) with its content type, and a WebDAV Depth header.
+interface RelayOptions {
+    body?: BodyInit
+    contentType?: string
+    depth?: string
+}
+
+// Forwards one WebDAV request through the same-origin relay, tagging the target, method, credentials, and optional
+// depth; a text body defaults to JSON, a binary body passes its own content type through.
+async function relay(method: string, url: string, connection: NextcloudConnection, options: RelayOptions = {}) {
     const headers: Record<string, string> = {
         'x-nc-url': url,
         'x-nc-method': method,
@@ -79,9 +107,9 @@ async function relay(
         // Nextcloud's public WebDAV endpoint rejects non-GET requests that lack this header with 401.
         'x-requested-with': 'XMLHttpRequest',
     }
-    if (depth !== undefined) headers.depth = depth
-    if (body !== undefined) headers['content-type'] = 'application/json'
-    return fetch('/api/nextcloud', {method: 'POST', headers, body})
+    if (options.depth !== undefined) headers.depth = options.depth
+    if (options.body !== undefined) headers['content-type'] = options.contentType ?? 'application/json'
+    return fetch('/api/nextcloud', {method: 'POST', headers, body: options.body})
 }
 
 // A readable error message for a failed relay response, calling out the common rejected-share case.
@@ -107,7 +135,7 @@ export const nextcloudProvider: StorageProvider = {
     async connect() {
         if (!active) throw new Error('No Nextcloud connection to validate.')
         // Confirm reachability and credentials before touching anything (PROPFIND returns 207 Multi-Status on success).
-        const probe = await relay('PROPFIND', webdavRoot(active), active, undefined, '0')
+        const probe = await relay('PROPFIND', webdavRoot(active), active, {depth: '0'})
         if (!probe.ok && probe.status !== 207) throw new Error(await describeHttpFailure(probe, describeFailure))
         // WebDAV MKCOL creates one level at a time, so walk the parent segments, tolerating collections that exist.
         for (const url of webdavParentUrls(active)) {
@@ -126,7 +154,7 @@ export const nextcloudProvider: StorageProvider = {
         if (!active) throw new Error('Not connected to Nextcloud.')
         const connection = active
         const put = async (locator: string, content: string) => {
-            const response = await relay('PUT', locator, connection, content)
+            const response = await relay('PUT', locator, connection, {body: content})
             if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
         }
         // Invalidate the sidecar first, so a later-failing write never leaves it describing a stale revision; a probe
@@ -153,5 +181,44 @@ export const nextcloudProvider: StorageProvider = {
             if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
             return response.text()
         }, target.locator)
+    },
+
+    async listImages() {
+        if (!active) return []
+        const response = await relay('PROPFIND', imageUrl(active, 'images'), active, {depth: '1'})
+        // No images folder yet means no remote images.
+        if (response.status === 404) return []
+        if (!response.ok && response.status !== 207) throw new Error(await describeHttpFailure(response, describeFailure))
+        return parseImageListing(await response.text())
+    },
+
+    async putImage(_target, path: string, bytes: Blob) {
+        if (!active) throw new Error('Not connected to Nextcloud.')
+        // Ensure the images collection exists first; MKCOL on an existing collection returns 405, which is fine.
+        const made = await relay('MKCOL', imageUrl(active, 'images'), active)
+        if (!made.ok && made.status !== 405 && made.status !== 301) {
+            throw new Error(await describeHttpFailure(made, describeFailure))
+        }
+        const response = await relay('PUT', imageUrl(active, path), active, {
+            body: bytes,
+            contentType: bytes.type || 'application/octet-stream',
+        })
+        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+    },
+
+    async getImage(_target, path: string) {
+        if (!active) return null
+        const response = await relay('GET', imageUrl(active, path), active)
+        if (response.status === 404) return null
+        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
+        return response.blob()
+    },
+
+    async deleteImage(_target, path: string) {
+        if (!active) return
+        const response = await relay('DELETE', imageUrl(active, path), active)
+        // Already gone is success for a delete.
+        if (response.status === 404) return
+        if (!response.ok) throw new Error(await describeHttpFailure(response, describeFailure))
     },
 }

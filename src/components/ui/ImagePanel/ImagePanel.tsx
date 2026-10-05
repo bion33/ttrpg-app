@@ -3,12 +3,14 @@ import {useState} from 'react'
 import {createPortal} from 'react-dom'
 import {ImagePlus, Trash2} from 'lucide-react'
 import ActionMenu, {type ActionMenuItem} from '@ui/ActionMenu/ActionMenu'
-import ImageUrlModal from '@ui/ImageUrlModal/ImageUrlModal'
+import ImageSourceModal from '@ui/ImageSourceModal/ImageSourceModal'
+import {useImageSource} from '@hooks/useImageSource.ts'
 import './ImagePanel.css'
 
 /**
- * Props for the image panel: the current image URL ('' = none), a setter for it, the content to show in place of the
- * image while none is set, and the panel shape ('circle' clips the image to a disc filling the footprint).
+ * Props for the image panel: the current image value ('' = none, otherwise a remote URL or a local image path), a
+ * setter for it, the content to show in place of the image while none is set, and the panel shape ('circle' clips the
+ * image to a disc filling the footprint).
  */
 interface ImagePanelProps {
     imageUrl: string
@@ -19,11 +21,13 @@ interface ImagePanelProps {
 
 /**
  * The shared image surface: it shows the image when one is set, otherwise the `fallback`, with an always-present "…"
- * menu to add, change, or remove the image via the image-URL dialog. Draws no `foreignObject`, so a field control hosts
- * it inside its own wrapper.
+ * menu to add, change, or remove the image via the image-source dialog. Draws no `foreignObject`, so a field control
+ * hosts it inside its own wrapper.
  */
 function ImagePanel({imageUrl, onChangeImage, fallback, shape = 'rectangle'}: ImagePanelProps) {
     const [dialogOpen, setDialogOpen] = useState(false)
+    // Resolves a local image path to a session blob URL, or passes a remote URL through; undefined while loading.
+    const source = useImageSource(imageUrl)
 
     const actions: ActionMenuItem[] = [
         {
@@ -50,14 +54,14 @@ function ImagePanel({imageUrl, onChangeImage, fallback, shape = 'rectangle'}: Im
                 </div>
             </div>
             <div className="image-panel__content">
-                {imageUrl
-                    ? <img className="image-panel__image" src={imageUrl} alt=""/>
+                {source
+                    ? <img className="image-panel__image" src={source} alt=""/>
                     : fallback}
             </div>
             {dialogOpen && createPortal(
-                <ImageUrlModal
-                    onInsert={(url) => {
-                        onChangeImage(url)
+                <ImageSourceModal
+                    onInsert={(value) => {
+                        onChangeImage(value)
                         setDialogOpen(false)
                     }}
                     onCancel={() => setDialogOpen(false)}

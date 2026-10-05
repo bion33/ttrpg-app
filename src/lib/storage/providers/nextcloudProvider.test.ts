@@ -1,7 +1,14 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
 import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import type {NextcloudConnection} from './nextcloudProvider.ts'
-import {adoptConnection, nextcloudProvider, webdavParentUrls, webdavUrl} from './nextcloudProvider.ts'
+import {
+    adoptConnection,
+    imageUrl,
+    nextcloudProvider,
+    parseImageListing,
+    webdavParentUrls,
+    webdavUrl,
+} from './nextcloudProvider.ts'
 import {
     extractMetadata,
     metadataLocator,
@@ -56,6 +63,35 @@ describe('webdavParentUrls', () => {
 
     it('is empty when the file sits at the WebDAV root', () => {
         expect(webdavParentUrls({...connection, path: 'library.json'})).toEqual([])
+    })
+})
+
+describe('imageUrl', () => {
+    it('places the images folder beside the library file, in its parent directory', () => {
+        expect(imageUrl(connection, 'images/hero-a1.png')).toBe(
+            'https://cloud.example.com/public.php/dav/files/kFy9Lek5sm928xP/personal/images/hero-a1.png',
+        )
+    })
+
+    it('places the images folder at the root when the library file sits there', () => {
+        expect(imageUrl({...connection, path: 'library.json'}, 'images/hero-a1.png')).toBe(
+            'https://cloud.example.com/public.php/dav/files/kFy9Lek5sm928xP/images/hero-a1.png',
+        )
+    })
+})
+
+describe('parseImageListing', () => {
+    it('extracts relative image paths from a PROPFIND multi-status body, dropping the collection itself', () => {
+        const xml = `<?xml version="1.0"?><d:multistatus xmlns:d="DAV:">
+            <d:response><d:href>/public.php/dav/files/TOKEN/personal/images/</d:href></d:response>
+            <d:response><d:href>/public.php/dav/files/TOKEN/personal/images/hero-a1.png</d:href></d:response>
+            <d:response><d:href>/public.php/dav/files/TOKEN/personal/images/map%20two-b2.jpg</d:href></d:response>
+        </d:multistatus>`
+        expect(parseImageListing(xml)).toEqual(['images/hero-a1.png', 'images/map two-b2.jpg'])
+    })
+
+    it('returns no paths for a body with no image entries', () => {
+        expect(parseImageListing('<d:multistatus xmlns:d="DAV:"/>')).toEqual([])
     })
 })
 

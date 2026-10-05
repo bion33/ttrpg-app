@@ -75,8 +75,8 @@ standalone Node/Hono API (its own Yarn install) exposing the same-origin
 - `src/components/ui/` — shared, feature-agnostic controls (see UI controls
   pattern).
 - `src/lib/` — framework-agnostic pure helpers, grouped by concern into
-  subfolders (`colors/`, `dnd/`, `fields/`, `ids/`, `navigation/`, `number/`,
-  `paper/`, `sorting/`, `url/`, `storage/`).
+  subfolders (`colors/`, `dnd/`, `fields/`, `ids/`, `images/`, `navigation/`,
+  `number/`, `paper/`, `sorting/`, `url/`, `storage/`).
 - `src/hooks/` — shared React hooks.
 - `src/type/` — shared field-node types.
 - `src/migrations/` — snapshot migration engine + one file per version.
@@ -208,6 +208,23 @@ live-linked).
 Persistence is **not per-field**: the entire `localStorage` key space is
 snapshotted to one JSON document and hydrated back, fully decoupling sync from the
 field-node system. Organised under `src/lib/storage/`:
+
+**Images are a separate channel.** Image *bytes* never enter the snapshot — only a
+stable reference does. An image field (and a markdown `![](…)`) holds either an
+http(s) URL (remote, rendered as-is) or a relative `images/<slug>-<id>.<ext>` path
+(the discriminator is `@lib/images/imageKey`). That one path is at once the OPFS
+key, the markdown link target, the cloud filename, and the zip entry — no separate
+id mapping. Uploaded bytes live in the browser's OPFS (`@lib/images/imageStore`, a
+graceful-degrading glue over `navigator.storage.getDirectory()`); a value is
+resolved to a renderable `blob:`/URL src per-session via `useImageSource` (revoked
+on change/unmount). `collectImageRefs` (pure) scans a snapshot for referenced
+paths — the single source of truth for both GC and cloud reconciliation. Cloud
+providers gain **optional** per-file image-folder methods (`listImages`/`putImage`/
+`getImage`/`deleteImage`); `reconcileImages` (pure) decides upload/download/delete
+from the referenced/local/remote inventories, and `useImageSync` runs it after a
+cloud save/load (never blocking the snapshot result). The file provider has no live
+folder: it bundles the snapshot + referenced images into a portable **zip** (via
+`fflate`) instead, reading a legacy bare `.json` on load.
 
 - A **pure, tested core** — snapshot create/apply/hash (`snapshot.ts`), the
   `evaluateSync` conflict decision (revision lineage, not clocks), and the

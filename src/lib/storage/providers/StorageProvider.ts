@@ -29,4 +29,14 @@ export interface StorageProvider {
     load(target: StorageTarget): Promise<LibrarySnapshot | null>
 
     readRevision(target: StorageTarget): Promise<string | null>
+
+    // The per-file image-folder operations backing cloud image sync. Absent on a provider with no live folder (the file
+    // provider, which bundles images into its export zip instead); each path is the image's relative `images/…` key.
+    listImages?(target: StorageTarget): Promise<string[]>
+
+    putImage?(target: StorageTarget, path: string, bytes: Blob): Promise<void>
+
+    getImage?(target: StorageTarget, path: string): Promise<Blob | null>
+
+    deleteImage?(target: StorageTarget, path: string): Promise<void>
 }

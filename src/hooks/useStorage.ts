@@ -35,6 +35,7 @@ import {
 import {exchangeCode, runGoogleAuth, runMicrosoftAuth} from '@lib/storage/oauth/oauthClient.ts'
 import {type CloudConnectionPorts, useCloudConnection} from './useCloudConnection.ts'
 import {useAutosave} from './useAutosave.ts'
+import {useImageSync} from './useImageSync.ts'
 import {newId} from '@lib/ids/newId.ts'
 import {errorMessage} from '@lib/errors/errorMessage.ts'
 
@@ -190,6 +191,8 @@ export function useStorage(): UseStorage {
     const hydrateOneDrive = onedrive.hydrate
     const hydrateGoogleDrive = googleDrive.hydrate
 
+    const {syncAfterSave, syncAfterLoad} = useImageSync()
+
     const probeable = isProbeable(provider)
     const target = useMemo(
         () => resolveTarget(provider, {
@@ -268,13 +271,15 @@ export function useStorage(): UseStorage {
     const status = evaluateSync({remoteRevision, baseRevision: syncState.baseRevision, dirty})
 
     // Applies a loaded snapshot to storage, records it as the new sync base, then swaps the store so atoms re-read.
+    // Image download into the OPFS runs after, in the background, so it never blocks the applied result.
     const applyLoaded = useCallback(async (snapshot: LibrarySnapshot) => {
         applySnapshot(localStorage, snapshot)
         const stored = createSnapshot(localStorage, snapshot.revision, snapshot.savedAt)
         await commitSyncState({baseRevision: snapshot.revision, baseHash: snapshotHash(stored)})
         setProbedRevision(snapshot.revision)
         remount()
-    }, [commitSyncState, remount])
+        if (target) void syncAfterLoad(provider, target, snapshot.entries)
+    }, [commitSyncState, remount, provider, target, syncAfterLoad])
 
     // Writes the current library to the target and records the new revision as the sync base; assumes no conflict.
     // Gates the Save button for the whole write (this is every write path, including the conflict resolution below), so
@@ -293,6 +298,8 @@ export function useStorage(): UseStorage {
             await commitSyncState({baseRevision: revision, baseHash: snapshotHash(snapshot)})
             setProbedRevision(revision)
             if (!silent) toast.success('Saved', {id: toastId})
+            // Reconcile the image folder after the snapshot lands, in the background, so it never blocks the save result.
+            void syncAfterSave(provider, target, snapshot.entries)
         } catch (caught) {
             // Dismissing the native file picker is a cancel, not a failure.
             if (isCancel(caught)) {
@@ -303,7 +310,7 @@ export function useStorage(): UseStorage {
         } finally {
             setSavingFlag(false)
         }
-    }, [target, provider, commitSyncState, setSavingFlag])
+    }, [target, provider, commitSyncState, setSavingFlag, syncAfterSave])
 
     // A `silent` save (autosave) suppresses the in-progress/success toasts; failures (including conflicts) still surface.
     const save = useCallback(async (silent = false) => {
