@@ -144,6 +144,8 @@ function Library() {
             <StorageControls placement="library"/>
 
             <nav className="library__legal no-print">
+                <a href="https://github.com/bion33/ttrpg-app" className="library__legal-link"
+                   target="_blank" rel="noreferrer">GitHub</a>
                 <RouteLink route="privacy" className="library__legal-link">Privacy</RouteLink>
                 <RouteLink route="terms" className="library__legal-link">Terms</RouteLink>
             </nav>
