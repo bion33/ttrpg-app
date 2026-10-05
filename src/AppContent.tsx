@@ -2,6 +2,7 @@ import Library from './components/features/Library/Library.tsx'
 import TemplateEditor from '@features/Templates/TemplateEditor.tsx'
 import PrivacyPage from '@features/Privacy/PrivacyPage.tsx'
 import TermsPage from '@features/Terms/TermsPage.tsx'
+import GoogleInfoPage from '@features/GoogleInfo/GoogleInfoPage.tsx'
 import {StorageProvider} from '@features/Storage/StorageProvider.tsx'
 import {useLocation, useNavigationHistory} from './hooks/useNavigation.ts'
 import {useRoute} from './hooks/useRoute.ts'
@@ -34,6 +35,8 @@ function RoutedSurface() {
             return <PrivacyPage/>
         case "terms":
             return <TermsPage/>
+        case "ginfo":
+            return <GoogleInfoPage/>
         default:
             return isMarkdownTemplate(location)
                 ? <TemplateEditor/>

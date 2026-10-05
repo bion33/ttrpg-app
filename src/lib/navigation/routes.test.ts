@@ -10,6 +10,10 @@ describe('routeForPath', () => {
         expect(routeForPath('/terms')).toBe('terms')
     })
 
+    it('resolves the ginfo path', () => {
+        expect(routeForPath('/ginfo')).toBe('ginfo')
+    })
+
     it('ignores a trailing slash', () => {
         expect(routeForPath('/privacy/')).toBe('privacy')
     })
@@ -34,8 +38,13 @@ describe('pathForRoute', () => {
         expect(pathForRoute('terms')).toBe('/terms')
     })
 
+    it('maps the ginfo route to its path', () => {
+        expect(pathForRoute('ginfo')).toBe('/ginfo')
+    })
+
     it('round-trips every non-default route back to itself', () => {
         expect(routeForPath(pathForRoute('privacy'))).toBe('privacy')
         expect(routeForPath(pathForRoute('terms'))).toBe('terms')
+        expect(routeForPath(pathForRoute('ginfo'))).toBe('ginfo')
     })
 })

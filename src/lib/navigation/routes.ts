@@ -2,12 +2,13 @@
  * A top-level URL route of the app: the main binder/page surface (its own in-app location model), or one of the
  * standalone legal pages.
  */
-export type Route = 'app' | 'privacy' | 'terms'
+export type Route = 'app' | 'privacy' | 'terms' | 'ginfo'
 
 // The URL path owned by each non-default route; any unmatched path resolves to the main app surface.
 const ROUTE_PATHS: Record<Exclude<Route, 'app'>, string> = {
     privacy: '/privacy',
     terms: '/terms',
+    ginfo: '/ginfo',
 }
 
 /**
