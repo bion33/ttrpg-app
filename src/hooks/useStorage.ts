@@ -388,8 +388,15 @@ export function useStorage(): UseStorage {
             return
         }
         // Keeping local during a save conflict still means writing this device's state over the remote.
-        if (pending.origin === 'save') await performSave(false)
-    }, [conflict, applyLoaded, performSave])
+        if (pending.origin === 'save') {
+            await performSave(false)
+            return
+        }
+        // Keeping local during a load conflict: record the seen remote as our base ancestor (so local reads as ahead,
+        // not diverged) and leave local untouched, so autoload stops re-raising and the next save cleanly overwrites it.
+        setProbedRevision(pending.incoming.revision)
+        await commitSyncState({baseRevision: pending.incoming.revision, baseHash: snapshotHash(pending.incoming)})
+    }, [conflict, applyLoaded, performSave, commitSyncState])
 
     const setProvider = useCallback((id: ProviderId) => {
         setProviderState((current) => {

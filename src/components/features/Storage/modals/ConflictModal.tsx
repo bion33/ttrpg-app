@@ -26,15 +26,19 @@ function ConflictModal({incomingSavedAt, onKeepLocal, onTakeOther}: ConflictModa
         <Modal title="Conflicting changes" onClose={onKeepLocal}>
             <div className="modal__body">
                 <p className="modal__prompt">
-                    This device has changes that are not in the file you chose (saved {formatSavedAt(incomingSavedAt)}).
-                    Loading it would replace everything on this device. Which do you want to keep?
+                    Could not load remote changes because you have made recent changes while there are different changes
+                    in the remote save (saved {formatSavedAt(incomingSavedAt)}).
+                </p>
+                <p>
+                    <strong>Take remote</strong> will replace everything on this device.<br/>
+                    <strong>Keep local</strong> will replace the remote save with your local changes.
                 </p>
                 <div className="modal__actions">
                     <button type="button" className="modal__btn modal__btn--danger" onClick={onTakeOther}>
-                        Take other device
+                        Take remote
                     </button>
                     <button type="button" className="modal__btn modal__btn--primary" onClick={onKeepLocal}>
-                        Keep this device
+                        Keep local
                     </button>
                 </div>
             </div>

@@ -37,6 +37,11 @@
     gap: 1rem;
 }
 
+.modal__body > p {
+    margin-top: .25rem;
+    margin-bottom: .25rem;
+}
+
 .modal__prompt {
     margin: 0;
     line-height: 1.4;
