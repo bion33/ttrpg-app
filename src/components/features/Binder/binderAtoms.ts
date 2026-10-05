@@ -15,6 +15,7 @@ export type Page = TabItem & { type: PageType; storagePrefix: string }
 // One shared atom instance per storage prefix, cached so the binder and the library shelf read/write the same atom.
 const pagesAtoms = new Map<string, WritableAtom<Page[], [Page[] | ((previous: Page[]) => Page[])], void>>()
 const activePageAtoms = new Map<string, WritableAtom<string, [string | ((previous: string) => string)], void>>()
+const portraitAtoms = new Map<string, WritableAtom<string, [string | ((previous: string) => string)], void>>()
 
 // ---- EXPORTED FUNCTIONS ----
 
@@ -47,6 +48,19 @@ export function activePageAtom(prefix: string) {
     if (!existing) {
         existing = atomWithStorage(`${prefix}:activePage`, '', notifyingStorage<string>())
         activePageAtoms.set(prefix, existing)
+    }
+    return existing
+}
+
+/**
+ * The binder's cover portrait at the given storage prefix — a remote image URL or a local `images/…` path, empty for
+ * none. Its own entry (not nested in the binders list) so the image channel sees the path like any other image field.
+ */
+export function portraitAtom(prefix: string) {
+    let existing = portraitAtoms.get(prefix)
+    if (!existing) {
+        existing = atomWithStorage(`${prefix}:portrait`, '', notifyingStorage<string>())
+        portraitAtoms.set(prefix, existing)
     }
     return existing
 }

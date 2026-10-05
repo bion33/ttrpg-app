@@ -6,7 +6,7 @@ import {notifyingStorage} from '@lib/storage/observableStorage.ts'
 import {BookDashed, SquareDashedText} from 'lucide-react'
 import './Library.css'
 import Binder from '@features/Binder/Binder.tsx'
-import {activePageAtom, pagePrefix, pagesAtom} from '@features/Binder/binderAtoms.ts'
+import {activePageAtom, pagePrefix, pagesAtom, portraitAtom} from '@features/Binder/binderAtoms.ts'
 import {libraryLocation} from '@lib/navigation/navigation.ts'
 import {useLocation, useNavigate} from '@hooks/useNavigation.ts'
 import {tabHue} from '@lib/colors/tabHue.ts'
@@ -27,13 +27,12 @@ import {instantiateBinderTemplate} from '@features/Templates/logic/instantiate/i
 
 /**
  * A binder in the library: an opaque id (also the storage-prefix root every one of its pages persists under), a
- * display label, the hue of its spine on the shelf, and an optional portrait image (a remote URL or local image path).
+ * display label, and the hue of its spine on the shelf. Its cover portrait lives in its own per-binder atom.
  */
 interface LibraryBinderItem {
     id: string
     label: string
     hue: number
-    portrait?: string
 }
 
 /** The user's binders, loaded from and persisted to storage. Empty until the user adds one. */
@@ -51,11 +50,12 @@ function LibraryShelfBinder({binder, onOpen, onEdit, onDelete}: {
 }) {
     const pages = useAtomValue(pagesAtom(binder.id))
     const rememberedPage = useAtomValue(activePageAtom(binder.id))
+    const portrait = useAtomValue(portraitAtom(binder.id))
     return (
         <LibraryBinder
             hue={binder.hue}
             label={binder.label}
-            portrait={binder.portrait}
+            portrait={portrait}
             jitterSeed={binder.id}
             // Decorative tabs mirror the binder's real pages (first four only), in their stored hue/label.
             tabs={binderTabs(pages).slice(0, 4)}
@@ -106,12 +106,9 @@ function Library() {
 
     // Renames, recolours, and re-portraits the binder being edited (its id and stored pages are unchanged).
     function saveBinder(name: string, hue: number, portrait: string) {
-        setBinders((previous) => previous.map((binder) => (binder.id === editing?.id ? {
-            ...binder,
-            label: name,
-            hue,
-            portrait: portrait || undefined
-        } : binder)))
+        if (!editing) return
+        setBinders((previous) => previous.map((binder) => (binder.id === editing.id ? {...binder, label: name, hue} : binder)))
+        store.set(portraitAtom(editing.id), portrait)
         setEditing(null)
     }
 
@@ -163,7 +160,7 @@ function Library() {
             {adding && <AddBinderModal onCreate={createBinder} onCancel={() => setAdding(false)}/>}
             {editing && (
                 <EditBinderModal initialLabel={editing.label} initialHue={editing.hue}
-                                 initialPortrait={editing.portrait ?? ''} onSave={saveBinder}
+                                 initialPortrait={store.get(portraitAtom(editing.id))} onSave={saveBinder}
                                  onCancel={() => setEditing(null)}/>
             )}
             {deleting && (
