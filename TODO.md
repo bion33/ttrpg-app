@@ -1,7 +1,6 @@
 # TODO
 
 - Do the whole "app homepage" thing for Google
-- Put code on github
 
 # FUTURE-ME HANDOVER
 

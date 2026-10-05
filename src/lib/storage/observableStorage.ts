@@ -31,6 +31,20 @@ export function notifyingStorage<Value>(): NotifyingStorage<Value> {
 }
 
 /**
+ * Removes every localStorage entry whose key starts with the given prefix, then notifies subscribers once. Used to
+ * purge a whole namespace (e.g. a deleted binder and all its pages) rather than one atom at a time.
+ */
+export function removeStorageByPrefix(prefix: string): void {
+    const keys = []
+    for (let index = 0; index < localStorage.length; index++) {
+        const key = localStorage.key(index)
+        if (key !== null && key.startsWith(prefix)) keys.push(key)
+    }
+    for (const key of keys) localStorage.removeItem(key)
+    notifyStorageWrite()
+}
+
+/**
  * Subscribes to persisted-atom writes; returns an unsubscribe. The storage hook uses it to recompute dirty on edits.
  */
 export function subscribeToStorageWrites(listener: () => void): () => void {

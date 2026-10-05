@@ -2,7 +2,7 @@ import type {MouseEvent} from 'react'
 import {useState} from 'react'
 import {useAtom, useAtomValue, useStore} from 'jotai'
 import {atomWithStorage} from 'jotai/utils'
-import {notifyingStorage} from '@lib/storage/observableStorage.ts'
+import {notifyingStorage, removeStorageByPrefix} from '@lib/storage/observableStorage.ts'
 import {BookDashed, SquareDashedText} from 'lucide-react'
 import './Library.css'
 import Binder from '@features/Binder/Binder.tsx'
@@ -112,9 +112,11 @@ function Library() {
         setEditing(null)
     }
 
-    // Removes the given binder from the library.
+    // Removes the given binder from the library, purging every storage entry in its namespace (pages, active page,
+    // portrait, and all page fields) so nothing lingers and its portrait image is no longer referenced.
     function removeBinder(id: string) {
         setBinders((previous) => previous.filter((binder) => binder.id !== id))
+        removeStorageByPrefix(`${id}:`)
         setDeleting(null)
     }
 
