@@ -1,3 +1,31 @@
+# What does this app do?
+
+This app is a free, open-source tabletop role-playing game character app. It
+lets you organise your characters into a library of binders, each holding a set
+of pages. You choose which types of pages to add and how many. Pages include the
+standard character sheets with interactive fields and markdown notes. You can
+create your own reusable markdown templates, and binder templates with a
+predefined set of pages in a particular order. The app runs entirely in your
+browser, with no account required, and is intended for self or small-scale hosting.
+
+Everything you create is saved in your browser's local storage on your own
+device. You can optionally back up and sync a single snapshot of all your data to
+a storage provider of your choice. This only ever happens when you explicitly use
+or connect such a provider:
+
+- **File (import / export)**: the snapshot is downloaded to, and loaded from, a
+  file you pick on your device.
+- **Nextcloud**: the snapshot is uploaded to the Nextcloud instance of the
+  public share link you provide.
+- **OneDrive**: the snapshot is stored in an app-specific folder of your own
+  Microsoft OneDrive account.
+- **Google Drive**: the snapshot is stored in an app-specific folder of your own
+  Google Drive account.
+
+For all cloud providers the credential/token is your own, stored in your browser. 
+There is no analytics, tracking, or advertising, and your data is never stored, sold or 
+shared with anyone beyond your browser and the storage providers you explicitly connect to.
+
 ## Run with Docker (dev)
 
 `docker compose up` brings up three containers behind one origin: `proxy`

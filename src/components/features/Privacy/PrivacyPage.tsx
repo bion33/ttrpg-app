@@ -55,7 +55,7 @@ function PrivacyPage() {
             <h2>What we don't do</h2>
             <p>
                 There is no analytics, tracking, or advertising, and your data is never stored, sold or shared with anyone
-                beyond the storage providers you explicitly connect to.
+                beyond your browser and the storage providers you explicitly connect to.
             </p>
         </InfoPage>
     )
