@@ -8,6 +8,12 @@
     background: rgba(0, 0, 0, 0.4);
 }
 
+/* Pinned to the pinch-zoom visible rectangle (offset/size set inline from the visual viewport), so a zoomed-in user
+   sees the dialog centred in view instead of it centring off-screen in the layout viewport. */
+.modal__backdrop--pinned {
+    inset: auto;
+}
+
 .modal {
     width: min(24rem, 90vw);
     display: flex;
@@ -20,6 +26,14 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     font-family: var(--font-serif);
     color: var(--color-text);
+}
+
+/* Full-width sheet for the pinned (pinch-zoom) layout, centred in the visible rectangle: fills the visible width and
+   scrolls within the visible height rather than sizing to a fixed width that could overflow a zoomed-in viewport. */
+.modal--sheet {
+    width: 100%;
+    max-height: 100%;
+    overflow-y: auto;
 }
 
 .modal__title {
