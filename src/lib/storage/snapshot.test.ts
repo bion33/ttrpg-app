@@ -29,10 +29,10 @@ function fakeStorage(initial: Record<string, string> = {}): StorageLike {
 }
 
 describe('createSnapshot', () => {
-    it('reads every key with no filtering and stamps the current version', () => {
-        const storage = fakeStorage({binders: '[]', location: '{}', pageScale: '1'})
+    it('reads character data and stamps the current version, leaving out per-device view keys', () => {
+        const storage = fakeStorage({binders: '[]', location: '{}', pageWidthFraction: '0.5'})
         const snapshot = createSnapshot(storage, 'rev-1', '2026-01-01T00:00:00.000Z')
-        expect(snapshot.entries).toEqual({binders: '[]', location: '{}', pageScale: '1'})
+        expect(snapshot.entries).toEqual({binders: '[]'})
         expect(snapshot.version).toBe(CURRENT_VERSION)
         expect(snapshot.revision).toBe('rev-1')
         expect(snapshot.savedAt).toBe('2026-01-01T00:00:00.000Z')
@@ -57,6 +57,21 @@ describe('applySnapshot', () => {
         applySnapshot(destination, createSnapshot(fakeStorage({fresh: 'y'}), 'rev', 'now'))
         expect(destination.getItem('stale')).toBeNull()
         expect(destination.getItem('fresh')).toBe('y')
+    })
+
+    it("keeps the device's own view keys across a load", () => {
+        const destination = fakeStorage({location: '{"binderId":"local"}', pageWidthFraction: '0.7', stale: 'x'})
+        applySnapshot(destination, createSnapshot(fakeStorage({fresh: 'y'}), 'rev', 'now'))
+        expect(destination.getItem('location')).toBe('{"binderId":"local"}')
+        expect(destination.getItem('pageWidthFraction')).toBe('0.7')
+        expect(destination.getItem('stale')).toBeNull()
+    })
+
+    it('never adopts view keys carried by a legacy snapshot', () => {
+        const destination = fakeStorage()
+        const legacy = {version: 1, revision: 'rev', savedAt: 'now', entries: {location: '{"binderId":"other"}'}}
+        applySnapshot(destination, legacy)
+        expect(destination.getItem('location')).toBeNull()
     })
 })
 

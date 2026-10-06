@@ -18,10 +18,10 @@ describe('migrateSnapshot', () => {
         expect(() => migrateSnapshot(snapshotAt(CURRENT_VERSION + 1, {}))).toThrow(/newer app version/)
     })
 
-    it('brings an older snapshot up to the current version, running the real (no-op) migrations', () => {
+    it('brings an older snapshot up to the current version, running the real migrations', () => {
         const migrated = migrateSnapshot(snapshotAt(1, {a: '1', b: '2'}))
         expect(migrated.version).toBe(CURRENT_VERSION)
-        // The shipped migrations are identity, so the entries survive unchanged.
+        // No shipped migration touches ordinary character keys, so these entries survive unchanged.
         expect(migrated.entries).toEqual({a: '1', b: '2'})
     })
 })

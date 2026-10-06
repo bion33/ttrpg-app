@@ -13,6 +13,12 @@ export interface LibrarySnapshot {
 }
 
 /**
+ * Per-device view keys (which binder/page is open, the page zoom level) excluded from the snapshot so they never sync
+ * between devices, and preserved locally across a load.
+ */
+export const SYNC_IGNORE_KEYS = new Set(['location', 'pageWidthFraction'])
+
+/**
  * The subset of the Storage API the snapshot layer uses; window.localStorage satisfies it, and tests inject a fake.
  */
 export interface StorageLike {
@@ -31,13 +37,13 @@ export interface StorageLike {
 
 /**
  * Reads every key from storage into a snapshot stamped with the given revision and save timestamp (both injected so the
- * function stays pure); no key is filtered, so location and pageScale are included.
+ * function stays pure); per-device view keys are left out so they never sync.
  */
 export function createSnapshot(storage: StorageLike, revision: string, savedAt: string): LibrarySnapshot {
     const entries: Record<string, string> = {}
     for (let index = 0; index < storage.length; index++) {
         const key = storage.key(index)
-        if (key === null) continue
+        if (key === null || SYNC_IGNORE_KEYS.has(key)) continue
         const value = storage.getItem(key)
         if (value !== null) entries[key] = value
     }
@@ -46,12 +52,20 @@ export function createSnapshot(storage: StorageLike, revision: string, savedAt: 
 
 /**
  * Migrates the snapshot up to the current version, clears storage, then writes its entries — a replace, not a merge, so
- * any pre-existing unrelated key is gone afterwards.
+ * any pre-existing unrelated key is gone afterwards; the device's own view keys are carried across the clear untouched.
  */
 export function applySnapshot(storage: StorageLike, snapshot: LibrarySnapshot): void {
     const migrated = migrateSnapshot(snapshot)
+    const preservedView: Record<string, string> = {}
+    for (const key of SYNC_IGNORE_KEYS) {
+        const value = storage.getItem(key)
+        if (value !== null) preservedView[key] = value
+    }
     storage.clear()
     for (const [key, value] of Object.entries(migrated.entries)) {
+        storage.setItem(key, value)
+    }
+    for (const [key, value] of Object.entries(preservedView)) {
         storage.setItem(key, value)
     }
 }

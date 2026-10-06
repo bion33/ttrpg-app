@@ -1,5 +1,6 @@
 import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
 import {v2} from './v2.ts'
+import {v3} from './v3.ts'
 
 /**
  * One append-only schema migration: the version it produces (its predecessor is `to - 1`) and a pure transform of the
@@ -14,7 +15,8 @@ export interface Migration {
 // One file per migration in this directory, listed here in ascending `to` order; never edit or renumber an existing
 // entry, only append. Version numbers are meaningless on their own — they exist only to trigger migrations.
 export const MIGRATIONS: Migration[] = [
-    v2
+    v2,
+    v3
 ]
 
 /** The schema version fresh snapshots are stamped with: the highest migration target, or 1 when there are none. */
