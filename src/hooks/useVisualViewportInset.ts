@@ -4,6 +4,11 @@ import {useEffect} from 'react'
 // reposition. Long enough to ride out the event stream of a pinch-pan or momentum scroll, short enough to feel prompt.
 const SETTLE_MS = 120
 
+// Mobile browsers restore the previous session's pinch-zoom shortly after load without firing a visual-viewport event,
+// so the metrics we read at mount are stale. We re-read over this window to catch the restore once it lands.
+const RESTORE_SETTLE_MS = 1500
+const RESTORE_POLL_MS = 150
+
 /**
  * Publishes the visual viewport's inset and zoom as CSS custom properties on the document root, so fixed chrome (the
  * corner-cluster controls) can anchor to what's actually visible rather than to the layout viewport.
@@ -54,12 +59,25 @@ export function useVisualViewportInset(): void {
         }
 
         write() // Position correctly at rest before any gesture.
+        // The browser's post-load pinch-zoom restore fires no visual-viewport event, so poll briefly to catch it; each
+        // write no-ops when nothing changed, so this quietly stops mattering once the viewport is stable.
+        const pollStart = Date.now()
+        const pollTimer = window.setInterval(() => {
+            write()
+            if (Date.now() - pollStart >= RESTORE_SETTLE_MS) clearInterval(pollTimer)
+        }, RESTORE_POLL_MS)
+        // A route change swaps the page without a visual-viewport event; the document resize it causes is our signal to
+        // re-read so the new page's chrome anchors to the (possibly zoomed) visible rectangle.
+        const resizeObserver = new ResizeObserver(schedule)
+        resizeObserver.observe(document.documentElement)
         // Pinch-zoom fires these on the visual viewport; window resize covers layout-viewport changes (rotation, chrome).
         viewport.addEventListener('resize', schedule)
         viewport.addEventListener('scroll', schedule)
         window.addEventListener('resize', schedule)
         return () => {
             if (settleTimer) clearTimeout(settleTimer)
+            clearInterval(pollTimer)
+            resizeObserver.disconnect()
             viewport.removeEventListener('resize', schedule)
             viewport.removeEventListener('scroll', schedule)
             window.removeEventListener('resize', schedule)
