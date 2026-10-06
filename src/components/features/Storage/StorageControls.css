@@ -1,14 +1,17 @@
 /* Corner placement for the storage cluster; the fixed-stack base comes from the shared `.corner-cluster` utility
    (index.css) and printing hides it via `.no-print`. */
 
-/* In a binder: stacked in the top-left column beneath the "Back to library" button (a 2.5rem button at top 1.5rem). */
+/* In a binder (and the template editor): the top-left column, led by the "Back to library" button passed in as the
+   cluster's leading child, with the save/load/settings buttons stacked beneath it under the one shared gap. */
 .storage-controls--binder {
-    top: 4.75rem;
+    top: 1.5rem;
     left: 1.5rem;
+    transform-origin: top left;
 }
 
 /* In the library grid, which has no back-to-library button: pinned to the top-left corner. */
 .storage-controls--library {
     top: 1.5rem;
     left: 1.5rem;
+    transform-origin: top left;
 }

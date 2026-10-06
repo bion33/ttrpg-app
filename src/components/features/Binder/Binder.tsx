@@ -1,5 +1,7 @@
 import type {CSSProperties} from 'react'
 import {useState} from 'react'
+import {Library} from 'lucide-react'
+import IconButton from '@ui/IconButton/IconButton'
 import './Binder.css'
 import Tabs from './tabs/Tabs.tsx'
 import AddTabModal from './tabs/modals/AddTabModal.tsx'
@@ -60,9 +62,11 @@ function Binder({storagePrefix, onExit}: BinderProps) {
                       onLastTabChange={setLastTab}/>
             </PageViewport>
             <TabControls onAdd={() => setAdding(true)} hasActive={!!active} onEdit={() => setEditing('edit')}
-                         onDelete={(event) => (event.shiftKey ? deletePage() : setEditing('delete'))} onExit={onExit}
+                         onDelete={(event) => (event.shiftKey ? deletePage() : setEditing('delete'))}
                          lastTab={lastTab}/>
-            <StorageControls placement="binder"/>
+            <StorageControls placement="binder" leading={
+                <IconButton icon={<Library/>} label="Back to library" labelSide="right" onClick={onExit}/>
+            }/>
             {adding && (
                 <AddTabModal
                     onCreate={(name, type, markdownTemplateId) => {

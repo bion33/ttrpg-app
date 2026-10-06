@@ -1,29 +1,27 @@
 import type {MouseEvent} from 'react'
 import {useEffect, useState} from 'react'
-import {ArrowUp, FilePlus2, Library, Pencil, Printer, Trash2} from 'lucide-react'
+import {ArrowUp, FilePlus2, Pencil, Printer, Trash2} from 'lucide-react'
 import IconButton from '@ui/IconButton/IconButton'
 import './TabControls.css'
 
 /**
- * Props for the tab controls: adding a page and returning to the library (`onExit`) are always available; editing and
- * deleting act on the active tab and are offered only when `hasActive` is true. `lastTab` is the tab whose visibility
- * gates the back-to-top button.
+ * Props for the tab controls: adding a page is always available; editing and deleting act on the active tab and are
+ * offered only when `hasActive` is true. `lastTab` is the tab whose visibility gates the back-to-top button.
  */
 interface TabControlsProps {
     onAdd: () => void
     hasActive: boolean
     onEdit: () => void
     onDelete: (event: MouseEvent<HTMLButtonElement>) => void
-    onExit: () => void
     lastTab: HTMLElement | null
 }
 
 /**
- * The binder's fixed on-screen controls: a back-to-library button in the top-left corner, and a bottom-corner cluster
- * to add a page and print (always shown) plus — for the active tab — edit (rename and recolour) and delete. A
- * back-to-top button appears once the last tab scrolls out of view.
+ * The binder's fixed on-screen controls: a bottom-corner cluster to add a page and print (always shown) plus — for the
+ * active tab — edit (rename and recolour) and delete. A back-to-top button appears once the last tab scrolls out of
+ * view. (The back-to-library button lives in the top-left storage cluster; see StorageControls.)
  */
-function TabControls({onAdd, hasActive, onEdit, onDelete, onExit, lastTab}: TabControlsProps) {
+function TabControls({onAdd, hasActive, onEdit, onDelete, lastTab}: TabControlsProps) {
     const [scrolledPast, setScrolledPast] = useState(false)
     // The back-to-top button shows only while there is a last tab and it has scrolled out of view.
     const showToTop = !!lastTab && scrolledPast
@@ -38,9 +36,6 @@ function TabControls({onAdd, hasActive, onEdit, onDelete, onExit, lastTab}: TabC
 
     return (
         <>
-            <div className="tab-controls__library corner-cluster no-print">
-                <IconButton icon={<Library/>} label="Back to library" labelSide="right" onClick={onExit}/>
-            </div>
             <div className="tab-controls corner-cluster no-print">
                 {hasActive && (
                     <>

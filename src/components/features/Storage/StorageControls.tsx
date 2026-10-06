@@ -1,3 +1,4 @@
+import type {ReactNode} from 'react'
 import {useState} from 'react'
 import {FolderOpen, Save, Settings} from 'lucide-react'
 import IconButton from '@ui/IconButton/IconButton'
@@ -13,13 +14,16 @@ import './StorageControls.css'
  */
 interface StorageControlsProps {
     placement: 'binder' | 'library'
+    // An optional button (e.g. the binder's back-to-library) rendered at the top of the same cluster, so it shares the
+    // cluster's gap and single counter-scale rather than sitting in its own fixed stack a scaled distance away.
+    leading?: ReactNode
 }
 
 /**
  * The save/load/settings cluster wired to `useStorage`: exports the whole library to a file, imports one back (through
  * the conflict flow when it diverges from local edits), and opens the provider settings.
  */
-function StorageControls({placement}: StorageControlsProps) {
+function StorageControls({placement, leading}: StorageControlsProps) {
     const storage = useStorageContext()
     const [settingsOpen, setSettingsOpen] = useState(false)
     // Both placements sit against the left edge, so their hover labels open rightward.
@@ -52,6 +56,7 @@ function StorageControls({placement}: StorageControlsProps) {
     return (
         <>
             <div className={`storage-controls storage-controls--${placement} corner-cluster no-print`}>
+                {leading}
                 <IconButton icon={<Settings/>} label="Storage settings" labelSide={labelSide}
                             onClick={() => setSettingsOpen(true)}/>
                 {!autosaveActive && (

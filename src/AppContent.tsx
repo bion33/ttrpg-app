@@ -6,6 +6,7 @@ import GoogleInfoPage from '@features/GoogleInfo/GoogleInfoPage.tsx'
 import {StorageProvider} from '@features/Storage/StorageProvider.tsx'
 import {useLocation, useNavigationHistory} from './hooks/useNavigation.ts'
 import {useRoute} from './hooks/useRoute.ts'
+import {useVisualViewportInset} from './hooks/useVisualViewportInset.ts'
 import {isMarkdownTemplate} from '@lib/navigation/navigation.ts'
 
 /**
@@ -14,6 +15,7 @@ import {isMarkdownTemplate} from '@lib/navigation/navigation.ts'
  */
 function AppContent() {
     useNavigationHistory()
+    useVisualViewportInset()
 
     return (
         <StorageProvider>

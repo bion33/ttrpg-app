@@ -1,6 +1,5 @@
 import type {CSSProperties} from 'react'
 import {Library} from 'lucide-react'
-import './TemplateEditor.css'
 import IconButton from '@ui/IconButton/IconButton'
 import PageViewport from '@features/PageViewport/PageViewport.tsx'
 import MarkdownPage from '@pages/MarkdownPage/MarkdownPage'
@@ -26,11 +25,10 @@ function TemplateEditor() {
                     <MarkdownPage storagePrefix={templateContentPrefix(templateId)} active/>
                 </main>
             </PageViewport>
-            <div className="template-editor__library corner-cluster no-print">
+            <StorageControls placement="binder" leading={
                 <IconButton icon={<Library/>} label="Back to library" labelSide="right"
                             onClick={() => navigate(libraryLocation())}/>
-            </div>
-            <StorageControls placement="binder"/>
+            }/>
         </div>
     )
 }

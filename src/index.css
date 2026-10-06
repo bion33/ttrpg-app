@@ -24,13 +24,37 @@ body {
     background: var(--color-parchment);
 }
 
-/* A fixed cluster of controls: a vertical stack lifted above the page and tabs. Callers add the corner insets. */
+/* A fixed cluster of controls: a vertical stack lifted above the page and tabs. Callers set the anchored corner with
+   a --corner-inset gap (top/left/right/bottom); all current callers use the default below, which each margin's
+   correction term relies on matching.
+   The margins track the visible rectangle (the variables are published by useVisualViewportInset) and do two things:
+   - `var(--vv-*)` shifts the cluster in by the gap between the layout viewport and the visual viewport, so pinch-zoom
+     on mobile no longer carries the controls off-screen;
+   - `--corner-inset * (invScale - 1)` counter-scales the inset itself. The inset lives in the caller's top/left/etc.
+     in layout pixels, which `scale` (below) can't touch, so without this it would render at inset × zoom and the
+     controls would drift toward the centre the more you zoom in. This pulls the anchored edge back so the inset stays
+     a constant distance on screen at any zoom.
+   On desktop (and unzoomed) invScale is 1 and the gaps are 0, so both terms vanish and placement is untouched.
+   `scale` counter-zooms by the inverse of the pinch scale so the controls keep a constant on-screen size; it's the
+   independent scale property, not `transform`, so a cluster's own transform (e.g. the to-top button's show/hide) is
+   left free. Callers set transform-origin to their anchored corner so this counter-scale pivots there. */
 .corner-cluster {
+    --corner-inset: 1.5rem;
     position: fixed;
     z-index: var(--z-controls);
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    margin:
+        calc(var(--vv-top, 0px) + var(--corner-inset) * (var(--vv-inv-scale, 1) - 1))
+        calc(var(--vv-right, 0px) + var(--corner-inset) * (var(--vv-inv-scale, 1) - 1))
+        calc(var(--vv-bottom, 0px) + var(--corner-inset) * (var(--vv-inv-scale, 1) - 1))
+        calc(var(--vv-left, 0px) + var(--corner-inset) * (var(--vv-inv-scale, 1) - 1));
+    scale: var(--vv-inv-scale, 1);
+    /* Eases the once-per-gesture snap to the visible corner (see useVisualViewportInset); at rest the values hold
+       steady so nothing animates. Only the viewport-follow properties transition, leaving transform (e.g. the to-top
+       button's show/hide) alone. */
+    transition: margin 0.18s ease, scale 0.18s ease;
 }
 
 /* A hover/focus tooltip pill shared by icon buttons and the markdown toolbar: set the text via a data-tooltip

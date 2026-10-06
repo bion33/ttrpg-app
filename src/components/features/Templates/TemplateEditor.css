@@ -1,6 +1,0 @@
-/* The back-to-library button on the template editor surface, pinned to the top-left viewport corner — matching the
-   binder's back-to-library placement. The fixed-stack base comes from the shared `.corner-cluster` utility. */
-.template-editor__library {
-    top: 1.5rem;
-    left: 1.5rem;
-}

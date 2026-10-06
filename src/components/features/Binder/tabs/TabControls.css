@@ -4,18 +4,14 @@
 .tab-controls {
     bottom: 1.5rem;
     right: 1.5rem;
-}
-
-/* The back-to-library button, pinned to the top-left viewport corner, away from the tab strip and its controls. */
-.tab-controls__library {
-    top: 1.5rem;
-    left: 1.5rem;
+    transform-origin: bottom right;
 }
 
 /* The back-to-top button, pinned to the viewport corner; it scales/fades in once the last tab scrolls out of view. */
 .tab-controls__to-top {
     top: 1.5rem;
     right: 1.5rem;
+    transform-origin: top right;
     opacity: 0;
     transform: scale(0);
     pointer-events: none;

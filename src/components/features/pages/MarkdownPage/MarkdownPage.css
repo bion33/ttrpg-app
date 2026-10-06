@@ -238,18 +238,35 @@
 
 /* Floats over the page at the bottom of the viewport. It is portalled to the body (see MarkdownEditor), escaping the
    .binder-view zoom transform, which would otherwise reparent a fixed/sticky toolbar to that scrolling element; so
-   it is centred over the page with a plain viewport-fixed position and stays put as the page scrolls beneath it. */
+   it is centred over the page with a plain viewport-fixed position and stays put as the page scrolls beneath it.
+   Like the corner clusters, it tracks the visible rectangle (variables from useVisualViewportInset) so mobile
+   pinch-zoom can't carry it off-screen: `left` re-centres on the visible width, `margin-bottom` lifts it above the
+   visible bottom edge, `max-width` is capped to the visible width, and `scale` counter-zooms it to a constant
+   on-screen size (the independent scale property, leaving `transform` for the translate that centres it). The
+   `1rem * (invScale - 1)` term in `margin-bottom` counter-scales the bottom inset the same way the corner clusters do
+   (it lives in `bottom` in layout pixels, which `scale` can't touch), so the toolbar keeps a constant gap to the
+   bottom edge instead of drifting upward as you zoom in. On desktop (and unzoomed) every variable is 0 / 1, so none
+   of this changes the placement. */
 .markdown-toolbar {
     position: fixed;
     bottom: 1rem;
-    left: 50%;
+    left: calc(50% + (var(--vv-left, 0px) - var(--vv-right, 0px)) / 2);
+    margin-bottom: calc(var(--vv-bottom, 0px) + 1rem * (var(--vv-inv-scale, 1) - 1));
     transform: translateX(-50%);
+    /* Pivot the counter-scale at the box's left edge, not its centre: because the centring translateX(-50%) lives in
+       `transform` (applied before `scale`), a centre pivot would drag the scaled toolbar sideways off `left`. With the
+       left-edge pivot the toolbar's centre stays exactly on `left` (the visible-viewport centre) at any zoom. */
+    transform-origin: bottom left;
+    scale: var(--vv-inv-scale, 1);
+    /* Eases the once-per-gesture snap to the visible rectangle (see useVisualViewportInset); the centring transform is
+       left out so it isn't animated. */
+    transition: left 0.18s ease, margin-bottom 0.18s ease, scale 0.18s ease;
     z-index: var(--z-controls);
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     justify-content: center;
-    max-width: calc(100vw - 2rem);
+    max-width: calc(100vw - var(--vv-left, 0px) - var(--vv-right, 0px) - 2rem);
     gap: 0.25rem;
     padding: 0.35rem;
     background: var(--color-paper);
