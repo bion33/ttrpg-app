@@ -30,7 +30,8 @@ interface LibraryBinderProps {
  */
 function LibraryBinder({hue, label, portrait, jitterSeed, tabs, onOpen, onEdit, onDelete, ghost = false}: LibraryBinderProps) {
     const jitter = bookJitter(jitterSeed)
-    const portraitSource = useImageSource(portrait ?? '')
+    // A loading local portrait falls back to the initial rather than a loader, so the shelf stays calm.
+    const {src: portraitSource} = useImageSource(portrait ?? '')
     return (
         <div className={`library__binder${ghost ? ' library__binder--ghost' : ''}`}
              style={{'--spine-light': binderSpineLight(hue), '--spine-dark': binderSpineDark(hue)} as CSSProperties}>

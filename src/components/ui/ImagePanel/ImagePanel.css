@@ -22,10 +22,13 @@
     transform-origin: top right;
 }
 
-/* The image or fallback fills the remaining height below the toolbar row. */
+/* The image, loader, or fallback fills the remaining height below the toolbar row, centred within it. */
 .image-panel__content {
     flex: 1;
     min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* The image fills the content area, cropping the overflow to keep its aspect ratio. */

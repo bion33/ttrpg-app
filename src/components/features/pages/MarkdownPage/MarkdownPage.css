@@ -191,7 +191,14 @@
     height: auto;
 }
 
-/* A local image still resolving (or missing) from the OPFS: a neutral inline placeholder standing in for the image. */
+/* The loader standing in for a still-loading inline image: shrunk to its icon and left-aligned, so it flows inline
+   with the text like the image it replaces rather than filling and centring in the paragraph. */
+.md-image .loading-spinner {
+    display: inline-flex;
+    flex: none;
+}
+
+/* A local image missing from the OPFS: a neutral inline placeholder standing in for the unresolved image. */
 .md-image__placeholder {
     display: inline-block;
     padding: 0.25rem 0.5rem;

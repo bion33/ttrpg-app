@@ -33,7 +33,8 @@ function EditBinderModal({initialLabel, initialHue, initialPortrait, onSave, onC
     const [portrait, setPortrait] = useState(initialPortrait)
     // Whether the image-source form has swapped in to replace the edit form while picking a portrait.
     const [choosingImage, setChoosingImage] = useState(false)
-    const portraitSource = useImageSource(portrait)
+    // A loading local portrait falls back to the initial rather than a loader, matching the library shelf.
+    const {src: portraitSource} = useImageSource(portrait)
     const {name, setName, nameReference, submit} = useNameForm(initialLabel, (trimmed) => onSave(trimmed, hue, portrait))
 
     if (choosingImage) {

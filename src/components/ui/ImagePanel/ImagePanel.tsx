@@ -4,6 +4,7 @@ import {createPortal} from 'react-dom'
 import {ImagePlus, Trash2} from 'lucide-react'
 import ActionMenu, {type ActionMenuItem} from '@ui/ActionMenu/ActionMenu'
 import ImageSourceModal from '@ui/ImageSourceModal/ImageSourceModal'
+import LoadingSpinner from '@ui/LoadingSpinner/LoadingSpinner'
 import {useImageSource} from '@hooks/useImageSource.ts'
 import './ImagePanel.css'
 
@@ -27,7 +28,7 @@ interface ImagePanelProps {
 function ImagePanel({imageUrl, onChangeImage, fallback, shape = 'rectangle'}: ImagePanelProps) {
     const [dialogOpen, setDialogOpen] = useState(false)
     // Resolves a local image path to a session blob URL, or passes a remote URL through; undefined while loading.
-    const source = useImageSource(imageUrl)
+    const {src, loading} = useImageSource(imageUrl)
 
     const actions: ActionMenuItem[] = [
         {
@@ -54,9 +55,11 @@ function ImagePanel({imageUrl, onChangeImage, fallback, shape = 'rectangle'}: Im
                 </div>
             </div>
             <div className="image-panel__content">
-                {source
-                    ? <img className="image-panel__image" src={source} alt=""/>
-                    : fallback}
+                {src
+                    ? <img className="image-panel__image" src={src} alt=""/>
+                    : loading
+                        ? <LoadingSpinner/>
+                        : fallback}
             </div>
             {dialogOpen && createPortal(
                 <ImageSourceModal
