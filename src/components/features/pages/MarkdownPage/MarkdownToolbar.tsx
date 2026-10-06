@@ -1,9 +1,15 @@
 import type {ReactNode} from 'react'
+import {useState} from 'react'
 import type {Editor} from '@tiptap/core'
 import {useEditorState} from '@tiptap/react'
-import {Bold, Italic, Strikethrough, Underline} from 'lucide-react'
+import {Bold, ChevronDown, ChevronUp, Italic, Strikethrough, Underline} from 'lucide-react'
+import {useMediaQuery} from '@hooks/useMediaQuery.ts'
+import IconButton from '@ui/IconButton/IconButton.tsx'
 import {BLOCK_ACTIONS, BLOCK_GROUPS, INSERT_ACTIONS, runBlockAction} from './blocks/insertBlocks.ts'
 import ToolbarDropdown from './ToolbarDropdown.tsx'
+
+// Below this viewport width the toolbar collapses to a single toggle button, expandable on demand.
+const COLLAPSE_QUERY = '(max-width: 750px)'
 
 /**
  * Props for the toolbar: the editor it drives and the callback opening the insert-image dialog.
@@ -42,6 +48,8 @@ const OTHER_GROUPS = BLOCK_GROUPS.filter((group) => group.id !== 'heading')
  * buttons, driving the editor's commands.
  */
 function MarkdownToolbar({editor, onRequestImage}: MarkdownToolbarProps) {
+    const narrow = useMediaQuery(COLLAPSE_QUERY)
+    const [expanded, setExpanded] = useState(false)
     const state = useEditorState({
         editor,
         selector: ({editor}) => ({
@@ -61,8 +69,26 @@ function MarkdownToolbar({editor, onRequestImage}: MarkdownToolbarProps) {
         )
     }
 
+    // Narrow and collapsed: show only the top-middle toggle that expands the toolbar.
+    if (narrow && !expanded) {
+        return (
+            <div className="markdown-toolbar markdown-toolbar--collapsed no-print">
+                <span className="markdown-toolbar__toggle">
+                    <IconButton icon={<ChevronUp size={16}/>} label="Show formatting toolbar"
+                                onClick={() => setExpanded(true)}/>
+                </span>
+            </div>
+        )
+    }
+
     return (
         <div className="markdown-toolbar no-print">
+            {narrow && (
+                <span className="markdown-toolbar__toggle">
+                    <IconButton icon={<ChevronDown size={16}/>} label="Hide formatting toolbar"
+                                onClick={() => setExpanded(false)}/>
+                </span>
+            )}
             <button type="button" aria-label="Undo" data-tooltip="Undo"
                     className="markdown-toolbar__btn markdown-toolbar__btn--history has-tooltip has-tooltip--top"
                     disabled={!state.canUndo} onClick={() => editor.chain().focus().undo().run()}>↶

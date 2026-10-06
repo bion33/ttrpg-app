@@ -263,7 +263,7 @@
     right: 0;
     margin-inline: auto;
     width: fit-content;
-    max-width: calc(100vw - 2rem);
+    max-width: calc(80vw - 2rem);
     margin-bottom: calc(var(--vv-bottom, 0px) + 1rem * (var(--vv-inv-scale, 1) - 1));
     transform: translateX(calc((var(--vv-left, 0px) - var(--vv-right, 0px)) / 2 / var(--vv-inv-scale, 1)));
     /* Pivot the counter-scale at the bottom centre so it stays anchored to the visible-rectangle centre and bottom. */
@@ -275,13 +275,45 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 0.25rem;
     padding: 0.35rem;
     background: var(--color-paper);
     border: 1px solid var(--color-border);
     border-radius: 0.5rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* On narrow screens (matching MarkdownToolbar's COLLAPSE_QUERY) the toolbar may use the full viewport width less the
+   side gutters, rather than the desktop 80vw cap, so the expanded bar fits more controls per row. */
+@media (max-width: 750px) {
+    .markdown-toolbar {
+        max-width: calc(100vw - 2rem);
+    }
+}
+
+/* Collapsed on narrow screens: no toolbar box, just the floating toggle sitting where the toolbar would open. */
+.markdown-toolbar--collapsed {
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+}
+
+/* Positioning wrapper for the narrow-screen expand/collapse toggle, floating centred over the toolbar's top edge. Kept
+   separate from the button so the button's own hover transform never fights this centring transform. */
+.markdown-toolbar__toggle {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -90%);
+    display: flex;
+}
+
+/* Collapsed, the toggle has no toolbar box to straddle, so it sits in normal flow instead of overhanging an edge. */
+.markdown-toolbar--collapsed .markdown-toolbar__toggle {
+    position: static;
+    transform: none;
 }
 
 .markdown-toolbar__btn {
