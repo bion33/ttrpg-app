@@ -3,6 +3,7 @@ import {useEffect} from 'react'
 import './PageViewport.css'
 import ViewControls from './ViewControls.tsx'
 import {usePageScale} from '@hooks/usePageScale.ts'
+import {usePinchZoomCapable} from '@hooks/usePinchZoomCapable.ts'
 
 /**
  * Props for the page viewport: the active page's natural (unscaled) width the zoom scales to a fraction of the
@@ -19,6 +20,8 @@ interface PageViewportProps {
  */
 function PageViewport({naturalWidth, children}: PageViewportProps) {
     const {scale, scaleUp, scaleDown, canScaleUp, canScaleDown, viewReference} = usePageScale(naturalWidth)
+    // On a pinch-and-pan device the native gesture replaces these buttons, so they are dropped there.
+    const pinchCapable = usePinchZoomCapable()
 
     // Promote the view to its own compositor layer only for the duration of a zoom (a little past the 0.25s transition),
     // then drop it — a permanent layer around the editable markdown surface blanks out after inactivity. Toggled as a
@@ -33,15 +36,19 @@ function PageViewport({naturalWidth, children}: PageViewportProps) {
 
     // The scale is also published as a custom property so in-page controls can counter-scale (`1 / --page-scale`) to a
     // constant on-screen size against the zoom transform.
-    const viewStyle = {transform: `scale(${scale})`, '--page-scale': scale} as CSSProperties
+    // On a pinch-capable device the native gesture does the zooming, so the controls' scale is pinned to 1.
+    const effectiveScale = pinchCapable ? 1 : scale
+    const viewStyle = {transform: `scale(${effectiveScale})`, '--page-scale': effectiveScale} as CSSProperties
 
     return (
         <>
             <div className="binder-view" ref={viewReference} style={viewStyle}>
                 {children}
             </div>
-            <ViewControls onScaleUp={scaleUp} onScaleDown={scaleDown} canScaleUp={canScaleUp}
-                          canScaleDown={canScaleDown}/>
+            {!pinchCapable && (
+                <ViewControls onScaleUp={scaleUp} onScaleDown={scaleDown} canScaleUp={canScaleUp}
+                              canScaleDown={canScaleDown}/>
+            )}
         </>
     )
 }
