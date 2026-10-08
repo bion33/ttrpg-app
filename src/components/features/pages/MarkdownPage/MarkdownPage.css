@@ -253,16 +253,19 @@
    subtracts the visible-rectangle insets so the bar stays within the visible rectangle and clears the corner-cluster
    controls; this means that when zoomed in far enough for content to exceed the shrunk cap, the bar does wrap to more
    rows — the deliberate cost of not overlapping the corner buttons.
-   Only placement tracks the visible rectangle (variables from useVisualViewportInset) so mobile pinch-zoom can't carry
-   the bar off-screen: `transform: translateX` slides it from the layout centre to the visible-rectangle centre (a
-   transform, so it doesn't disturb the layout width), `margin-bottom` lifts it above the visible bottom edge, and
+   Only placement tracks the pinch rectangle (variables from useVisualViewportInset) so mobile pinch-zoom can't carry
+   the bar off-screen: `transform: translateX` slides it from the layout centre to the pinch-rectangle centre (a
+   transform, so it doesn't disturb the layout width), `margin-bottom` lifts it above the pinch-rectangle bottom edge, and
    `scale` counter-zooms it to a constant on-screen size (the independent scale property). The translate is divided by
    invScale because `scale` is applied after `transform` and would otherwise multiply the offset by invScale, landing
    the bar off the visible centre; dividing first leaves the net layout shift exactly the centre-to-centre gap. The
    `1rem * (invScale - 1)`
    term in `margin-bottom` counter-scales the bottom inset the same way the corner clusters do (it lives in `bottom` in
    layout pixels, which `scale` can't touch), so the toolbar keeps a constant gap to the bottom edge instead of drifting
-   upward as you zoom in. On desktop (and unzoomed) every variable is 0 / 1, so none of this changes the placement. */
+   upward as you zoom in. On desktop (and unzoomed) every variable is 0 / 1, so none of this changes the placement.
+   `--keyboard-inset` lifts the bar above an on-screen keyboard that overlays the layout viewport (where the
+   `interactive-widget=resizes-content` meta tag is unsupported); it is 0 where the keyboard resizes the layout viewport
+   instead, so the bar already clears it. */
 .markdown-toolbar {
     position: fixed;
     bottom: 1rem;
@@ -271,7 +274,7 @@
     margin-inline: auto;
     width: fit-content;
     max-width: calc(80vw - 2rem);
-    margin-bottom: calc(var(--vv-bottom, 0px) + 1rem * (var(--vv-inv-scale, 1) - 1));
+    margin-bottom: calc(var(--vv-bottom, 0px) + var(--keyboard-inset, 0px) + 1rem * (var(--vv-inv-scale, 1) - 1));
     transform: translateX(calc((var(--vv-left, 0px) - var(--vv-right, 0px)) / 2 / var(--vv-inv-scale, 1)));
     /* Pivot the counter-scale at the bottom centre so it stays anchored to the visible-rectangle centre and bottom. */
     transform-origin: center bottom;

@@ -32,8 +32,8 @@ body {
 /* A fixed cluster of controls: a vertical stack lifted above the page and tabs. Callers set the anchored corner with
    a --corner-inset gap (top/left/right/bottom); all current callers use the default below, which each margin's
    correction term relies on matching.
-   The margins track the visible rectangle (the variables are published by useVisualViewportInset) and do two things:
-   - `var(--vv-*)` shifts the cluster in by the gap between the layout viewport and the visual viewport, so pinch-zoom
+   The margins track the pinch rectangle (the variables are published by useVisualViewportInset) and do two things:
+   - `var(--vv-*)` shifts the cluster in by the gap between the layout viewport and the pinch rectangle, so pinch-zoom
      on mobile no longer carries the controls off-screen;
    - `--corner-inset * (invScale - 1)` counter-scales the inset itself. The inset lives in the caller's top/left/etc.
      in layout pixels, which `scale` (below) can't touch, so without this it would render at inset × zoom and the
@@ -121,8 +121,8 @@ body {
 }
 
 /* The toast viewport is fixed to the layout viewport, so mobile pinch-zoom would otherwise carry it off the visible
-   area and scale it with the zoom. It tracks the visible rectangle (variables from useVisualViewportInset): the margins
-   shift its fixed top-left origin in to the visible rectangle's top-left corner, and `scale` counter-zooms it to a
+   area and scale it with the zoom. It tracks the pinch rectangle (variables from useVisualViewportInset): the margins
+   shift its fixed top-left origin in to the pinch rectangle's top-left corner, and `scale` counter-zooms it to a
    constant on-screen size pivoting at that corner. On desktop (and unzoomed) every variable is 0 / 1, so placement is
    untouched. The eased transition matches the once-per-gesture snap the other visible-rectangle-tracking chrome uses. */
 [data-sonner-toaster].toaster-viewport {

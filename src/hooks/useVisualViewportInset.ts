@@ -1,4 +1,5 @@
 import {useEffect} from 'react'
+import {computeViewportInset} from '@lib/viewport/viewportInset.ts'
 
 // How long the visual viewport must stay quiet (no scroll/resize events) before we treat the gesture as finished and
 // reposition. Long enough to ride out the event stream of a pinch-pan or momentum scroll, short enough to feel prompt.
@@ -18,7 +19,9 @@ const RESTORE_POLL_MS = 150
  * drift off the visible area. These variables give the gap on each side between the layout viewport and the pinch
  * rectangle, plus the inverse zoom, letting the controls follow the visible corners and keep a constant on-screen size.
  * The rectangle is measured from the pinch geometry alone; an on-screen keyboard that further shrinks the visual
- * viewport is excluded, so the chrome tracks the zoom but never rises to chase the keyboard.
+ * viewport is excluded, so the chrome tracks the zoom but never rises to chase the keyboard. A separate
+ * `--keyboard-inset` carries the keyboard's height, letting a bottom-anchored control lift above a keyboard that
+ * overlays the layout viewport (where the `interactive-widget=resizes-content` meta tag is unsupported).
  *
  * We deliberately reposition only once the gesture settles, not on every event. The browser composites a pinch-pan on
  * its own thread and paints it immediately, so a JS-driven reposition always lands a frame behind and visibly jitters
@@ -34,31 +37,30 @@ export function useVisualViewportInset(): void {
         const root = document.documentElement
         // The last values written, so a settle that didn't actually move the visible rectangle writes nothing and the
         // controls (and their transition) stay untouched.
-        const last = {left: NaN, top: NaN, right: NaN, bottom: NaN, invScale: NaN}
+        const last = {left: NaN, top: NaN, right: NaN, bottom: NaN, invScale: NaN, keyboardInset: NaN}
         let settleTimer = 0
 
-        // Writes the current visible-rectangle metrics as CSS variables. Gaps are in layout CSS pixels (as are the
-        // controls' rem insets), so each control shifts by exactly how far the visible rectangle is inset from its
+        // Writes the current pinch-rectangle metrics as CSS variables. Gaps are in layout CSS pixels (as are the
+        // controls' rem insets), so each control shifts by exactly how far the pinch rectangle is inset from its
         // layout-viewport edge; the inverse scale counter-zooms it. Only changed values are written.
         const write = () => {
             settleTimer = 0
-            // Size the visible rectangle from the pinch geometry (layout / scale), not the measured viewport size. An
-            // on-screen keyboard shrinks viewport.width/height below that geometric size without any zoom; using the
-            // geometric size makes the keyboard drop out of the trailing-edge gaps, so the chrome follows the pinch
-            // rectangle only and never drifts up to chase the keyboard (clamped ≥ 0 since the keyboard would make the
-            // raw gap negative). The near edges read offset directly — the keyboard doesn't move them.
-            const geometricWidth = window.innerWidth / viewport.scale
-            const geometricHeight = window.innerHeight / viewport.scale
-            const left = Math.max(0, viewport.offsetLeft)
-            const top = Math.max(0, viewport.offsetTop)
-            const right = Math.max(0, window.innerWidth - viewport.offsetLeft - geometricWidth)
-            const bottom = Math.max(0, window.innerHeight - viewport.offsetTop - geometricHeight)
-            const invScale = 1 / viewport.scale
+            const {left, top, right, bottom, invScale, keyboardInset} = computeViewportInset({
+                innerWidth: window.innerWidth,
+                innerHeight: window.innerHeight,
+                offsetLeft: viewport.offsetLeft,
+                offsetTop: viewport.offsetTop,
+                height: viewport.height,
+                scale: viewport.scale,
+            })
             if (left !== last.left) root.style.setProperty('--vv-left', `${(last.left = left)}px`)
             if (top !== last.top) root.style.setProperty('--vv-top', `${(last.top = top)}px`)
             if (right !== last.right) root.style.setProperty('--vv-right', `${(last.right = right)}px`)
             if (bottom !== last.bottom) root.style.setProperty('--vv-bottom', `${(last.bottom = bottom)}px`)
             if (invScale !== last.invScale) root.style.setProperty('--vv-inv-scale', `${(last.invScale = invScale)}`)
+            if (keyboardInset !== last.keyboardInset) {
+                root.style.setProperty('--keyboard-inset', `${(last.keyboardInset = keyboardInset)}px`)
+            }
         }
 
         // Each event restarts the quiet timer, so the write fires only after the gesture stops rather than during it.
