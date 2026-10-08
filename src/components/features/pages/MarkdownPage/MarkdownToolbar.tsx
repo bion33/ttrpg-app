@@ -74,7 +74,9 @@ function MarkdownToolbar({editor, onRequestImage}: MarkdownToolbarProps) {
         return (
             <div className="markdown-toolbar markdown-toolbar--collapsed no-print">
                 <span className="markdown-toolbar__toggle">
+                    {/* Suppress focus so toggling leaves the editor's keyboard untouched on mobile. */}
                     <IconButton icon={<ChevronUp size={16}/>} label="Show formatting toolbar"
+                                onMouseDown={(event) => event.preventDefault()}
                                 onClick={() => setExpanded(true)}/>
                 </span>
             </div>
@@ -85,7 +87,9 @@ function MarkdownToolbar({editor, onRequestImage}: MarkdownToolbarProps) {
         <div className="markdown-toolbar no-print">
             {narrow && (
                 <span className="markdown-toolbar__toggle">
+                    {/* Suppress focus so toggling leaves the editor's keyboard untouched on mobile. */}
                     <IconButton icon={<ChevronDown size={16}/>} label="Hide formatting toolbar"
+                                onMouseDown={(event) => event.preventDefault()}
                                 onClick={() => setExpanded(false)}/>
                 </span>
             )}
