@@ -18,6 +18,7 @@ interface BlockActionsMenuProps {
     onOpenChange: (open: boolean) => void
     onRunAction: (action: BlockAction) => void
     align?: 'start' | 'center' | 'end'
+    side?: 'top' | 'bottom'
     searchPlaceholder?: string
     // Whether to mark the action matching the current block type as active (the toolbar does; the insert menu does not).
     markActive?: boolean
@@ -29,7 +30,7 @@ interface BlockActionsMenuProps {
  */
 function BlockActionsMenu({
                               editor, actions, trigger, open, onOpenChange, onRunAction, align = 'start',
-                              searchPlaceholder = 'Search', markActive = true
+                              side = 'bottom', searchPlaceholder = 'Search', markActive = true
                           }: BlockActionsMenuProps) {
     const inputReference = useRef<HTMLInputElement>(null)
     // Under pinch-zoom the collision middleware mis-sizes this counter-scaled popover and drifts it off the trigger, so
@@ -45,7 +46,7 @@ function BlockActionsMenu({
         <Popover.Root open={open} onOpenChange={onOpenChange}>
             <Popover.Trigger asChild>{trigger}</Popover.Trigger>
             <Popover.Portal>
-                <Popover.Content className="menu block-menu" align={align} sideOffset={4}
+                <Popover.Content className="menu block-menu" align={align} side={side} sideOffset={4}
                                  avoidCollisions={!zoomed}
                     // Focus the search field on open and keep the caret in the editor on close.
                                  onOpenAutoFocus={(event) => {

@@ -26,7 +26,7 @@ function ToolbarDropdown({editor, label, icon: GroupIcon, actions, activeStates}
     const TriggerIcon = activeIndex >= 0 ? actions[activeIndex].icon : GroupIcon
 
     return (
-        <BlockActionsMenu editor={editor} actions={actions} open={open} onOpenChange={setOpen}
+        <BlockActionsMenu editor={editor} actions={actions} open={open} onOpenChange={setOpen} side="top"
                           onRunAction={(action) => action.run?.(editor)}
                           trigger={
                               <button type="button" aria-label={label} data-tooltip={label}
