@@ -15,8 +15,10 @@ const RESTORE_POLL_MS = 150
  *
  * `position: fixed` anchors to the layout viewport. On desktop that matches the screen, but mobile pinch-zoom leaves
  * the layout viewport unchanged and shows a smaller, pannable sub-rectangle (the visual viewport) — so fixed corners
- * drift off the visible area. These variables give the gap on each side between the layout viewport and the visible
+ * drift off the visible area. These variables give the gap on each side between the layout viewport and the pinch
  * rectangle, plus the inverse zoom, letting the controls follow the visible corners and keep a constant on-screen size.
+ * The rectangle is measured from the pinch geometry alone; an on-screen keyboard that further shrinks the visual
+ * viewport is excluded, so the chrome tracks the zoom but never rises to chase the keyboard.
  *
  * We deliberately reposition only once the gesture settles, not on every event. The browser composites a pinch-pan on
  * its own thread and paints it immediately, so a JS-driven reposition always lands a frame behind and visibly jitters
@@ -40,10 +42,17 @@ export function useVisualViewportInset(): void {
         // layout-viewport edge; the inverse scale counter-zooms it. Only changed values are written.
         const write = () => {
             settleTimer = 0
-            const left = viewport.offsetLeft
-            const top = viewport.offsetTop
-            const right = window.innerWidth - viewport.offsetLeft - viewport.width
-            const bottom = window.innerHeight - viewport.offsetTop - viewport.height
+            // Size the visible rectangle from the pinch geometry (layout / scale), not the measured viewport size. An
+            // on-screen keyboard shrinks viewport.width/height below that geometric size without any zoom; using the
+            // geometric size makes the keyboard drop out of the trailing-edge gaps, so the chrome follows the pinch
+            // rectangle only and never drifts up to chase the keyboard (clamped ≥ 0 since the keyboard would make the
+            // raw gap negative). The near edges read offset directly — the keyboard doesn't move them.
+            const geometricWidth = window.innerWidth / viewport.scale
+            const geometricHeight = window.innerHeight / viewport.scale
+            const left = Math.max(0, viewport.offsetLeft)
+            const top = Math.max(0, viewport.offsetTop)
+            const right = Math.max(0, window.innerWidth - viewport.offsetLeft - geometricWidth)
+            const bottom = Math.max(0, window.innerHeight - viewport.offsetTop - geometricHeight)
             const invScale = 1 / viewport.scale
             if (left !== last.left) root.style.setProperty('--vv-left', `${(last.left = left)}px`)
             if (top !== last.top) root.style.setProperty('--vv-top', `${(last.top = top)}px`)
