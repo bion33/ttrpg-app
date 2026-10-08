@@ -398,7 +398,12 @@
 /* ---- Block handle ---- */
 
 .block-handle {
-    /* Positioned by the drag-handle extension via floating-ui; kept clear of the text column. */
+    /* Positioned by the drag-handle extension via floating-ui; kept clear of the text column. The extension creates the
+       handle with an inline `position: absolute` and only switches it to `fixed` inside its first computePosition
+       callback; until then floating-ui resolves the handle's offset parent to the zoomed `.binder-view` wrapper and
+       lands the first placement offset by that scaled origin. Forcing `fixed` up front (overriding the inline style)
+       makes the very first placement correct. */
+    position: fixed !important;
     display: flex;
 }
 
