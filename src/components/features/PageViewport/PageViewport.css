@@ -1,3 +1,17 @@
+/* Wraps the zoom wrapper so a fitted (pinch-capable) page reserves only its scaled footprint in layout: without a box
+   the transform shrinks the page visually while its layout box stays at the full physical width, overflowing a narrow
+   screen. Transparent by default (`display: contents`) so desktop/tablet lay out exactly as if it were not here. */
+.binder-view-frame {
+    display: contents;
+}
+
+/* The fitted variant becomes a real box sized (inline, from PageViewport.tsx) to the scaled footprint and centred, so
+   the whole page width fits the screen on open and native pinch-zoom takes over from there. */
+.binder-view-frame--fitted {
+    display: block;
+    margin: 0 auto;
+}
+
 /* The zoom wrapper shared by every page view. Wraps the page (and, in a binder, the tab strip) so they scale together
    (the transform is set in PageViewport.tsx) while the view controls, which sit outside it, stay a fixed size.
    Anchors the absolutely-positioned tab strip and, scaling from the top centre, keeps the page centred as it grows or
@@ -26,5 +40,10 @@
 @media print {
     .binder-view {
         transform: none !important;
+    }
+
+    /* Drop the fitted reservation so the restored true-size transform is not clipped to the scaled footprint. */
+    .binder-view-frame--fitted {
+        display: contents;
     }
 }

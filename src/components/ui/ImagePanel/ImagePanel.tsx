@@ -47,12 +47,9 @@ function ImagePanel({imageUrl, onChangeImage, fallback, shape = 'rectangle'}: Im
 
     return (
         <div className={`image-panel image-panel--${shape}`}>
-            {/* A thin row reserving space for the menu, so the content below never flows under the button. Both the row
-                and the menu counter-scale the page zoom, so their on-screen sizes stay constant and matched. */}
+            {/* A thin row reserving space for the menu, so the content below never flows under the button. */}
             <div className="image-panel__toolbar">
-                <div className="image-panel__menu">
-                    <ActionMenu label="Image options" actions={actions}/>
-                </div>
+                <ActionMenu label="Image options" actions={actions}/>
             </div>
             <div className="image-panel__content">
                 {src

@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
-import {notifyingStorage, subscribeToStorageWrites} from './observableStorage.ts'
+import {notifyingStorage, subscribeToDataWrites, subscribeToStorageWrites} from './observableStorage.ts'
 
 // A minimal in-memory Storage so createJSONStorage has a localStorage to back onto in the node test environment.
 function installLocalStorage() {
@@ -47,5 +47,26 @@ describe('notifyingStorage', () => {
 
         notifyingStorage<number>().setItem('a', 1)
         expect(listener).not.toHaveBeenCalled()
+    })
+})
+
+describe('subscribeToDataWrites', () => {
+    beforeEach(installLocalStorage)
+    afterEach(() => vi.unstubAllGlobals())
+
+    it('notifies on a data-key write but ignores per-device view-key writes', () => {
+        const listener = vi.fn()
+        subscribeToDataWrites(listener)
+        const storage = notifyingStorage<number>()
+
+        storage.setItem('location', 1)
+        storage.setItem('pageWidthFraction', 1)
+        expect(listener).not.toHaveBeenCalled()
+
+        storage.setItem('binders', 1)
+        expect(listener).toHaveBeenCalledTimes(1)
+
+        storage.removeItem('location')
+        expect(listener).toHaveBeenCalledTimes(1)
     })
 })

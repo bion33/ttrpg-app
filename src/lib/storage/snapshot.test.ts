@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
 import type {StorageLike} from './snapshot.ts'
-import {applySnapshot, createSnapshot, snapshotHash} from './snapshot.ts'
+import {appliedBaseHash, applySnapshot, createSnapshot, snapshotHash} from './snapshot.ts'
 import {CURRENT_VERSION} from '../../migrations/migrations.ts'
 
 /** A minimal in-memory Storage used to exercise the snapshot layer without a real localStorage. */
@@ -86,5 +86,15 @@ describe('snapshotHash', () => {
         const base = createSnapshot(fakeStorage({a: '1'}), 'r', 't')
         const changed = createSnapshot(fakeStorage({a: '2'}), 'r', 't')
         expect(snapshotHash(base)).not.toBe(snapshotHash(changed))
+    })
+})
+
+describe('appliedBaseHash', () => {
+    it('matches the base hash applying the snapshot would record, ignoring view keys the remote still carries', () => {
+        const remote = {version: 1, revision: 'rev', savedAt: 'now', entries: {binders: '[]', location: '{"binderId":"other"}'}}
+        const destination = fakeStorage({location: '{"binderId":"local"}'})
+        applySnapshot(destination, remote)
+        const appliedHash = snapshotHash(createSnapshot(destination, remote.revision, remote.savedAt))
+        expect(appliedBaseHash(remote)).toBe(appliedHash)
     })
 })

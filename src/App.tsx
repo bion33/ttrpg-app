@@ -16,7 +16,7 @@ function App() {
             <Provider store={store}>
                 <AppContent/>
             </Provider>
-            <Toaster position="top-left" offset={{top: '1.5rem', left: '5.5rem'}}/>
+            <Toaster className="toaster-viewport" position="top-left" offset={{top: '1.5rem', left: '5.5rem'}}/>
         </StorageRemountContext.Provider>
     )
 }

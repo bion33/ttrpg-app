@@ -1,6 +1,7 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import {Ellipsis, type LucideIcon} from 'lucide-react'
 import IconButton from '@ui/IconButton/IconButton.tsx'
+import {useVisualViewportZoomed} from '@hooks/useVisualViewportZoomed.ts'
 import './ActionMenu.css'
 
 /**
@@ -29,6 +30,9 @@ interface ActionMenuProps {
  * navigation, ARIA roles, and zoom-aware (portalled, fixed) positioning.
  */
 function ActionMenu({label, actions, align = 'end'}: ActionMenuProps) {
+    // Under pinch-zoom the collision middleware mis-sizes this counter-scaled popover and drifts it off the trigger, so
+    // place it straight at the trigger instead; desktop and unzoomed keep full flip/shift.
+    const zoomed = useVisualViewportZoomed()
     return (
         <DropdownMenu.Root>
             <DropdownMenu.Trigger asChild>
@@ -36,6 +40,7 @@ function ActionMenu({label, actions, align = 'end'}: ActionMenuProps) {
             </DropdownMenu.Trigger>
             <DropdownMenu.Portal>
                 <DropdownMenu.Content className="menu menu__list" align={align} sideOffset={4}
+                                      avoidCollisions={!zoomed}
                                       onCloseAutoFocus={(event) => event.preventDefault()}>
                     {actions.map((action) => {
                         const ActionIcon = action.icon

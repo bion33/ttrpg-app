@@ -2,12 +2,12 @@ import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useS
 import {toast} from 'sonner'
 import {useDebouncedCallback} from 'use-debounce'
 import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
-import {applySnapshot, createSnapshot, snapshotHash, SYNC_IGNORE_KEYS} from '@lib/storage/snapshot.ts'
+import {appliedBaseHash, applySnapshot, createSnapshot, snapshotHash, SYNC_IGNORE_KEYS} from '@lib/storage/snapshot.ts'
 import type {ProviderId} from '@lib/storage/providers/StorageProvider.ts'
 import {getProvider} from '@lib/storage/providers/providers.ts'
 import {evaluateSync, type SyncStatus} from '@lib/storage/sync/sync.ts'
 import {chooseRemoteRevision, isProbeable, resolveTarget, saveIntent} from '@lib/storage/sync/syncActions.ts'
-import {subscribeToStorageWrites} from '@lib/storage/observableStorage.ts'
+import {subscribeToDataWrites} from '@lib/storage/observableStorage.ts'
 import type {SyncState} from '@lib/storage/connectionStore.ts'
 import {
     clearGoogleDriveConnection,
@@ -53,7 +53,11 @@ export interface ConflictPrompt {
 }
 
 // How long to wait after the last persisted-atom write before recomputing dirty, so rapid edits (typing) hash once.
-const DIRTY_DEBOUNCE_MS = 200
+const DIRTY_DEBOUNCE_MS = 1000
+
+// How long to suppress the remote re-probe after this device saves or loads, giving an eventually-consistent cloud
+// remote time to reflect the write before it is read back (a probe reading the old revision would look like a conflict).
+const PROBE_COOLDOWN_MS = 15000
 
 /** The storage state and actions the controls consume. */
 export interface UseStorage {
@@ -157,6 +161,9 @@ export function useStorage(): UseStorage {
     // can fire autoload through a stable ref without the engine having to precede it.
     const maybeAutoloadRef = useRef<(revision: string | null, token: number) => void>(() => {
     })
+    // A timestamp until which the remote re-probe is suppressed after this device writes or loads, so a probe does not
+    // read a not-yet-propagated cloud remote (eventual consistency) and raise a spurious conflict against what we wrote.
+    const probeCooldownUntil = useRef(0)
 
     // Mirrors the saving flag into a ref alongside the state, so programmatic writes can guard re-entrancy synchronously.
     const setSavingFlag = useCallback((value: boolean) => {
@@ -229,6 +236,9 @@ export function useStorage(): UseStorage {
     // stale probe on a non-probeable provider is never read (chooseRemoteRevision ignores it) and needs no clearing here.
     const refreshRemote = useCallback(async () => {
         if (!probeable || !target) return
+        // Within the post-write cooldown, trust the revision we just recorded rather than re-reading a remote that may
+        // not have propagated the write yet.
+        if (Date.now() < probeCooldownUntil.current) return
         const token = ++probeToken.current
         try {
             const revision = await getProvider(provider).readRevision(target)
@@ -255,8 +265,9 @@ export function useStorage(): UseStorage {
         }
         sync()
         window.addEventListener('focus', sync)
-        // A local edit changes dirtiness but not the remote, so it only recomputes dirty (debounced, no re-probe).
-        const unsubscribe = subscribeToStorageWrites(recomputeDirtyDebounced)
+        // A local edit changes dirtiness but not the remote, so it only recomputes dirty (debounced, no re-probe); a
+        // per-device view-key write (open tab, zoom) is not an edit and is ignored.
+        const unsubscribe = subscribeToDataWrites(recomputeDirtyDebounced)
         return () => {
             window.removeEventListener('focus', sync)
             unsubscribe()
@@ -274,6 +285,7 @@ export function useStorage(): UseStorage {
         const stored = createSnapshot(localStorage, snapshot.revision, snapshot.savedAt)
         await commitSyncState({baseRevision: snapshot.revision, baseHash: snapshotHash(stored)})
         setProbedRevision(snapshot.revision)
+        probeCooldownUntil.current = Date.now() + PROBE_COOLDOWN_MS
         remount()
         if (target) void syncAfterLoad(provider, target, snapshot.entries)
     }, [commitSyncState, remount, provider, target, syncAfterLoad])
@@ -294,6 +306,7 @@ export function useStorage(): UseStorage {
             await getProvider(provider).save(target, snapshot)
             await commitSyncState({baseRevision: revision, baseHash: snapshotHash(snapshot)})
             setProbedRevision(revision)
+            probeCooldownUntil.current = Date.now() + PROBE_COOLDOWN_MS
             if (!silent) toast.success('Saved', {id: toastId})
             // Reconcile the image folder after the snapshot lands, in the background, so it never blocks the save result.
             void syncAfterSave(provider, target, snapshot.entries)
@@ -392,7 +405,7 @@ export function useStorage(): UseStorage {
         // Keeping local during a load conflict: record the seen remote as our base ancestor (so local reads as ahead,
         // not diverged) and leave local untouched, so autoload stops re-raising and the next save cleanly overwrites it.
         setProbedRevision(pending.incoming.revision)
-        await commitSyncState({baseRevision: pending.incoming.revision, baseHash: snapshotHash(pending.incoming)})
+        await commitSyncState({baseRevision: pending.incoming.revision, baseHash: appliedBaseHash(pending.incoming)})
     }, [conflict, applyLoaded, performSave, commitSyncState])
 
     const setProvider = useCallback((id: ProviderId) => {

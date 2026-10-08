@@ -17,6 +17,11 @@
     --z-page: 10;
     --z-controls: 300;
     --z-modal: 1000;
+
+    /* The factor an in-page control multiplies its size by to counter the combined on-screen zoom (the page-view
+       transform times any native pinch zoom) so it keeps a constant on-screen size. `--page-scale` is published per
+       page view and `--vv-inv-scale` by useVisualViewportInset; both default to 1, so off those surfaces this is 1. */
+    --control-counter-scale: calc(1 / var(--page-scale, 1) * var(--vv-inv-scale, 1));
 }
 
 body {
@@ -113,6 +118,19 @@ body {
 /* Sonner's success toast: tint just the checkmark icon green, leaving the rest of the toast at its default styling. */
 [data-sonner-toast][data-type='success'] [data-icon] {
     color: #2e7d32;
+}
+
+/* The toast viewport is fixed to the layout viewport, so mobile pinch-zoom would otherwise carry it off the visible
+   area and scale it with the zoom. It tracks the visible rectangle (variables from useVisualViewportInset): the margins
+   shift its fixed top-left origin in to the visible rectangle's top-left corner, and `scale` counter-zooms it to a
+   constant on-screen size pivoting at that corner. On desktop (and unzoomed) every variable is 0 / 1, so placement is
+   untouched. The eased transition matches the once-per-gesture snap the other visible-rectangle-tracking chrome uses. */
+[data-sonner-toaster].toaster-viewport {
+    margin-top: var(--vv-top, 0px);
+    margin-left: var(--vv-left, 0px);
+    transform-origin: top left;
+    scale: var(--vv-inv-scale, 1);
+    transition: margin 0.18s ease, scale 0.18s ease;
 }
 
 /* On-screen chrome hidden when printing, so only the page content prints. */

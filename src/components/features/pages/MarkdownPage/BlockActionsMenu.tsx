@@ -3,6 +3,7 @@ import {useRef} from 'react'
 import * as Popover from '@radix-ui/react-popover'
 import {Command} from 'cmdk'
 import type {Editor} from '@tiptap/core'
+import {useVisualViewportZoomed} from '@hooks/useVisualViewportZoomed.ts'
 import type {BlockAction} from './blocks/insertBlocks.ts'
 
 /**
@@ -31,6 +32,9 @@ function BlockActionsMenu({
                               searchPlaceholder = 'Search', markActive = true
                           }: BlockActionsMenuProps) {
     const inputReference = useRef<HTMLInputElement>(null)
+    // Under pinch-zoom the collision middleware mis-sizes this counter-scaled popover and drifts it off the trigger, so
+    // place it straight at the trigger instead; desktop and unzoomed keep full flip/shift.
+    const zoomed = useVisualViewportZoomed()
 
     function select(action: BlockAction) {
         onOpenChange(false)
@@ -42,6 +46,7 @@ function BlockActionsMenu({
             <Popover.Trigger asChild>{trigger}</Popover.Trigger>
             <Popover.Portal>
                 <Popover.Content className="menu block-menu" align={align} sideOffset={4}
+                                 avoidCollisions={!zoomed}
                     // Focus the search field on open and keep the caret in the editor on close.
                                  onOpenAutoFocus={(event) => {
                                      event.preventDefault()

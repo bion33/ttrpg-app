@@ -16,11 +16,14 @@ const MIN_FRACTION = 0.4
 const FIT_MARGIN = 0.98
 
 /**
- * What the page-scale hook returns: the current scale, the step controls with their enabled flags, and the ref to put
- * on the scaled wrapper so its layout width can be measured.
+ * What the page-scale hook returns: the current scale, the fit-to-width scale, the measured unscaled content size, the
+ * step controls with their enabled flags, and the ref to put on the scaled wrapper so its layout size can be measured.
  */
 interface PageScale {
     scale: number
+    fitScale: number
+    contentWidth: number
+    contentHeight: number
     scaleUp: () => void
     scaleDown: () => void
     canScaleUp: boolean
@@ -44,23 +47,37 @@ export function usePageScale(naturalWidthPx: number): PageScale {
     const viewReference = useRef<HTMLDivElement>(null)
     // The wrapper's unscaled layout width (the sheet plus its surrounding chrome), tracked so the fit ceiling stays fresh.
     const [layoutWidth, setLayoutWidth] = useState(naturalWidthPx)
+    // The wrapper's unscaled layout height, tracked so a fitted frame can reserve only the scaled footprint.
+    const [layoutHeight, setLayoutHeight] = useState(0)
     // The viewport width the fraction is taken of, tracked so the scale recomputes as the window resizes.
     const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth)
+    // The width actually available to the page (its container's content box, narrower than the viewport by any page
+    // gutter), tracked so the fitted scale fills the container rather than the whole viewport and so does not overflow.
+    const [availableWidth, setAvailableWidth] = useState(() => window.innerWidth)
 
     // Tracks the wrapper's unscaled layout width (changes only when the page's own layout does, not on viewport resize).
     useEffect(() => {
         const view = viewReference.current
         if (!view) return
-        const update = () => setLayoutWidth(view.offsetWidth)
+        const update = () => {
+            setLayoutWidth(view.offsetWidth)
+            setLayoutHeight(view.offsetHeight)
+        }
         update()
         const observer = new ResizeObserver(update)
         observer.observe(view)
         return () => observer.disconnect()
     }, [])
 
-    // Tracks the viewport width, which the chosen fraction is measured against.
+    // Tracks the viewport width (the fraction's basis) and the container's available content width (the fitted basis).
     useEffect(() => {
-        const update = () => setViewportWidth(window.innerWidth)
+        const update = () => {
+            setViewportWidth(window.innerWidth)
+            // The positioned container the page is laid out within (its offsetParent); its content box is the real room
+            // the page has, so fitting to it respects the page gutters instead of overflowing them.
+            const container = viewReference.current?.offsetParent as HTMLElement | null
+            setAvailableWidth(container?.clientWidth ?? window.innerWidth)
+        }
         update()
         window.addEventListener('resize', update)
         return () => window.removeEventListener('resize', update)
@@ -72,6 +89,9 @@ export function usePageScale(naturalWidthPx: number): PageScale {
     // The applied fraction, clamped to the current page's fit ceiling (the stored value is left untouched for syncing).
     const fraction = Math.min(widthFraction, maxFraction)
     const scale = (fraction * viewportWidth) / naturalWidthPx
+    // The scale that fits the whole page plus its chrome to the container's available width, so a pinch-capable device
+    // opens at full page width (within the gutters, no overflow) and lets the native gesture take over from there.
+    const fitScale = layoutWidth > 0 ? (FIT_MARGIN * availableWidth) / layoutWidth : FIT_MARGIN
 
     // Widens the page by one step, stopping once it (with its chrome) fills the viewport width.
     function scaleUp() {
@@ -85,6 +105,9 @@ export function usePageScale(naturalWidthPx: number): PageScale {
 
     return {
         scale,
+        fitScale,
+        contentWidth: layoutWidth,
+        contentHeight: layoutHeight,
         scaleUp,
         scaleDown,
         canScaleUp: widthFraction < maxFraction,

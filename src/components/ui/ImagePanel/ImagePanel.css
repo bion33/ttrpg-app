@@ -6,20 +6,13 @@
     height: 100%;
 }
 
-/* A thin row that reserves the menu's space above the content. Its height divides by the page zoom so its on-screen
-   height stays constant and matches the counter-scaled button, keeping the content clear of the menu at any zoom. */
+/* A thin row that reserves the menu's space above the content, keeping the content clear of the menu. */
 .image-panel__toolbar {
     flex: none;
     display: flex;
     justify-content: flex-end;
     align-items: flex-start;
-    height: calc(1.5rem / var(--page-scale, 1));
-}
-
-/* The "…" menu, counter-scaling the page zoom (anchored to its top-right corner) to a constant on-screen size. */
-.image-panel__menu {
-    transform: scale(calc(1 / var(--page-scale, 1)));
-    transform-origin: top right;
+    height: 1.5rem;
 }
 
 /* The image, loader, or fallback fills the remaining height below the toolbar row, centred within it. */

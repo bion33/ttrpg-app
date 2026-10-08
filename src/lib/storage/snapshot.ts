@@ -81,3 +81,17 @@ export function snapshotHash(snapshot: LibrarySnapshot): string {
     }
     return hashSum(sorted)
 }
+
+/**
+ * The base hash a loaded snapshot records once applied — migrated to the current version with per-device view keys
+ * stripped — so a lineage recorded by keeping local (never applying it) matches one recorded by applying it.
+ */
+export function appliedBaseHash(snapshot: LibrarySnapshot): string {
+    const migrated = migrateSnapshot(snapshot)
+    const entries: Record<string, string> = {}
+    for (const [key, value] of Object.entries(migrated.entries)) {
+        if (SYNC_IGNORE_KEYS.has(key)) continue
+        entries[key] = value
+    }
+    return snapshotHash({...migrated, entries})
+}

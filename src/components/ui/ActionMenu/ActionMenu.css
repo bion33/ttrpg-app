@@ -7,6 +7,24 @@
     border: 1px solid var(--color-border);
     border-radius: 0.5rem;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    /* Portalled outside the page-view transform, so only native pinch-zoom scales it; `scale` counters that to a
+       constant on-screen size (the trigger is countered separately in the page), pivoting at the Radix popper origin so
+       the menu stays anchored to its trigger. `--vv-inv-scale` is published by useVisualViewportInset and is 1 when
+       unzoomed, leaving this untouched. The eased transition matches the once-per-gesture snap the other chrome uses. */
+    transform-origin: var(--radix-popper-transform-origin);
+    scale: var(--vv-inv-scale, 1);
+    transition: scale 0.18s ease, translate 0.18s ease;
+}
+
+/* WebKit (the test matches floating-ui's own isWebKit) positions this portalled, viewport-fixed popover with the visual
+   viewport's offset folded into the trigger rect, but then renders the fixed box without that offset, so under
+   pinch-zoom the popover lands shifted from its trigger by the visible rectangle's offset. Translate it back by that
+   offset (0 when unzoomed) so it stays anchored to its trigger. Other engines don't fold the offset in, so the
+   correction is scoped to WebKit to avoid shifting the popover the wrong way there. */
+@supports (-webkit-backdrop-filter: none) {
+    .menu {
+        translate: calc(-1 * var(--vv-left, 0px)) calc(-1 * var(--vv-top, 0px));
+    }
 }
 
 /* The padded, optionally-scrolling row region; the action menu is its own list, the block menu wraps one. */

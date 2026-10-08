@@ -18,8 +18,9 @@ interface ModalProps {
  */
 function Modal({title, onClose, children}: ModalProps) {
     const titleId = useId()
-    // On a pinch-zoom device the dialog is pinned to the currently visible rectangle (as a top-anchored sheet) so a
-    // zoomed-in user still sees it; desktop keeps the plain centred dialog (viewportRect stays null).
+    // On a pinch-zoom device the dialog is pinned to the currently visible rectangle so a zoomed-in user sees it, and
+    // counter-scaled by the inverse zoom so it renders at its natural (1x) size instead of being squished into the
+    // narrowed visible width; desktop keeps the plain centred dialog (viewportRect stays null).
     const pinchCapable = usePinchZoomCapable()
     const viewportRect = useVisualViewportRect(pinchCapable)
     const backdropStyle: CSSProperties | undefined = viewportRect
@@ -28,6 +29,14 @@ function Modal({title, onClose, children}: ModalProps) {
             top: `${viewportRect.offsetTop}px`,
             width: `${viewportRect.width}px`,
             height: `${viewportRect.height}px`,
+        }
+        : undefined
+    // Counter-scale around the dialog's centre (flex already centres it in the visible rectangle); the height cap is
+    // the natural height whose scaled image just fills the visible rectangle, so a tall dialog scrolls within it.
+    const modalStyle: CSSProperties | undefined = viewportRect
+        ? {
+            transform: `scale(${1 / viewportRect.scale})`,
+            maxHeight: `${viewportRect.height * viewportRect.scale}px`,
         }
         : undefined
     const pinned = viewportRect != null
@@ -39,6 +48,7 @@ function Modal({title, onClose, children}: ModalProps) {
         >
             <div
                 className={pinned ? 'modal modal--sheet' : 'modal'}
+                style={modalStyle}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}

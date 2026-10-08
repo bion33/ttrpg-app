@@ -8,6 +8,7 @@ export interface VisualViewportRect {
     offsetTop: number
     width: number
     height: number
+    scale: number
 }
 
 // A single cached rect compared field-by-field, so getSnapshot returns a stable reference until the viewport moves
@@ -42,7 +43,8 @@ function getSnapshot(enabled: boolean): VisualViewportRect | null {
         && cached.offsetLeft === viewport.offsetLeft
         && cached.offsetTop === viewport.offsetTop
         && cached.width === viewport.width
-        && cached.height === viewport.height) {
+        && cached.height === viewport.height
+        && cached.scale === viewport.scale) {
         return cached
     }
     cached = {
@@ -50,6 +52,7 @@ function getSnapshot(enabled: boolean): VisualViewportRect | null {
         offsetTop: viewport.offsetTop,
         width: viewport.width,
         height: viewport.height,
+        scale: viewport.scale,
     }
     return cached
 }

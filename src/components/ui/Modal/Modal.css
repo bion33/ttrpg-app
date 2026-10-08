@@ -28,11 +28,13 @@
     color: var(--color-text);
 }
 
-/* Full-width sheet for the pinned (pinch-zoom) layout, centred in the visible rectangle: fills the visible width and
-   scrolls within the visible height rather than sizing to a fixed width that could overflow a zoomed-in viewport. */
+/* Pinned (pinch-zoom) layout: the dialog keeps its natural width and is counter-scaled (transform + max-height set
+   inline from the zoom) so it renders at 1x in the visible rectangle instead of reflowing into the narrowed width;
+   taller content scrolls within the capped height. */
 .modal--sheet {
-    width: 100%;
-    max-height: 100%;
+    /* Keep the natural width: the backdrop is sized to the narrowed zoomed viewport, so flex-shrink would otherwise
+       collapse the dialog toward its min-content width before the counter-scale maps it back into view. */
+    flex-shrink: 0;
     overflow-y: auto;
 }
 

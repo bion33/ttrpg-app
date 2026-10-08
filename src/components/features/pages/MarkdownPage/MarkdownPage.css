@@ -406,10 +406,6 @@
     display: flex;
     align-items: center;
     gap: 0.15rem;
-    /* Counter-scale the zoom transform so the handle stays a constant on-screen size; the inner cluster carries it so
-       it never fights floating-ui's positioning transform on the handle itself. Right-anchored to hug the block edge. */
-    transform: scale(calc(1 / var(--page-scale, 1)));
-    transform-origin: right center;
 }
 
 /* The flat handle buttons take the muted/ink colour pair (the chrome is dropped by `icon-button--flat`). */
@@ -484,7 +480,7 @@
     position: absolute;
     top: 0.1rem;
     right: 0.1rem;
-    transform: scale(calc(1 / var(--page-scale, 1)));
+    transform: scale(var(--control-counter-scale, 1));
     transform-origin: top right;
     opacity: 0;
     transition: opacity 0.15s;
@@ -502,7 +498,7 @@
     position: absolute;
     top: 0.1rem;
     right: 0.1rem;
-    transform: scale(calc(1 / var(--page-scale, 1)));
+    transform: scale(var(--control-counter-scale, 1));
     transform-origin: top right;
     opacity: 0;
     transition: opacity 0.15s;
@@ -554,7 +550,7 @@
     width: 1.5rem;
     height: 1.4rem;
     /* Counter-scale the zoom transform so the menu stays a constant on-screen size, centred in the corner square. */
-    transform: scale(calc(1 / var(--page-scale, 1)));
+    transform: scale(var(--control-counter-scale, 1));
     opacity: 0;
     transition: opacity 0.15s;
 }

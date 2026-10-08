@@ -5,7 +5,7 @@ import type {StorageTarget} from '@lib/storage/providers/StorageProvider.ts'
 import type {SyncState} from '@lib/storage/connectionStore.ts'
 import {evaluateSync, type SyncStatus} from '@lib/storage/sync/sync.ts'
 import {autoloadIntent, autosaveIntent, chooseRemoteRevision} from '@lib/storage/sync/syncActions.ts'
-import {subscribeToStorageWrites} from '@lib/storage/observableStorage.ts'
+import {subscribeToDataWrites} from '@lib/storage/observableStorage.ts'
 import {useAutosaveFlush} from './useAutosaveFlush.ts'
 import type {ConflictPrompt} from './useStorage.ts'
 
@@ -101,10 +101,11 @@ export function useAutosave(ports: AutosavePorts): Autosave {
 
     useAutosaveFlush({hasPendingWrite, flush: flushAutosave})
 
-    // Schedule an autosave after edits settle: a persisted-atom write starts the (longer) autosave debounce, coalescing a
-    // burst of edits into one write. Cancel it on cleanup so a pending save never fires against a torn-down instance.
+    // Schedule an autosave after edits settle: a snapshot-affecting write starts the (longer) autosave debounce,
+    // coalescing a burst of edits into one write (a per-device view-key write never does). Cancel it on cleanup so a
+    // pending save never fires against a torn-down instance.
     useEffect(() => {
-        const unsubscribe = subscribeToStorageWrites(autosaveDebounced)
+        const unsubscribe = subscribeToDataWrites(autosaveDebounced)
         return () => {
             unsubscribe()
             autosaveDebounced.cancel()
