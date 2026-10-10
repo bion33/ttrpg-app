@@ -10,8 +10,10 @@ const ARTWORK_WIDTH = 815.96265
 const ARTWORK_HEIGHT = 1055.9626
 
 // The artwork id of the grey deity name plate, re-painted directly above the portrait field so the circular portrait
-// does not cover it, while the deity name/info inputs (later fields) still paint over the plate.
-const DEITY_NAME_PLATE_ID = 'path68'
+// does not cover it, while the deity name/info inputs (later fields) still paint over the plate. The id is unique to
+// this sheet's artwork (not a generic `path<n>` that also occurs in the other traced SVGs) so the `<use>` reference
+// cannot resolve to a colliding element on another mounted page.
+const DEITY_NAME_PLATE_ID = 'deityNamePlate'
 
 /**
  * Props for a character-info sheet: the localStorage-key prefix its fields persist under (one namespace per sheet page).
