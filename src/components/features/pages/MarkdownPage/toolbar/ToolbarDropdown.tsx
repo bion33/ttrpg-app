@@ -1,8 +1,8 @@
 import {useState} from 'react'
 import type {Editor} from '@tiptap/core'
 import type {LucideIcon} from 'lucide-react'
-import type {BlockAction} from './blocks/insertBlocks.ts'
-import BlockActionsMenu from './BlockActionsMenu.tsx'
+import type {BlockAction} from '../blocks/insertBlocks.ts'
+import BlockActionsMenu from '../blocks/BlockActionsMenu.tsx'
 
 /**
  * Props for a toolbar dropdown: the editor it drives, its default (no-active-member) label/icon, the grouped actions,

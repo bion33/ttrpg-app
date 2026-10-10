@@ -71,6 +71,7 @@
 }
 
 .modal__field input[type='text'],
+.modal__field input[type='url'],
 .modal__field select {
     padding: 0.5rem;
     font: inherit;

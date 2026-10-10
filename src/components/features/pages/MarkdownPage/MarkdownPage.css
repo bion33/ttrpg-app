@@ -135,6 +135,13 @@
     padding-left: 1.5rem;
 }
 
+/* Hyperlinks: the parchment ink accent, underlined so they read as links on the printed sheet too. */
+.markdown-page__content a {
+    color: var(--color-ink);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
 /* Task list: no bullets, checkbox aligned with its label. */
 .markdown-page__content ul[data-type='taskList'] {
     list-style: none;

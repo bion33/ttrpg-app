@@ -2,10 +2,10 @@ import type {ReactNode} from 'react'
 import {useState} from 'react'
 import type {Editor} from '@tiptap/core'
 import {useEditorState} from '@tiptap/react'
-import {Bold, ChevronDown, ChevronUp, Italic, Strikethrough, Underline} from 'lucide-react'
+import {Bold, ChevronDown, ChevronUp, Italic, Link as LinkIcon, Strikethrough, Underline} from 'lucide-react'
 import {useMediaQuery} from '@hooks/useMediaQuery.ts'
 import IconButton from '@ui/IconButton/IconButton.tsx'
-import {BLOCK_ACTIONS, BLOCK_GROUPS, INSERT_ACTIONS, runBlockAction} from './blocks/insertBlocks.ts'
+import {BLOCK_ACTIONS, BLOCK_GROUPS, INSERT_ACTIONS, runBlockAction} from '../blocks/insertBlocks.ts'
 import ToolbarDropdown from './ToolbarDropdown.tsx'
 
 // Below this viewport width the toolbar collapses to a single toggle button, expandable on demand.
@@ -17,6 +17,7 @@ const COLLAPSE_QUERY = '(max-width: 750px)'
 interface MarkdownToolbarProps {
     editor: Editor
     onRequestImage: () => void
+    onRequestLink: () => void
 }
 
 // The inline marks, kept here (not in insertBlocks) since the block-insert menu does not apply marks.
@@ -47,7 +48,7 @@ const OTHER_GROUPS = BLOCK_GROUPS.filter((group) => group.id !== 'heading')
  * The formatting toolbar: undo/redo, the headings dropdown, inline marks, the block dropdowns, and the insert
  * buttons, driving the editor's commands.
  */
-function MarkdownToolbar({editor, onRequestImage}: MarkdownToolbarProps) {
+function MarkdownToolbar({editor, onRequestImage, onRequestLink}: MarkdownToolbarProps) {
     const narrow = useMediaQuery(COLLAPSE_QUERY)
     const [expanded, setExpanded] = useState(false)
     const state = useEditorState({
@@ -56,6 +57,7 @@ function MarkdownToolbar({editor, onRequestImage}: MarkdownToolbarProps) {
             canUndo: editor.can().undo(),
             canRedo: editor.can().redo(),
             marks: MARKS.map((mark) => editor.isActive(mark.id)),
+            linkActive: editor.isActive('link'),
             blocks: Object.fromEntries(BLOCK_ACTIONS.map((action) => [action.id, action.isActive(editor)])),
         }),
     })
@@ -118,15 +120,24 @@ function MarkdownToolbar({editor, onRequestImage}: MarkdownToolbarProps) {
             {OTHER_GROUPS.map(renderGroup)}
             <span className="markdown-toolbar__sep"/>
 
-            {INSERT_ACTIONS.map((action) => {
+            {INSERT_ACTIONS.flatMap((action) => {
                 const ActionIcon = action.icon
-                return (
+                const button = (
                     <button key={action.id} type="button" aria-label={action.label} data-tooltip={action.label}
                             className={'markdown-toolbar__btn markdown-toolbar__btn--icon has-tooltip has-tooltip--top' +
                                 (state.blocks[action.id] ? ' is-active' : '')}
                             onClick={() => runBlockAction(action, editor, {onRequestImage})}><ActionIcon size={16}/>
                     </button>
                 )
+                // The link control (an inline mark gathered through its own dialog, not a block) sits right after image.
+                if (action.id !== 'image') return [button]
+                return [button, (
+                    <button key="link" type="button" aria-label="Link" data-tooltip="Link"
+                            className={'markdown-toolbar__btn markdown-toolbar__btn--icon has-tooltip has-tooltip--top' +
+                                (state.linkActive ? ' is-active' : '')}
+                            onClick={onRequestLink}><LinkIcon size={16}/>
+                    </button>
+                )]
             })}
         </div>
     )

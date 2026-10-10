@@ -4,7 +4,7 @@ import * as Popover from '@radix-ui/react-popover'
 import {Command} from 'cmdk'
 import type {Editor} from '@tiptap/core'
 import {useVisualViewportZoomed} from '@hooks/useVisualViewportZoomed.ts'
-import type {BlockAction} from './blocks/insertBlocks.ts'
+import type {BlockAction} from './insertBlocks.ts'
 
 /**
  * Props for the shared block-actions menu: the editor whose state marks active items, the actions it lists, the

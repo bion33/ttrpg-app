@@ -3,7 +3,7 @@ import type {Editor} from '@tiptap/core'
 import DragHandle from '@tiptap/extension-drag-handle-react'
 import {GripVertical, Plus} from 'lucide-react'
 import IconButton from '@ui/IconButton/IconButton'
-import {BLOCK_ACTIONS, type BlockAction, runBlockAction} from './blocks/insertBlocks.ts'
+import {BLOCK_ACTIONS, type BlockAction, runBlockAction} from './insertBlocks.ts'
 import BlockActionsMenu from './BlockActionsMenu.tsx'
 
 // Stable identity so the React DragHandle's effect does not tear down and re-register the plugin on every render

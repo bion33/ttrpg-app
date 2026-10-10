@@ -10,13 +10,16 @@ import {TaskItem} from '@tiptap/extension-task-item'
 import '@ui/ActionMenu/ActionMenu.css'
 import './MarkdownPage.css'
 import {Callout} from './extensions/callout.ts'
+import {Link} from './extensions/link.ts'
 import {Image} from './extensions/image/image.ts'
 import {PageBreak} from './extensions/pageBreak.ts'
 import {Pagination} from './extensions/pagination/pagination.ts'
 import {tableExtensions} from './extensions/table/tableExtensions.ts'
-import MarkdownToolbar from './MarkdownToolbar.tsx'
-import BlockHandle from './BlockHandle.tsx'
+import MarkdownToolbar from './toolbar/MarkdownToolbar.tsx'
+import BlockHandle from './blocks/BlockHandle.tsx'
 import ImageSourceModal from '@ui/ImageSourceModal/ImageSourceModal.tsx'
+import LinkModal from './link/LinkModal.tsx'
+import {applyLink, type LinkSelection, readLinkSelection, removeLink} from './link/linkCommands.ts'
 
 /**
  * Props for the markdown editor: the markdown to show (read on mount, and re-applied if it changes externally, e.g. a
@@ -38,12 +41,15 @@ function MarkdownEditor({markdown, onChange, active}: MarkdownEditorProps) {
     const [pageCount, setPageCount] = useState(1)
     // Whether the insert-image dialog is open; on confirm it inserts at the editor's current selection.
     const [imageDialogOpen, setImageDialogOpen] = useState(false)
+    // The href and label the link dialog opens with (from the selection or the link under the caret), or null when closed.
+    const [linkDialog, setLinkDialog] = useState<LinkSelection | null>(null)
     const editor = useEditor({
         extensions: [
             StarterKit.configure({link: false, codeBlock: false}),
             Markdown,
             TaskList,
             TaskItem.configure({nested: true}),
+            Link.configure({openOnClick: true, HTMLAttributes: {target: '_blank', rel: 'noopener noreferrer'}}),
             ...tableExtensions,
             Image,
             Callout,
@@ -71,7 +77,9 @@ function MarkdownEditor({markdown, onChange, active}: MarkdownEditorProps) {
                 block handle render only for the active page: an inactive page is hidden via display:none, but the portal
                 escapes that, so its toolbar would otherwise linger over the active page. */}
             {active && createPortal(
-                <MarkdownToolbar editor={editor} onRequestImage={() => setImageDialogOpen(true)}/>, document.body)}
+                <MarkdownToolbar editor={editor} onRequestImage={() => setImageDialogOpen(true)}
+                                 onRequestLink={() => setLinkDialog(readLinkSelection(editor))}/>,
+                document.body)}
             {active && <BlockHandle editor={editor} onRequestImage={() => setImageDialogOpen(true)}/>}
             {/* Portalled to the body like the toolbar: rendered in place it would sit inside the zoomed, page-tall
                 `.binder-view` transform, which confines its fixed backdrop to the editor and scales it. */}
@@ -82,6 +90,20 @@ function MarkdownEditor({markdown, onChange, active}: MarkdownEditorProps) {
                         setImageDialogOpen(false)
                     }}
                     onCancel={() => setImageDialogOpen(false)}
+                />, document.body)}
+            {linkDialog && createPortal(
+                <LinkModal
+                    initialUrl={linkDialog.url}
+                    initialLabel={linkDialog.label}
+                    onSubmit={(link) => {
+                        applyLink(editor, link)
+                        setLinkDialog(null)
+                    }}
+                    onRemove={() => {
+                        removeLink(editor)
+                        setLinkDialog(null)
+                    }}
+                    onCancel={() => setLinkDialog(null)}
                 />, document.body)}
             <div className="md-sheets">
                 {/* One A4 sheet per page behind the flow; the first fuses with the active tab, the rest stack below. */}
