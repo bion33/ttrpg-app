@@ -115,7 +115,7 @@ export type AbilitiesSection = {
  * the two together, so they are created in one factory-bound scope.
  */
 export function buildAbilities(factory: SheetFactory): AbilitiesSection {
-    const {inputNode, checkNode, computedInputNode, derivedNode} = factory
+    const {inputNode, checkNode, numericNode, computedInputNode, derivedNode} = factory
 
     // Toggle for the passive-perception auto-calculation; when checked, passive Perception is derived.
     const enablePassivePerceptionCalculation = checkNode({
@@ -134,14 +134,15 @@ export function buildAbilities(factory: SheetFactory): AbilitiesSection {
     ) as { [A in Ability as A['name']]: AbilityNodes<A> }
 
     const abilityMeta = {
-        proficiencyBonus: inputNode({
+        proficiencyBonus: numericNode({
             id: 'proficiencyBonus',
             x: 44,
             y: 166.27,
             width: 40,
             height: 32,
             type: 'number',
-            fontSize: 28
+            fontSize: 28,
+            signed: true
         }),
         inspiration: inputNode({id: 'inspiration', x: 151, y: 172, width: 11, height: 11, type: 'check'}),
         enablePassivePerceptionCalculation,
