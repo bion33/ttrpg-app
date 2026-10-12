@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/dnd.iml" filepath="$PROJECT_DIR$/.idea/dnd.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ttrpg-app.iml" filepath="$PROJECT_DIR$/.idea/dnd.iml" />
     </modules>
   </component>
 </project>
