@@ -1,5 +1,5 @@
 import {createJSONStorage} from 'jotai/utils'
-import {SYNC_IGNORE_KEYS} from './snapshot.ts'
+import {isIgnoredKey} from './snapshot.ts'
 
 // The synchronous jotai storage shape, derived from createJSONStorage since jotai does not re-export the type.
 type NotifyingStorage<Value> = ReturnType<typeof createJSONStorage<Value>>
@@ -62,7 +62,7 @@ export function subscribeToStorageWrites(listener: (key?: string) => void): () =
  */
 export function subscribeToDataWrites(listener: () => void): () => void {
     return subscribeToStorageWrites((key) => {
-        if (key !== undefined && SYNC_IGNORE_KEYS.has(key)) return
+        if (key !== undefined && isIgnoredKey(key)) return
         listener()
     })
 }

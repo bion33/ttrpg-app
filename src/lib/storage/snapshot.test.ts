@@ -30,7 +30,7 @@ function fakeStorage(initial: Record<string, string> = {}): StorageLike {
 
 describe('createSnapshot', () => {
     it('reads character data and stamps the current version, leaving out per-device view keys', () => {
-        const storage = fakeStorage({binders: '[]', location: '{}', pageWidthFraction: '0.5'})
+        const storage = fakeStorage({binders: '[]', location: '{}', pageWidthFraction: '0.5', 'hero:activePage': 'p1'})
         const snapshot = createSnapshot(storage, 'rev-1', '2026-01-01T00:00:00.000Z')
         expect(snapshot.entries).toEqual({binders: '[]'})
         expect(snapshot.version).toBe(CURRENT_VERSION)
@@ -60,10 +60,13 @@ describe('applySnapshot', () => {
     })
 
     it("keeps the device's own view keys across a load", () => {
-        const destination = fakeStorage({location: '{"binderId":"local"}', pageWidthFraction: '0.7', stale: 'x'})
+        const destination = fakeStorage({
+            location: '{"binderId":"local"}', pageWidthFraction: '0.7', 'hero:activePage': 'p1', stale: 'x',
+        })
         applySnapshot(destination, createSnapshot(fakeStorage({fresh: 'y'}), 'rev', 'now'))
         expect(destination.getItem('location')).toBe('{"binderId":"local"}')
         expect(destination.getItem('pageWidthFraction')).toBe('0.7')
+        expect(destination.getItem('hero:activePage')).toBe('p1')
         expect(destination.getItem('stale')).toBeNull()
     })
 

@@ -17,10 +17,18 @@ export interface LibrarySnapshot {
 export const SCHEMA_VERSION_KEY = 'schemaVersion'
 
 /**
- * Per-device keys excluded from the snapshot so they never sync between devices, and preserved locally across a load:
- * the page zoom level and the local schema version.
+ * The fixed per-device keys excluded from the snapshot. Suffixed per-device keys (e.g. each binder's active page) are
+ * matched by `isIgnoredKey` instead, so this set holds only the whole-key names.
  */
 export const SYNC_IGNORE_KEYS = new Set(['location', 'pageWidthFraction', SCHEMA_VERSION_KEY])
+
+/**
+ * Whether a key is a per-device view preference excluded from the snapshot so it never syncs and never counts as a
+ * library edit: the fixed keys above, or any binder's remembered active-page id (one such key per binder prefix).
+ */
+export function isIgnoredKey(key: string): boolean {
+    return SYNC_IGNORE_KEYS.has(key) || key.endsWith(':activePage')
+}
 
 /**
  * The subset of the Storage API the snapshot layer uses; window.localStorage satisfies it, and tests inject a fake.
@@ -47,7 +55,7 @@ export function createSnapshot(storage: StorageLike, revision: string, savedAt: 
     const entries: Record<string, string> = {}
     for (let index = 0; index < storage.length; index++) {
         const key = storage.key(index)
-        if (key === null || SYNC_IGNORE_KEYS.has(key)) continue
+        if (key === null || isIgnoredKey(key)) continue
         const value = storage.getItem(key)
         if (value !== null) entries[key] = value
     }
@@ -61,7 +69,9 @@ export function createSnapshot(storage: StorageLike, revision: string, savedAt: 
 export function applySnapshot(storage: StorageLike, snapshot: LibrarySnapshot): void {
     const migrated = migrateSnapshot(snapshot)
     const preservedView: Record<string, string> = {}
-    for (const key of SYNC_IGNORE_KEYS) {
+    for (let index = 0; index < storage.length; index++) {
+        const key = storage.key(index)
+        if (key === null || !isIgnoredKey(key)) continue
         const value = storage.getItem(key)
         if (value !== null) preservedView[key] = value
     }
@@ -117,7 +127,7 @@ export function appliedBaseHash(snapshot: LibrarySnapshot): string {
     const migrated = migrateSnapshot(snapshot)
     const entries: Record<string, string> = {}
     for (const [key, value] of Object.entries(migrated.entries)) {
-        if (SYNC_IGNORE_KEYS.has(key)) continue
+        if (isIgnoredKey(key)) continue
         entries[key] = value
     }
     return snapshotHash({...migrated, entries})

@@ -2,7 +2,7 @@ import {createContext, useCallback, useContext, useEffect, useMemo, useRef, useS
 import {toast} from 'sonner'
 import {useDebouncedCallback} from 'use-debounce'
 import type {LibrarySnapshot} from '@lib/storage/snapshot.ts'
-import {appliedBaseHash, applySnapshot, createSnapshot, snapshotHash, SYNC_IGNORE_KEYS} from '@lib/storage/snapshot.ts'
+import {appliedBaseHash, applySnapshot, createSnapshot, isIgnoredKey, snapshotHash} from '@lib/storage/snapshot.ts'
 import type {ProviderId} from '@lib/storage/providers/StorageProvider.ts'
 import {getProvider} from '@lib/storage/providers/providers.ts'
 import {evaluateSync, type SyncStatus} from '@lib/storage/sync/sync.ts'
@@ -126,7 +126,7 @@ const googleDrivePorts: CloudConnectionPorts<GoogleDriveConnection> = {
 // True when a snapshot holds any binder, page, or field data (an empty binder list and view keys do not count).
 function libraryHasData(snapshot: LibrarySnapshot): boolean {
     return Object.entries(snapshot.entries).some(([key, value]) => {
-        if (SYNC_IGNORE_KEYS.has(key)) return false
+        if (isIgnoredKey(key)) return false
         if (key === 'binders') return value.trim() !== '' && value.trim() !== '[]'
         return true
     })
