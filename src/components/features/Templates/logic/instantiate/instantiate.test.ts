@@ -2,27 +2,32 @@ import {describe, expect, it} from 'vitest'
 import {instantiateBinderTemplate} from './instantiate.ts'
 import type {BinderTemplate} from '../../templateTypes.ts'
 
-// A deterministic id factory: sequential ids so the output can be asserted exactly.
-function sequentialIds(): () => string {
-    let next = 0
-    return () => `id-${next++}`
-}
-
 describe('instantiateBinderTemplate', () => {
-    it('builds pages in order with fresh ids doubling as storage prefix, preserving label/type/hue', () => {
+    it('builds pages in order with slug ids doubling as storage prefix, preserving label/type/hue', () => {
         const template: BinderTemplate = {
             id: 'template', label: 'Adventurer', pages: [
-                {id: 'a', label: 'Sheet', type: 'characterSheet', hue: 10},
+                {id: 'a', label: 'Character Sheet', type: 'characterSheet', hue: 10},
                 {id: 'b', label: 'Log', type: 'markdown', hue: 20},
             ],
         }
 
-        const {pages} = instantiateBinderTemplate(template, sequentialIds())
+        const {pages} = instantiateBinderTemplate(template)
 
         expect(pages).toEqual([
-            {id: 'id-0', label: 'Sheet', type: 'characterSheet', hue: 10, storagePrefix: 'id-0'},
-            {id: 'id-1', label: 'Log', type: 'markdown', hue: 20, storagePrefix: 'id-1'},
+            {id: 'character-sheet', label: 'Character Sheet', type: 'characterSheet', hue: 10, storagePrefix: 'character-sheet'},
+            {id: 'log', label: 'Log', type: 'markdown', hue: 20, storagePrefix: 'log'},
         ])
+    })
+
+    it('disambiguates duplicate tab labels within the new binder', () => {
+        const template: BinderTemplate = {
+            id: 'template', label: 'Twins', pages: [
+                {id: 'a', label: 'Notes', type: 'markdown', hue: 10},
+                {id: 'b', label: 'Notes', type: 'markdown', hue: 20},
+            ],
+        }
+
+        expect(instantiateBinderTemplate(template).pages.map((page) => page.id)).toEqual(['notes', 'notes-2'])
     })
 
     it('seeds only markdown tabs that reference a template, carrying the created page id', () => {
@@ -34,14 +39,14 @@ describe('instantiateBinderTemplate', () => {
             ],
         }
 
-        const {seeds} = instantiateBinderTemplate(template, sequentialIds())
+        const {seeds} = instantiateBinderTemplate(template)
 
-        expect(seeds).toEqual([{pageId: 'id-1', markdownTemplateId: 'spells-template'}])
+        expect(seeds).toEqual([{pageId: 'spells', markdownTemplateId: 'spells-template'}])
     })
 
     it('yields empty pages and seeds for a template with no tabs', () => {
         const template: BinderTemplate = {id: 'template', label: 'Empty', pages: []}
 
-        expect(instantiateBinderTemplate(template, sequentialIds())).toEqual({pages: [], seeds: []})
+        expect(instantiateBinderTemplate(template)).toEqual({pages: [], seeds: []})
     })
 })

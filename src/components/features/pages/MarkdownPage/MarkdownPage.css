@@ -123,6 +123,12 @@
     margin: 1rem 0 0.5rem;
 }
 
+/* Leave a gap above a heading that an in-app link scrolls to, so it is not jammed against the top edge; only affects
+   scroll-into-view (heading anchors), never layout. */
+.markdown-page__content :is(h1, h2, h3, h4, h5, h6) {
+    scroll-margin-top: 10vh;
+}
+
 .markdown-page__content blockquote {
     margin: 0;
     padding-left: 1rem;

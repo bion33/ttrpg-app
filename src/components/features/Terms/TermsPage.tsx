@@ -1,5 +1,5 @@
+import {Link} from 'react-router'
 import InfoPage from '@ui/InfoPage/InfoPage.tsx'
-import RouteLink from '@ui/RouteLink/RouteLink.tsx'
 
 /**
  * The standalone terms-of-service page: states that the app is free and provided as-is, and that any storage provider
@@ -18,7 +18,7 @@ function TermsPage() {
 
             <h2>Privacy and data</h2>
             <p>
-                How your data is handled is described in the <RouteLink route="privacy">privacy page</RouteLink>.
+                How your data is handled is described in the <Link to="/privacy">privacy page</Link>.
                 You are responsible for the content you create and for keeping your own back-ups. The app does its very best
                 to keep your data safe, but you remain responsible for creating a copy of anything important to you.
             </p>

@@ -1,5 +1,5 @@
 import hashSum from 'hash-sum'
-import {CURRENT_VERSION, migrateSnapshot} from '../../migrations/migrations.ts'
+import {CURRENT_VERSION, migrateSnapshot, MIGRATIONS, runMigrations} from '../../migrations/migrations.ts'
 
 /**
  * A whole-library snapshot: every localStorage entry plus the version it conforms to, a revision GUID identifying this
@@ -12,11 +12,15 @@ export interface LibrarySnapshot {
     entries: Record<string, string>
 }
 
+// The device-local key holding the schema version the live localStorage conforms to, so the boot migration knows where
+// to start. Kept out of the snapshot (it describes this device's local shape, not shared content).
+export const SCHEMA_VERSION_KEY = 'schemaVersion'
+
 /**
- * Per-device view keys (which binder/page is open, the page zoom level) excluded from the snapshot so they never sync
- * between devices, and preserved locally across a load.
+ * Per-device keys excluded from the snapshot so they never sync between devices, and preserved locally across a load:
+ * the page zoom level and the local schema version.
  */
-export const SYNC_IGNORE_KEYS = new Set(['location', 'pageWidthFraction'])
+export const SYNC_IGNORE_KEYS = new Set(['location', 'pageWidthFraction', SCHEMA_VERSION_KEY])
 
 /**
  * The subset of the Storage API the snapshot layer uses; window.localStorage satisfies it, and tests inject a fake.
@@ -68,6 +72,29 @@ export function applySnapshot(storage: StorageLike, snapshot: LibrarySnapshot): 
     for (const [key, value] of Object.entries(preservedView)) {
         storage.setItem(key, value)
     }
+}
+
+/**
+ * Runs the boot-phase migrations against live localStorage in place, bringing an existing install up to the current
+ * schema before any atom reads it, then stamps the local schema version so it never re-runs. A missing version means a
+ * pre-versioning install (defaults to 1); a brand-new empty store no-ops the transform and is simply stamped.
+ */
+export function migrateLocalStorage(storage: StorageLike): void {
+    const stored = storage.getItem(SCHEMA_VERSION_KEY)
+    const parsed = stored === null ? NaN : Number.parseInt(stored, 10)
+    const fromVersion = Number.isNaN(parsed) ? 1 : parsed
+    if (fromVersion >= CURRENT_VERSION) return
+    const entries: Record<string, string> = {}
+    for (let index = 0; index < storage.length; index++) {
+        const key = storage.key(index)
+        if (key === null) continue
+        const value = storage.getItem(key)
+        if (value !== null) entries[key] = value
+    }
+    const migrated = runMigrations(entries, fromVersion, MIGRATIONS, 'boot')
+    storage.clear()
+    for (const [key, value] of Object.entries(migrated)) storage.setItem(key, value)
+    storage.setItem(SCHEMA_VERSION_KEY, String(CURRENT_VERSION))
 }
 
 /**

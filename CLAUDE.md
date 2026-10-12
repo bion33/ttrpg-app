@@ -160,25 +160,57 @@ sheet→page via CSS fragmentation. Block insert/apply actions have a **single
 source of truth** (`blocks/insertBlocks.ts`) projected into both the toolbar and
 the block handle so they never drift.
 
+**In-app links.** A link's href is either an external http(s) URL (opened in a new
+browser tab) or an **in-app link** whose href is a real app route path — a binder
+page (`/binders/<slug>/<slug>`), optionally with a `#heading`, or a bare `#heading`
+on the current page. The `link/LinkModal` offers a Web-URL / In-app toggle, the
+in-app mode picking a binder, page, and optional heading from the live atoms. A
+delegated click handler (`link/linkClick.ts`, `openOnClick: false`) routes a plain
+click: internal hrefs navigate client-side via react-router, external ones open a
+tab, modified clicks fall through to the browser. Heading anchors are
+**GitHub-style slugs** set as DOM `id`s by the `headingAnchors` extension via a node
+**decoration** (never serialized into the markdown); `logic/headings/` is the pure,
+tested source for both those ids and the modal's targets, so they always agree.
+Scrolling leans on the browser's native hash behaviour plus one effect keyed on the
+router hash (`link/headingScroll.ts`) that retries for a page that just
+deferred-mounted.
+
 ### Library / Binder / navigation
 
 - `App` holds the jotai store in state inside a `<Provider>` and exposes
   `remount()` (a fresh store) via `StorageRemountContext`, so a storage **load**
   can swap the store and make every `atomWithStorage` atom re-read bulk-rewritten
   `localStorage`.
-- The **library** is a grid of binder covers (`atomWithStorage('binders', …)`,
-  empty by default). A binder's `id` is a `crypto.randomUUID()` GUID
-  (`@lib/ids/newId.ts`) that survives renames and is the **storage-prefix root**
-  every one of its pages persists under.
-- A `Binder` renders per open binder, keyed by id. Its page list is a
+- The **library** is a grid of binder covers (`bindersAtom` in
+  `Library/libraryAtoms.ts`, empty by default).
+- **Ids are frozen slugs, not GUIDs.** A binder, page, and markdown template is
+  identified by a human-readable slug generated once at creation from its label
+  (`@lib/navigation/slug.ts`: `slugify` + `uniqueSlug`/`dedupeSlugs`, with a
+  `binder`/`page`/`template` fallback) and **frozen** on rename. The slug *is* the
+  id and the **storage-prefix root** — no slug↔GUID indirection. Uniqueness is
+  scoped: binders and markdown templates library-wide, pages within their binder.
+  Binder templates and their structural pages are not URL-addressable, so they keep
+  GUID ids (`@lib/ids/newId.ts`). A one-off boot migration (v4) converted existing
+  GUID data (see Storage / sync).
+- **The URL is the source of truth for location**, via **react-router** (one route
+  table in `AppContent`). `/` is the shelf; `/binders/:binderSlug` and
+  `/binders/:binderSlug/:pageSlug` both render **one** `Binder` (it reads the page
+  slug from `useParams` to pick the active page among its always-mounted children,
+  so a tab switch — `navigate(binderPath(...))` — never unmounts); `/templates/
+  :templateSlug` is the markdown-template editor; `/privacy`, `/terms`, `/ginfo` are
+  the legal pages; `*` redirects to `/`. Build paths with `@lib/navigation/
+  routePaths.ts`, never string literals. OAuth callback pages in `public/` are
+  static files served outside the SPA, so the router never claims them.
+- A `Binder` renders per open binder, keyed by slug. Its page list is a
   **per-binder** atom (`pagesAtom(prefix)`, one cached instance per prefix, shared
   with the library shelf). Pages are serialisable metadata (`id`, `label`, `type`,
   `storagePrefix`); each page persists under `pagePrefix(binderPrefix, pageId)`.
   Visited pages stay **mounted but hidden** so tab switches are instant.
-- **The active page is the app-wide location**, not per-binder state. A pure
-  `Location` type (`@lib/navigation`) captures which binder/page or markdown
-  template is open. `useNavigation` backs it with the browser History API so
-  Back/Forward work; all navigation goes through `useNavigate`.
+- **Store-remount survival.** The `BrowserRouter` lives **outside** the swapped
+  jotai `<Provider>` (in `main.tsx`), so the URL survives a storage load swapping
+  the store. After a load the open slug may no longer exist, so each routed surface
+  resolves its slug against the freshly-read atoms and renders `<Navigate to="/"
+  replace/>` when it does not match — the same guard covers a stale/typo URL.
 - Page-view zoom is the shared **`PageViewport`** scaffold: it owns the scaled
   `.binder-view` wrapper, publishes `--page-scale` (so in-page controls can
   counter-scale to a constant on-screen size), and holds the zoom controls. Zoom
@@ -238,7 +270,18 @@ folder: it bundles the snapshot + referenced images into a portable **zip** (via
   clouds' stored connections (`useCloudConnection.reset`, orchestrated in
   `useStorage`), so switching clouds leaves no stale connection behind.
 - Migrations: append-only, **one file per version** in `src/migrations/`, never
-  edit or renumber an existing one.
+  edit or renumber an existing one. Each declares a **phase**: `'snapshot'` (runs
+  only when applying an incoming snapshot — a normalization that must not touch live
+  local data), `'boot'` (runs only at startup against live `localStorage`), or
+  `'both'` (changes the canonical stored shape, so it must converge every path).
+  The snapshot-apply path (`migrateSnapshot`) runs snapshot-phase migrations; a
+  **boot path** (`migrateLocalStorage`, called synchronously in `main.tsx` before
+  any atom initialises) runs boot-phase migrations against live data in place and
+  stamps a device-local `schemaVersion` key so it never re-runs — therefore a
+  shape-changing boot transform must be **idempotent on already-migrated data**.
+  The frozen-slug conversion (v4) is `'both'`, so live data and GUID-era snapshots
+  converge; a `'both'` migration must dedupe exactly as the runtime creation path
+  does (both via `@lib/navigation/slug.ts`).
 - Orchestration is `useStorage()` (+ `useAutosave`, `useAutosaveFlush`,
   `useCloudConnection`), held in a single instance above the library/binder switch
   via `StorageProvider`/`storageContext` so navigation does not remount it.

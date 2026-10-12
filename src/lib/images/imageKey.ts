@@ -1,4 +1,5 @@
 import {isHttpUrl} from '@lib/url/httpUrl.ts'
+import {slugify} from '@lib/navigation/slug.ts'
 
 // The folder every stored image path lives under, so a path is at once the OPFS path, the markdown link target, the
 // cloud filename, and the zip entry.
@@ -36,13 +37,11 @@ export function imageExtension(fileName: string): string {
     return fileName.slice(lastDot + 1).toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
-// A filesystem-safe slug of a filename's base (no extension): lower-cased, non-alphanumerics collapsed to single
-// dashes, with leading/trailing dashes trimmed; falls back to 'image' when nothing usable remains.
+// A filesystem-safe slug of a filename's base (no extension), falling back to 'image' when nothing usable remains.
 function slugFileName(fileName: string): string {
     const lastDot = fileName.lastIndexOf('.')
     const base = lastDot > 0 ? fileName.slice(0, lastDot) : fileName
-    const slug = base.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-    return slug === '' ? 'image' : slug
+    return slugify(base) || 'image'
 }
 
 /**

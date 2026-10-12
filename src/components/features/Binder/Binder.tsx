@@ -1,5 +1,7 @@
 import type {CSSProperties} from 'react'
 import {useState} from 'react'
+import {Navigate, useNavigate, useParams} from 'react-router'
+import {useAtomValue} from 'jotai'
 import {Library} from 'lucide-react'
 import IconButton from '@ui/IconButton/IconButton'
 import './Binder.css'
@@ -10,36 +12,33 @@ import PageViewport from '@features/PageViewport/PageViewport.tsx'
 import EditTabModal from './tabs/modals/EditTabModal.tsx'
 import ConfirmModal from '@ui/ConfirmModal/ConfirmModal'
 import {pagePrefix} from './binderAtoms.ts'
+import {bindersAtom} from '@features/Library/libraryAtoms.ts'
 import {PAGE_REGISTRY} from './pageRegistry.tsx'
 import {useBinderPages} from './useBinderPages.ts'
 import {tabBorderColor} from '@lib/colors/hueColors.ts'
+import {binderPath, libraryPath} from '@lib/navigation/routePaths.ts'
 import {A4_WIDTH_PX} from '@lib/paper/paperSize.ts'
 import EmptyPage from '@pages/EmptyPage/EmptyPage'
-import {useNavigate} from '@hooks/useNavigation.ts'
 import StorageControls from '@features/Storage/StorageControls.tsx'
 
 /**
- * Props for a binder: the storage prefix (its library id) all its pages persist under, and the callback that returns
- * to the library shelf.
+ * The whole page area of one binder, addressed by the URL's binder slug (and optional page slug): the active page
+ * beside the binder-tab strip, with controls to add pages and return to the library. An unknown binder slug (e.g. a
+ * stale URL after a storage load) redirects to the library.
  */
-interface BinderProps {
-    storagePrefix: string
-    onExit: () => void
-}
-
-/**
- * The whole page area of one binder: the active page beside the binder-tab strip, with controls to add pages and
- * return to the library.
- */
-function Binder({storagePrefix, onExit}: BinderProps) {
+function Binder() {
+    const {binderSlug = '', pageSlug} = useParams()
+    const binders = useAtomValue(bindersAtom)
     const navigate = useNavigate()
-    const {pages, active, visited, createPage, editPage, deletePage, reorderPages} = useBinderPages(storagePrefix)
+    const {pages, active, visited, createPage, editPage, deletePage, reorderPages} = useBinderPages(binderSlug, pageSlug)
     const [adding, setAdding] = useState(false)
     // The last tab's element, watched so the back-to-top button appears once it scrolls out of view.
     const [lastTab, setLastTab] = useState<HTMLElement | null>(null)
     // Which edit dialogue is open for the active tab, if any.
     const [editing, setEditing] = useState<'edit' | 'delete' | null>(null)
     const naturalWidth = active ? PAGE_REGISTRY[active.type].naturalWidth : A4_WIDTH_PX
+
+    if (!binders.some((binder) => binder.id === binderSlug)) return <Navigate to={libraryPath()} replace/>
 
     return (
         <div className="app-shell" style={{'--sheet-border-color': tabBorderColor(active?.hue ?? 0)} as CSSProperties}>
@@ -51,21 +50,22 @@ function Binder({storagePrefix, onExit}: BinderProps) {
                     <main key={page.id} hidden={page.id !== active.id}
                           className={`page${page.type === 'markdown' ? ' page--bare' : ''}`}>
                         {PAGE_REGISTRY[page.type].render(
-                            pagePrefix(storagePrefix, page.storagePrefix), page.id === active.id, page.label,
+                            pagePrefix(binderSlug, page.storagePrefix), page.id === active.id, page.label,
                         )}
                     </main>
                 )) : (
                     <main className="page"><EmptyPage/></main>
                 )}
                 <Tabs tabs={pages} activeId={active?.id ?? ''}
-                      onSelect={(id) => navigate({binderId: storagePrefix, pageId: id})} onReorder={reorderPages}
+                      onSelect={(id) => navigate(binderPath(binderSlug, id))} onReorder={reorderPages}
                       onLastTabChange={setLastTab}/>
             </PageViewport>
             <TabControls onAdd={() => setAdding(true)} hasActive={!!active} onEdit={() => setEditing('edit')}
                          onDelete={(event) => (event.shiftKey ? deletePage() : setEditing('delete'))}
                          lastTab={lastTab}/>
             <StorageControls placement="binder" leading={
-                <IconButton icon={<Library/>} label="Back to library" labelSide="right" onClick={onExit}/>
+                <IconButton icon={<Library/>} label="Back to library" labelSide="right"
+                            onClick={() => navigate(libraryPath())}/>
             }/>
             {adding && (
                 <AddTabModal

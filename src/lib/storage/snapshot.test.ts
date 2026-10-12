@@ -1,6 +1,6 @@
 import {describe, expect, it} from 'vitest'
 import type {StorageLike} from './snapshot.ts'
-import {appliedBaseHash, applySnapshot, createSnapshot, snapshotHash} from './snapshot.ts'
+import {appliedBaseHash, applySnapshot, createSnapshot, migrateLocalStorage, SCHEMA_VERSION_KEY, snapshotHash} from './snapshot.ts'
 import {CURRENT_VERSION} from '../../migrations/migrations.ts'
 
 /** A minimal in-memory Storage used to exercise the snapshot layer without a real localStorage. */
@@ -96,5 +96,30 @@ describe('appliedBaseHash', () => {
         applySnapshot(destination, remote)
         const appliedHash = snapshotHash(createSnapshot(destination, remote.revision, remote.savedAt))
         expect(appliedBaseHash(remote)).toBe(appliedHash)
+    })
+})
+
+describe('migrateLocalStorage', () => {
+    const GUID = '11111111-1111-4111-8111-111111111111'
+
+    it('migrates pre-versioning live data in place and stamps the current version', () => {
+        const storage = fakeStorage({binders: JSON.stringify([{id: GUID, label: 'Hero'}]), pageWidthFraction: '0.7'})
+        migrateLocalStorage(storage)
+        expect(JSON.parse(storage.getItem('binders')!)[0].id).toBe('hero')
+        expect(storage.getItem('pageWidthFraction')).toBe('0.7')
+        expect(storage.getItem(SCHEMA_VERSION_KEY)).toBe(String(CURRENT_VERSION))
+    })
+
+    it('stamps a brand-new empty store without changing content', () => {
+        const storage = fakeStorage()
+        migrateLocalStorage(storage)
+        expect(storage.getItem(SCHEMA_VERSION_KEY)).toBe(String(CURRENT_VERSION))
+    })
+
+    it('is a no-op once already at the current version', () => {
+        const storage = fakeStorage({[SCHEMA_VERSION_KEY]: String(CURRENT_VERSION), binders: JSON.stringify([{id: GUID, label: 'Hero'}])})
+        migrateLocalStorage(storage)
+        // The GUID id is left untouched because the migration did not run.
+        expect(JSON.parse(storage.getItem('binders')!)[0].id).toBe(GUID)
     })
 })

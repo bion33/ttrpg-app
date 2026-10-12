@@ -1,19 +1,16 @@
 import type {MouseEvent} from 'react'
 import {useState} from 'react'
 import {useAtom, useAtomValue, useStore} from 'jotai'
-import {atomWithStorage} from 'jotai/utils'
-import {notifyingStorage, removeStorageByPrefix} from '@lib/storage/observableStorage.ts'
+import {removeStorageByPrefix} from '@lib/storage/observableStorage.ts'
+import {Link, useNavigate} from 'react-router'
 import {BookDashed, SquareDashedText} from 'lucide-react'
 import './Library.css'
-import Binder from '@features/Binder/Binder.tsx'
 import {activePageAtom, pagePrefix, pagesAtom, portraitAtom} from '@features/Binder/binderAtoms.ts'
-import {libraryLocation} from '@lib/navigation/navigation.ts'
-import {useLocation, useNavigate} from '@hooks/useNavigation.ts'
+import {binderPath} from '@lib/navigation/routePaths.ts'
 import {tabHue} from '@lib/colors/tabHue.ts'
 import {compareByLabel} from '@lib/sorting/compareByLabel.ts'
-import {newId} from '@lib/ids/newId.ts'
+import {uniqueSlug} from '@lib/navigation/slug.ts'
 import IconButton from '@ui/IconButton/IconButton'
-import RouteLink from '@ui/RouteLink/RouteLink.tsx'
 import ConfirmModal from '@ui/ConfirmModal/ConfirmModal'
 import AddBinderModal from './modals/AddBinderModal.tsx'
 import EditBinderModal from './modals/EditBinderModal.tsx'
@@ -24,19 +21,8 @@ import MarkdownTemplatesModal from '@features/Templates/MarkdownTemplatesModal.t
 import BinderTemplatesModal from '@features/Templates/BinderTemplatesModal.tsx'
 import {binderTemplatesAtom, seedMarkdownContent} from '@features/Templates/templateAtoms.ts'
 import {instantiateBinderTemplate} from '@features/Templates/logic/instantiate/instantiate.ts'
-
-/**
- * A binder in the library: an opaque id (also the storage-prefix root every one of its pages persists under), a
- * display label, and the hue of its spine on the shelf. Its cover portrait lives in its own per-binder atom.
- */
-interface LibraryBinderItem {
-    id: string
-    label: string
-    hue: number
-}
-
-/** The user's binders, loaded from and persisted to storage. Empty until the user adds one. */
-const bindersAtom = atomWithStorage<LibraryBinderItem[]>('binders', [], notifyingStorage<LibraryBinderItem[]>())
+import type {LibraryBinderItem} from './libraryAtoms.ts'
+import {bindersAtom} from './libraryAtoms.ts'
 
 /**
  * One binder cover on the shelf, subscribed to that binder's persisted pages and last-active page so its decorative
@@ -74,27 +60,24 @@ function Library() {
     const [binders, setBinders] = useAtom(bindersAtom)
     const binderTemplates = useAtomValue(binderTemplatesAtom)
     const store = useStore()
-    const location = useLocation()
     const navigate = useNavigate()
-    const openId = location.binderId
     const [adding, setAdding] = useState(false)
     // Which template manager is open, if any.
     const [managing, setManaging] = useState<'markdown' | 'binder' | null>(null)
     // The binder targeted by the open edit or delete dialogue, if any.
     const [editing, setEditing] = useState<LibraryBinderItem | null>(null)
     const [deleting, setDeleting] = useState<LibraryBinderItem | null>(null)
-    const open = binders.find((binder) => binder.id === openId)
     // Displayed in name order (case-insensitive); the stored list keeps its own order for stable default hues.
     const sorted = [...binders].sort(compareByLabel)
 
-    // Adds a binder with a fresh id and a spread-out default spine hue; when built from a template, its tabs (and any
-    // markdown content seeded from referenced templates) are created up front. The shelf stays open so it appears.
+    // Adds a binder with a frozen slug id and a spread-out default spine hue; when built from a template, its tabs (and
+    // any markdown content seeded from referenced templates) are created up front. The shelf stays open so it appears.
     function createBinder(name: string, fromTemplateId?: string) {
-        const id = newId()
+        const id = uniqueSlug(name, binders.map((binder) => binder.id), 'binder')
         setBinders([...binders, {id, label: name, hue: tabHue(binders.length)}])
         const template = fromTemplateId ? binderTemplates.find((candidate) => candidate.id === fromTemplateId) : undefined
         if (template) {
-            const {pages, seeds} = instantiateBinderTemplate(template, newId)
+            const {pages, seeds} = instantiateBinderTemplate(template)
             store.set(pagesAtom(id), pages)
             for (const seed of seeds) {
                 seedMarkdownContent(store, pagePrefix(id, seed.pageId), seed.markdownTemplateId)
@@ -120,8 +103,6 @@ function Library() {
         setDeleting(null)
     }
 
-    if (open) return <Binder key={open.id} storagePrefix={open.id} onExit={() => navigate(libraryLocation())}/>
-
     return (
         <div className="library">
             <div className="library__grid">
@@ -129,8 +110,8 @@ function Library() {
                     <LibraryShelfBinder
                         key={binder.id}
                         binder={binder}
-                        // Reopen the binder at its remembered active page.
-                        onOpen={(activePageId) => navigate({binderId: binder.id, pageId: activePageId})}
+                        // Reopen the binder at its remembered active page (its slug alone when none is remembered).
+                        onOpen={(activePageId) => navigate(binderPath(binder.id, activePageId || undefined))}
                         onEdit={() => setEditing(binder)}
                         onDelete={(event) => (event.shiftKey ? removeBinder(binder.id) : setDeleting(binder))}
                     />
@@ -145,8 +126,8 @@ function Library() {
             <nav className="library__legal no-print">
                 <a href="https://github.com/bion33/ttrpg-app" className="library__legal-link"
                    target="_blank" rel="noreferrer">GitHub</a>
-                <RouteLink route="privacy" className="library__legal-link">Privacy</RouteLink>
-                <RouteLink route="terms" className="library__legal-link">Terms</RouteLink>
+                <Link to="/privacy" className="library__legal-link">Privacy</Link>
+                <Link to="/terms" className="library__legal-link">Terms</Link>
             </nav>
 
             <div className="library__templates corner-cluster no-print">

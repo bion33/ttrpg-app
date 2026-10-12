@@ -1,7 +1,8 @@
 import {useEffect, useState} from 'react'
 import {useAtom, useSetAtom, useStore} from 'jotai'
-import {useLocation, useNavigate} from '@hooks/useNavigation.ts'
-import {newId} from '@lib/ids/newId.ts'
+import {useNavigate} from 'react-router'
+import {uniqueSlug} from '@lib/navigation/slug.ts'
+import {binderPath} from '@lib/navigation/routePaths.ts'
 import {tabHue} from '@lib/colors/tabHue.ts'
 import {seedMarkdownContent} from '@features/Templates/templateAtoms.ts'
 import type {PageType} from './pageTypes.ts'
@@ -27,16 +28,15 @@ export interface BinderPages {
 /**
  * Owns one binder's page list: the persisted pages/active-page atoms, the add/edit/delete/reorder handlers (each
  * navigating and persisting), the remembered-active-page mirror, and the visited-ids set that keeps visited pages
- * mounted. Keeps `Binder` a thin layout component.
+ * mounted. The active page is the one named by the URL's page slug (falling back to the first page). Keeps `Binder` a
+ * thin layout component.
  */
-export function useBinderPages(storagePrefix: string): BinderPages {
+export function useBinderPages(storagePrefix: string, activeSlug: string | undefined): BinderPages {
     const [pages, setPages] = useAtom(pagesAtom(storagePrefix))
     const store = useStore()
-    const location = useLocation()
     const navigate = useNavigate()
     const rememberActivePage = useSetAtom(activePageAtom(storagePrefix))
-    const activeId = location.pageId
-    const activeIndex = Math.max(0, pages.findIndex((page) => page.id === activeId))
+    const activeIndex = Math.max(0, pages.findIndex((page) => page.id === activeSlug))
     const active = pages.length ? pages[activeIndex] : undefined
     // Grown during render (the endorsed "adjust state while rendering" pattern) as each shown page resolves; it lives
     // only for the binder's mount, so leaving the binder (which remounts it) clears the set.
@@ -45,31 +45,35 @@ export function useBinderPages(storagePrefix: string): BinderPages {
         setVisited(new Set(visited).add(active.id))
     }
 
-    // Persists the shown page as this binder's remembered active page, so reopening it returns here.
-    useEffect(() => rememberActivePage(activeId), [activeId, rememberActivePage])
+    // Persists the resolved active page as this binder's remembered page, so reopening it returns here. Skipped when
+    // there is no active page (an empty or unknown binder), so a stale URL leaves no empty remembered-page entry.
+    const activeId = active?.id
+    useEffect(() => {
+        if (activeId) rememberActivePage(activeId)
+    }, [activeId, rememberActivePage])
 
-    // Appends a new page of the chosen type; its GUID id doubles as the page's storage prefix. A markdown page created
+    // Appends a new page of the chosen type; its slug id doubles as the page's storage prefix. A markdown page created
     // from a template seeds its content from that template's live body.
     function createPage(name: string, type: PageType, markdownTemplateId?: string) {
-        const id = newId()
+        const id = uniqueSlug(name, pages.map((page) => page.id), 'page')
         setPages([...pages, {id, label: name, type, storagePrefix: id, hue: tabHue(pages.length)}])
         if (type === 'markdown' && markdownTemplateId) {
             seedMarkdownContent(store, pagePrefix(storagePrefix, id), markdownTemplateId)
         }
-        navigate({binderId: storagePrefix, pageId: id})
+        navigate(binderPath(storagePrefix, id))
     }
 
     // Edits the active tab's label and hue (its id and stored fields are unchanged).
     function editPage(label: string, hue: number) {
-        setPages((previous) => previous.map((page) => (page.id === activeId ? {...page, label, hue} : page)))
+        setPages((previous) => previous.map((page) => (page.id === active?.id ? {...page, label, hue} : page)))
     }
 
     // Removes the active page, then activates its neighbour so a page stays selected when one remains.
     function deletePage() {
-        const index = pages.findIndex((page) => page.id === activeId)
-        const next = pages.filter((page) => page.id !== activeId)
+        const index = pages.findIndex((page) => page.id === active?.id)
+        const next = pages.filter((page) => page.id !== active?.id)
         setPages(next)
-        navigate({binderId: storagePrefix, pageId: next.length ? next[Math.min(index, next.length - 1)].id : ''})
+        navigate(binderPath(storagePrefix, next.length ? next[Math.min(index, next.length - 1)].id : undefined))
     }
 
     // Moves the page at index `from` to index `to`, persisting the new tab order.

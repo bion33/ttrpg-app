@@ -6,5 +6,6 @@ import type {Migration} from './migrations.ts'
  */
 export const v2: Migration = {
     to: 2,
+    phase: 'snapshot',
     migrate: (entries) => ({...entries}),
 }

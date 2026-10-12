@@ -3,7 +3,7 @@ import {Link as TiptapLink} from '@tiptap/extension-link'
 
 /**
  * The hyperlink mark, extending Tiptap's link to also render a `title` mirroring the href so hovering a link reveals
- * its destination. Click-to-open and the new-tab target are configured where the editor is built.
+ * its destination. Click handling (in-app navigation vs. new browser tab) is wired where the editor is built.
  */
 export const Link = TiptapLink.extend({
     renderHTML({HTMLAttributes}) {

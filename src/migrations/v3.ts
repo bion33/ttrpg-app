@@ -10,6 +10,7 @@ const STRIPPED_VIEW_KEYS = ['location', 'pageWidthFraction']
  */
 export const v3: Migration = {
     to: 3,
+    phase: 'snapshot',
     migrate: (entries) => {
         const migrated = {...entries}
         for (const key of STRIPPED_VIEW_KEYS) delete migrated[key]

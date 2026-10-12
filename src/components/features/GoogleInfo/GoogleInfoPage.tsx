@@ -1,5 +1,5 @@
+import {Link} from 'react-router'
 import InfoPage from '@ui/InfoPage/InfoPage.tsx'
-import RouteLink from '@ui/RouteLink/RouteLink.tsx'
 
 /**
  * The standalone application homepage used for Google's OAuth branding and app-ownership verification: identifies the
@@ -24,8 +24,8 @@ function GoogleInfoPage() {
 
             <h2>Privacy and terms</h2>
             <p>
-                How your data is handled is described in full on the <RouteLink route="privacy">privacy page</RouteLink>,
-                and the conditions of use on the <RouteLink route="terms">terms of service page</RouteLink>.
+                How your data is handled is described in full on the <Link to="/privacy">privacy page</Link>,
+                and the conditions of use on the <Link to="/terms">terms of service page</Link>.
             </p>
 
             <h2>What the app does with Google Drive</h2>

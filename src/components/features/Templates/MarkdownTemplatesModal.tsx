@@ -5,9 +5,9 @@ import ConfirmBody from '@ui/ConfirmModal/ConfirmBody.tsx'
 import ManagerList from './ManagerList.tsx'
 import NameForm from './NameForm.tsx'
 import {clearMarkdownTemplateContent, markdownTemplatesAtom} from './templateAtoms.ts'
-import {useNavigate} from '@hooks/useNavigation.ts'
-import {markdownTemplateLocation} from '@lib/navigation/navigation.ts'
-import {newId} from '@lib/ids/newId.ts'
+import {useNavigate} from 'react-router'
+import {templatePath} from '@lib/navigation/routePaths.ts'
+import {uniqueSlug} from '@lib/navigation/slug.ts'
 
 /**
  * Props for the markdown-templates manager: the close callback.
@@ -33,7 +33,8 @@ function MarkdownTemplatesModal({onClose}: MarkdownTemplatesModalProps) {
     const target = templates.find((template) => template.id === targetId)
 
     function addTemplate(label: string) {
-        setTemplates([...templates, {id: newId(), label}])
+        const id = uniqueSlug(label, templates.map((template) => template.id), 'template')
+        setTemplates([...templates, {id, label}])
         backToList()
     }
 
@@ -86,7 +87,7 @@ function MarkdownTemplatesModal({onClose}: MarkdownTemplatesModalProps) {
                 <ManagerList
                     items={templates}
                     openLabel="Edit"
-                    onOpen={(id) => navigate(markdownTemplateLocation(id))}
+                    onOpen={(id) => navigate(templatePath(id))}
                     onRename={(id) => setView({kind: 'rename', id})}
                     onDelete={(id, event) => (event.shiftKey ? deleteTemplate(id) : setView({kind: 'delete', id}))}
                     addLabel="New template"
