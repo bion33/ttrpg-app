@@ -60,8 +60,10 @@ function buildSlugMap(items: {id: string; label: string}[], fallback: string): M
 }
 
 // Rewrites a storage key's GUID path segments to their slugs: `template:<guid>:…`, `<binderGuid>:…`, and
-// `<binderGuid>:<pageGuid>:…` (field, markdown, portrait, pages, activePage keys all included). Unknown segments pass
-// through, so non-id segments like `pages`/`portrait` are left intact.
+// `<binderGuid>:<pageGuid>…` (field, markdown, portrait, pages, activePage keys all included). The page segment may
+// carry a dot-joined suffix — a field atom's key is `<binderGuid>:<pageGuid>.field.<id>` — so only its leading id (up
+// to the first `.`) is remapped and the suffix is preserved. Unknown segments pass through, so non-id segments like
+// `pages`/`portrait` are left intact.
 function rewriteKey(key: string, binders: Map<string, string>, pages: Map<string, Map<string, string>>, templates: Map<string, string>): string {
     const segments = key.split(':')
     if (segments[0] === 'template' && segments.length >= 2) {
@@ -72,7 +74,12 @@ function rewriteKey(key: string, binders: Map<string, string>, pages: Map<string
     if (binderSlug === undefined) return key
     const pageMap = pages.get(segments[0])
     segments[0] = binderSlug
-    if (pageMap && segments.length >= 2) segments[1] = pageMap.get(segments[1]) ?? segments[1]
+    if (pageMap && segments.length >= 2) {
+        const dotIndex = segments[1].indexOf('.')
+        const pageId = dotIndex === -1 ? segments[1] : segments[1].slice(0, dotIndex)
+        const suffix = dotIndex === -1 ? '' : segments[1].slice(dotIndex)
+        segments[1] = (pageMap.get(pageId) ?? pageId) + suffix
+    }
     return segments.join(':')
 }
 

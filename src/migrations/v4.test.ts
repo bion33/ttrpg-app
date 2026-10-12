@@ -21,7 +21,7 @@ describe('v4 migration', () => {
             [`${BINDER_A}:activePage`]: PAGE_1,
             [`${BINDER_A}:portrait`]: 'images/hero-ab12.png',
             [`${BINDER_A}:${PAGE_1}:markdown`]: '# Hi',
-            [`${BINDER_A}:${PAGE_1}:field.strength`]: '12',
+            [`${BINDER_A}:${PAGE_1}.field.strength`]: '12',
         }
         const migrated = v4.migrate(entries)
 
@@ -32,7 +32,7 @@ describe('v4 migration', () => {
         expect(migrated['my-hero:activePage']).toBe('notes')
         expect(migrated['my-hero:portrait']).toBe('images/hero-ab12.png')
         expect(migrated['my-hero:notes:markdown']).toBe('# Hi')
-        expect(migrated['my-hero:notes:field.strength']).toBe('12')
+        expect(migrated['my-hero:notes.field.strength']).toBe('12')
         // The old GUID keys are gone.
         expect(Object.keys(migrated).some((key) => key.includes(BINDER_A))).toBe(false)
     })
