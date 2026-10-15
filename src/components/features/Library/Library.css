@@ -142,8 +142,10 @@
     filter: drop-shadow(0 0.7rem 0.85rem rgba(0, 0, 0, 0.14));
 }
 
-/* Placeholder portrait: the name's first letter in a cream circle, filling the space reserved for a future portrait. */
+/* Placeholder portrait: the name's first letter in a cream circle, filling the space reserved for a future portrait.
+   Framed as a recessed inset: a dark mat ring with a soft drop below, so it sits down into the hued cover. */
 .library__portrait {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -156,14 +158,25 @@
     color: var(--spine-dark);
     font-size: 4.25rem;
     font-weight: 700;
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
-    overflow: hidden;
+    /* Dark mat ring framing the circle. */
+    box-shadow: 0 0 0 0.3rem rgba(0, 0, 0, 0.22);
+}
+
+/* Inner vignette painted over the portrait so its edge tucks into the frame rather than meeting it flat. */
+.library__portrait::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    box-shadow: inset 0 0.25rem 0.8rem rgba(0, 0, 0, 0.55), inset 0 0 0 1px rgba(0, 0, 0, 0.22);
+    pointer-events: none;
 }
 
 /* A chosen portrait image filling the circular portrait, cropped to cover it. */
 .library__portrait-image {
     width: 100%;
     height: 100%;
+    border-radius: 50%;
     object-fit: cover;
 }
 
