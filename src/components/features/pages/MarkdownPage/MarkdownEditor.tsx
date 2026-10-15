@@ -15,6 +15,7 @@ import {Link} from './extensions/link.ts'
 import {HeadingAnchors} from './extensions/headingAnchors.ts'
 import {Image} from './extensions/image/image.ts'
 import {PageBreak} from './extensions/pageBreak.ts'
+import {PasteMarkdown} from './extensions/pasteMarkdown.ts'
 import {Pagination} from './extensions/pagination/pagination.ts'
 import {tableExtensions} from './extensions/table/tableExtensions.ts'
 import MarkdownToolbar from './toolbar/MarkdownToolbar.tsx'
@@ -62,6 +63,7 @@ function MarkdownEditor({markdown, onChange, active}: MarkdownEditorProps) {
             Image,
             Callout,
             PageBreak,
+            PasteMarkdown,
             Pagination.configure({onPageCountChange: setPageCount}),
         ],
         content: markdown,
