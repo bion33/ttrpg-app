@@ -11,7 +11,7 @@ const COLUMN_GAP = 2             // horizontal padding kept clear of each side o
 // Column x-edges per group: itemX/weightX are the two grey vertical dividers' centerlines (their
 // ~0.23-unit stroke is negligible); countX/rightEdge are the box's own left/right edges.
 const LEFT_GROUP = {countX: 48.67, itemX: 73.73, weightX: 372.27, rightEdge: 395.47}
-const RIGHT_GROUP = {countX: 413.2, itemX: 434.73, weightX: 736.6, rightEdge: 760.13}
+const RIGHT_GROUP = {countX: 413.2, itemX: 434.73, weightX: 735, rightEdge: 760.13}
 
 // ---- EXPORTED FUNCTIONS ----
 

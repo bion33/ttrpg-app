@@ -9,5 +9,5 @@ const PREFILLED_HEADER_ROWS = new Set([3, 5, 8, 11, 14, 17, 23, 26])
  * artwork is a fixed prefilled header.
  */
 export function buildEquipped({inputNode}: SheetFactory) {
-    return buildItemRows(inputNode, {idPrefix: 'equipped', itemX: 380, weightX: 545.7, skipRows: PREFILLED_HEADER_ROWS})
+    return buildItemRows(inputNode, {idPrefix: 'equipped', itemX: 380, weightX: 544, skipRows: PREFILLED_HEADER_ROWS})
 }

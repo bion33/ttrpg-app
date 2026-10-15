@@ -265,9 +265,9 @@ export function buildAbilities(factory: SheetFactory): AbilitiesSection {
         const bonus = derivedNode(
             {
                 id: `${id}Bonus`,
-                x: 149.2,
-                y: expertiseY - 0.4,
-                width: 16,
+                x: 146,
+                y: expertiseY - 0.6,
+                width: 20,
                 height: 14,
                 type: 'number',
                 fontSize: 12,

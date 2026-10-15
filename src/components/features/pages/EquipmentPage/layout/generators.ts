@@ -8,7 +8,7 @@ const FIRST_ROW_Y = 184      // y of the first (topmost) divider, in viewBox uni
 const ROW_STEP = 15.19       // vertical gap between dividers ((593.4 - 183.4) / 27)
 const ROW_HEIGHT = 14.5      // field height within a row
 const ITEM_WIDTH = 166       // width of the wide item field, up to the grey WT column
-const WEIGHT_WIDTH = 14      // matches the grey WT column width
+const WEIGHT_WIDTH = 18      // matches the grey WT column width
 
 // ---- EXPORTED TYPES ----
 
