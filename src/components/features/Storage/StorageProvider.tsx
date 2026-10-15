@@ -1,5 +1,6 @@
 import type {ReactNode} from 'react'
 import {useStorage} from '@hooks/useStorage.ts'
+import {useSaveShortcut} from '@hooks/useSaveShortcut.ts'
 import {StorageContext} from './storageContext.ts'
 
 /**
@@ -8,5 +9,6 @@ import {StorageContext} from './storageContext.ts'
  */
 export function StorageProvider({children}: { children: ReactNode }) {
     const storage = useStorage()
+    useSaveShortcut(storage.save)
     return <StorageContext.Provider value={storage}>{children}</StorageContext.Provider>
 }
