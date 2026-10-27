@@ -40,7 +40,7 @@ function LinkModal({initialUrl, initialLabel, onSubmit, onRemove, onCancel}: Lin
     const {binderSlug = '', pageSlug = ''} = useParams()
     const binders = useAtomValue(bindersAtom)
     const initialTarget = parseBinderTarget(initialUrl)
-    const [mode, setMode] = useState<'web' | 'app'>(isInternalHref(initialUrl) ? 'app' : 'web')
+    const [mode, setMode] = useState<'web' | 'app'>(initialUrl && !isInternalHref(initialUrl) ? 'web' : 'app')
     const [label, setLabel] = useState(initialLabel)
     const [url, setUrl] = useState(isInternalHref(initialUrl) ? '' : initialUrl)
     const [binder, setBinder] = useState(initialTarget.binder || binderSlug || binders[0]?.id || '')
@@ -61,6 +61,12 @@ function LinkModal({initialUrl, initialLabel, onSubmit, onRemove, onCancel}: Lin
     }
 
     const valid = mode === 'web' ? isHttpUrl(url.trim()) : Boolean(binder && page)
+
+    // Picks a heading, filling the empty label input with its text so the user can still edit it before submitting.
+    function selectHeading(slug: string) {
+        setHeading(slug)
+        if (!label.trim() && slug) setLabel(texts[slugs.indexOf(slug)] ?? '')
+    }
 
     function submit(event: FormEvent) {
         event.preventDefault()
@@ -121,7 +127,7 @@ function LinkModal({initialUrl, initialLabel, onSubmit, onRemove, onCancel}: Lin
                         <label className="modal__field">
                             <span>Heading (optional):</span>
                             <select value={heading} disabled={!page}
-                                    onChange={(event) => setHeading(event.target.value)}>
+                                    onChange={(event) => selectHeading(event.target.value)}>
                                 <option value="">Top of page</option>
                                 {texts.map((text, index) => (
                                     <option key={slugs[index]} value={slugs[index]}>{text}</option>
