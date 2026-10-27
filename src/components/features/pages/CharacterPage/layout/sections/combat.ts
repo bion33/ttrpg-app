@@ -5,7 +5,7 @@ import type {SheetFactory} from '@lib/fields/fieldNodes.ts'
 /**
  * Builds the combat fields (armor class, speeds, hit points, conditions), the hit-dice block, and the death saves.
  */
-export function buildCombat({inputNode, checkNode, computedInputNode}: SheetFactory) {
+export function buildCombat({inputNode, checkNode, numericNode, computedInputNode}: SheetFactory) {
     // Toggle for the climb/swim speed auto-calculation; when checked, both are derived from run speed.
     const enableSpeedCalculation = checkNode({
         id: 'enableSpeedCalculation',
@@ -41,7 +41,7 @@ export function buildCombat({inputNode, checkNode, computedInputNode}: SheetFact
             }
         ),
         darkvision: inputNode({id: 'darkvision', x: 392, y: 172, width: 26, height: 16, type: 'number', fontSize: 14}),
-        initiative: inputNode({id: 'initiative', x: 380, y: 206, width: 50, height: 32, type: 'number', fontSize: 28}),
+        initiative: numericNode({id: 'initiative', x: 380, y: 206, width: 50, height: 32, type: 'number', fontSize: 28, signed: true}),
         enableSpeedCalculation,
         speed: {
             runSpeed,

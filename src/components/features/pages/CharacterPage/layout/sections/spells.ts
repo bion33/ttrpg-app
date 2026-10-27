@@ -12,8 +12,8 @@ const SPELL_SLOT_X_STEP = 24.93  // horizontal gap between spell-slot columns
 /**
  * Builds the spellcasting fields: weapon rows, cantrip rows, spell-slot columns, and the save/attack/custom stats.
  */
-export function buildSpells({inputNode, checkNode}: SheetFactory) {
-    const weapons = [1, 2, 3, 4].map((row) => weaponRow(inputNode, row))
+export function buildSpells({inputNode, checkNode, numericNode}: SheetFactory) {
+    const weapons = [1, 2, 3, 4].map((row) => weaponRow(inputNode, numericNode, row))
     const cantrips = [1, 2, 3, 4, 5, 6].map((row) => cantripRow(inputNode, checkNode, row))
     const spellSlots = [1, 2, 3, 4, 5, 6, 7, 8, 9].map((column) => spellSlotColumn(inputNode, column))
 
@@ -27,14 +27,15 @@ export function buildSpells({inputNode, checkNode}: SheetFactory) {
             type: 'number',
             fontSize: 28
         }),
-        spellAttackBonus: inputNode({
+        spellAttackBonus: numericNode({
             id: 'spellAttackBonus',
             x: 352,
             y: 806,
             width: 52,
             height: 30,
             type: 'number',
-            fontSize: 28
+            fontSize: 28,
+            signed: true
         }),
 
         customStatTitle: inputNode({
@@ -95,7 +96,7 @@ export function buildSpells({inputNode, checkNode}: SheetFactory) {
 /**
  * Fields for the weapon row at the given position (1-based).
  */
-function weaponRow(inputNode: SheetFactory['inputNode'], row: number): FieldNode[] {
+function weaponRow(inputNode: SheetFactory['inputNode'], numericNode: SheetFactory['numericNode'], row: number): FieldNode[] {
     const offsetY = (row - 1) * WEAPON_ROW_STEP
     return [
         inputNode({
@@ -107,14 +108,15 @@ function weaponRow(inputNode: SheetFactory['inputNode'], row: number): FieldNode
             type: 'text',
             fontSize: 12
         }),
-        inputNode({
+        numericNode({
             id: `weaponAttack${row}`,
             x: 406.2,
             y: 454.88 + offsetY,
             width: 24,
             height: 18,
             type: 'number',
-            fontSize: 12
+            fontSize: 12,
+            signed: true
         }),
         inputNode({
             id: `weaponDamage${row}`,
