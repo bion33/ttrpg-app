@@ -23,8 +23,8 @@ import BlockHandle from './blocks/BlockHandle.tsx'
 import ImageSourceModal from '@ui/ImageSourceModal/ImageSourceModal.tsx'
 import LinkModal from './link/LinkModal.tsx'
 import {applyLink, type LinkSelection, readLinkSelection, removeLink} from './link/linkCommands.ts'
-import {handleLinkClick} from './link/linkClick.ts'
-import {findHeading} from './link/headingScroll.ts'
+import {handleLinkClick, handleLinkMousedown} from './link/linkFollow.ts'
+import {scrollHeadingIntoView} from './link/headingScroll.ts'
 
 /**
  * Props for the markdown editor: the markdown to show (read on mount, and re-applied if it changes externally, e.g. a
@@ -68,7 +68,11 @@ function MarkdownEditor({markdown, onChange, active}: MarkdownEditorProps) {
         ],
         content: markdown,
         contentType: 'markdown',
-        editorProps: {handleDOMEvents: {click: (_view, event) => handleLinkClick(event, navigate)}},
+        editorProps: {handleDOMEvents: {
+            mousedown: (_view, event) => handleLinkMousedown(event),
+            click: (view, event) =>
+                handleLinkClick(event, navigate, (slug) => scrollHeadingIntoView(view.dom as HTMLElement, slug)),
+        }},
         onUpdate: ({editor}) => onChange(editor.getMarkdown()),
     })
 
@@ -80,38 +84,14 @@ function MarkdownEditor({markdown, onChange, active}: MarkdownEditorProps) {
         editor.commands.setContent(markdown, {contentType: 'markdown', emitUpdate: false})
     }, [editor, markdown])
 
-    // When the URL names a heading (`#slug`) on this active page, smooth-scroll it to the top of the view. Waits for the
-    // layout above the heading to settle before scrolling, rather than scrolling as soon as the anchor exists: the
-    // anchor is rendered before pagination inserts its spacer gaps and late images load, and that expansion would
-    // otherwise push the heading down the view mid-animation. Each frame it measures the heading's offset within the
-    // editor (scroll-independent, so a shift above it shows up) and fires the single smooth scroll once that offset
-    // holds steady, or the budget runs out. Scoped to this editor's DOM (several may share ids).
+    // When the URL names a heading (`#slug`) on this active page, smooth-scroll it into view (e.g. opening a deep link
+    // or following a cross-page link); a same-page link click scrolls imperatively instead, since re-clicking the
+    // current hash does not change the location. Scoped to this editor's DOM (several may share ids).
     useEffect(() => {
         if (!active || !editor) return
         const slug = routerLocation.hash.replace(/^#/, '')
         if (!slug) return
-        const root = editor.view.dom
-        let frame = 0
-        let attempts = 0
-        let settledFrames = 0
-        let lastOffset = Number.NaN
-        const align = () => {
-            if (editor.isDestroyed) return
-            const giveUp = attempts++ > 60
-            const target = findHeading(root, slug)
-            if (target) {
-                const offset = Math.round(target.getBoundingClientRect().top - root.getBoundingClientRect().top)
-                settledFrames = offset === lastOffset ? settledFrames + 1 : 0
-                lastOffset = offset
-                if (settledFrames >= 2 || giveUp) {
-                    target.scrollIntoView({behavior: 'smooth', block: 'start'})
-                    return
-                }
-            } else if (giveUp) return
-            frame = requestAnimationFrame(align)
-        }
-        frame = requestAnimationFrame(align)
-        return () => cancelAnimationFrame(frame)
+        return scrollHeadingIntoView(editor.view.dom as HTMLElement, slug)
     }, [active, editor, routerLocation.hash])
 
     if (!editor) return null

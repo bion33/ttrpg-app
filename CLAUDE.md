@@ -165,9 +165,16 @@ browser tab) or an **in-app link** whose href is a real app route path — a bin
 page (`/binders/<slug>/<slug>`), optionally with a `#heading`, or a bare `#heading`
 on the current page. The `link/LinkModal` offers a Web-URL / In-app toggle, the
 in-app mode picking a binder, page, and optional heading from the live atoms. A
-delegated click handler (`link/linkClick.ts`, `openOnClick: false`) routes a plain
+delegated click handler (`link/linkFollow.ts`, `openOnClick: false`) routes a plain
 click: internal hrefs navigate client-side via react-router, external ones open a
-tab, modified clicks fall through to the browser. Heading anchors are
+tab, modified clicks fall through to the browser. The link mark renders
+`contenteditable="false"`, so the caret never lands in a link (which on touch
+devices would focus the editor and scroll back to the caret) and the click fires
+reliably across browsers; a companion `mousedown` handler cancels the press so the
+editor neither focuses the link nor (in Firefox) selects the non-editable link node
+— a selected node would swallow the next click and break repeat clicks. The
+trade-off is that a link's text cannot be caret-placed by tapping it (edit it from
+an edge or via the link modal). Heading anchors are
 **GitHub-style slugs** set as DOM `id`s by the `headingAnchors` extension via a node
 **decoration** (never serialized into the markdown); `logic/headings/` is the pure,
 tested source for both those ids and the modal's targets, so they always agree.
