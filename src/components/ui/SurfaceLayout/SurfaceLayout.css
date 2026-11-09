@@ -8,6 +8,9 @@
 /* The in-flow control sidebar: a full-height vertical stack of control groups against the left edge. It scrolls
    internally only if its own controls overflow a short screen. */
 .sidebar {
+    /* Scale the control buttons with viewport width so they feel the same on-screen size across devices rather than a
+       fixed rem that looks oversized on a narrow phone and undersized on a wide tablet; clamped to stay tappable. */
+    --sidebar-button-size: clamp(1.75rem, 1.3rem + 1.9vw, 2.5rem);
     flex: none;
     display: flex;
     flex-direction: column;
@@ -17,6 +20,18 @@
     overflow: hidden auto;
     background: color-mix(in srgb, var(--color-parchment) 82%, transparent);
     border-right: 1px solid var(--color-border);
+}
+
+/* Size the sidebar's standard control buttons (and their icons at the same half-ratio) from the responsive token; the
+   smaller in-menu variant keeps its own fixed size. */
+.sidebar .icon-button:not(.icon-button--small) {
+    width: var(--sidebar-button-size);
+    height: var(--sidebar-button-size);
+}
+
+.sidebar .icon-button:not(.icon-button--small) svg {
+    width: 50%;
+    height: 50%;
 }
 
 /* The vertical scroll pane holding the page; `min-width: 0` lets it shrink beside the sidebar instead of overflowing,
