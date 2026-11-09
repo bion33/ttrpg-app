@@ -12,6 +12,14 @@
     margin: 0 auto;
 }
 
+/* On the fitted path the frame already centres the scaled footprint, and the view scales from its top-left corner to
+   fill that box, so the view must sit flush at the frame's left edge. Its own auto side-margins (which centre the view
+   on the desktop path) would instead centre the UNSCALED box in the frame; magnified by a large fit scale on a wide
+   screen, that offset throws the page far off to the right. */
+.binder-view-frame--fitted .binder-view {
+    margin: 0;
+}
+
 /* The zoom wrapper shared by every page view. Wraps the page (and, in a binder, the tab strip) so they scale together
    (the transform is set in PageViewport.tsx) while the view controls, which sit outside it, stay a fixed size.
    Anchors the absolutely-positioned tab strip and, scaling from the top centre, keeps the page centred as it grows or
