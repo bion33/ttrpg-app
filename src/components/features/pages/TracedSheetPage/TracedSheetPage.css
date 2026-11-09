@@ -6,3 +6,13 @@
     /* The artwork's own page colour, so the symmetric vertical padding reads as part of the same white sheet. */
     background: #ffffff;
 }
+
+/* Map the sheet to the exact physical A4 page (matching `@page` in Binder.css) in millimetres rather than the
+   pixel-derived height: the px→page rounding otherwise overflows by a sub-pixel and spills a blank second page. The
+   inline px width needs !important to override; preserveAspectRatio keeps the artwork undistorted (viewBox is 210:297). */
+@media print {
+    .traced-sheet-page {
+        width: 210mm !important;
+        height: 297mm !important;
+    }
+}

@@ -36,6 +36,8 @@
 /* When printing, show only the page content: drop the margins, tab strip, controls, and the page's own chrome. */
 @media print {
     @page {
+        /* Force the A4 page box so the A4 sheet maps onto it exactly regardless of the printer's default paper. */
+        size: A4;
         margin: 0;
     }
 
