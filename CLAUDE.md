@@ -218,11 +218,23 @@ deferred-mounted.
   the store. After a load the open slug may no longer exist, so each routed surface
   resolves its slug against the freshly-read atoms and renders `<Navigate to="/"
   replace/>` when it does not match — the same guard covers a stale/typo URL.
-- Page-view zoom is the shared **`PageViewport`** scaffold: it owns the scaled
-  `.binder-view` wrapper, publishes `--page-scale` (so in-page controls can
-  counter-scale to a constant on-screen size), and holds the zoom controls. Zoom
-  is stored as a **viewport-width fraction** shared across pages so it feels
-  uniform regardless of a page's natural width.
+- Page-view zoom is owned by **`PageZoomProvider`**, which wraps a surface's
+  sidebar and its page so both read one source: the shared **`PageViewport`**
+  scaffold renders the scaled `.binder-view` wrapper (publishing `--page-scale` so
+  in-page controls can counter-scale to a constant on-screen size), and the
+  `ZoomControls` buttons live in the surface's sidebar (desktop only — hidden where
+  the device zooms natively). Zoom is stored as a **viewport-width fraction** shared
+  across pages so it feels uniform regardless of a page's natural width.
+- Every surface (binder, template editor, library, info pages) is built on the
+  shared **`SurfaceLayout`**: a full-height left **`.sidebar`** of controls beside a
+  vertically scrolling content pane (`.surface__content`). The sidebar is in-flow,
+  not fixed, so under mobile pinch-zoom it scales and pans with the page instead of
+  drifting off a corner (the original bug); confining vertical scroll to the content
+  pane keeps the sidebar put as the page scrolls. The pane element is shared via
+  `surfaceScrollContext` (`useSurfaceScroll`) so in-pane controls — back-to-top, the
+  tab-visibility observer — act on the pane, not the window. Floating modals and
+  popover menus still follow the visual viewport via the `--vv-*` variables
+  (`useVisualViewportInset`).
 
 ### Page registry
 
@@ -370,10 +382,11 @@ sync decisions, …): pure tested core, thin glue.
 Global tokens and utilities live in `src/index.css` on `:root`: the type/parchment
 palette (`--font-serif`, `--color-parchment`/`-paper`/`-ink`/`-text`/`-border`)
 and the stacking scale (`--z-page`/`-controls`/`-modal`). Component CSS references
-these rather than re-hardcoding the shared font, colours, or z-index numbers. Two
-shared utility classes also live there: `.corner-cluster` (a fixed vertical
-control stack; callers add only the corner insets) and `.no-print` (chrome hidden
-under `@media print`) — prefer them over per-file copies. Hue-derived colours are
+these rather than re-hardcoding the shared font, colours, or z-index numbers.
+Shared utility classes also live there: `.control-group` (a vertically stacked
+cluster of related controls within a surface sidebar — see `SurfaceLayout`, whose
+`.sidebar`/`.surface`/`.surface__content` own the shell) and `.no-print` (chrome
+hidden under `@media print`) — prefer them over per-file copies. Hue-derived colours are
 **not** CSS literals: components set them as inline custom properties computed by
 `src/lib/colors/hueColors.ts`, the same source the modal previews use.
 

@@ -17,6 +17,7 @@ import EditBinderModal from './modals/EditBinderModal.tsx'
 import LibraryBinder from './LibraryBinder.tsx'
 import {binderTabs} from './logic/binderTabs/binderTabs.ts'
 import StorageControls from '@features/Storage/StorageControls.tsx'
+import SurfaceLayout from '@ui/SurfaceLayout/SurfaceLayout.tsx'
 import MarkdownTemplatesModal from '@features/Templates/MarkdownTemplatesModal.tsx'
 import BinderTemplatesModal from '@features/Templates/BinderTemplatesModal.tsx'
 import {binderTemplatesAtom, seedMarkdownContent} from '@features/Templates/templateAtoms.ts'
@@ -104,7 +105,18 @@ function Library() {
     }
 
     return (
-        <div className="library">
+        <SurfaceLayout sidebar={
+            <>
+                <StorageControls/>
+                <div className="control-group">
+                    <IconButton icon={<SquareDashedText/>} label="Page templates" labelSide="right"
+                                onClick={() => setManaging('markdown')}/>
+                    <IconButton icon={<BookDashed/>} label="Binder templates" labelSide="right"
+                                onClick={() => setManaging('binder')}/>
+                </div>
+            </>
+        }>
+            <div className="library">
             <div className="library__grid">
                 {sorted.map((binder) => (
                     <LibraryShelfBinder
@@ -121,21 +133,12 @@ function Library() {
                                onOpen={() => setAdding(true)}/>
             </div>
 
-            <StorageControls placement="library"/>
-
             <nav className="library__legal no-print">
                 <a href="https://github.com/bion33/ttrpg-app" className="library__legal-link"
                    target="_blank" rel="noreferrer">GitHub</a>
                 <Link to="/privacy" className="library__legal-link">Privacy</Link>
                 <Link to="/terms" className="library__legal-link">Terms</Link>
             </nav>
-
-            <div className="library__templates corner-cluster no-print">
-                <IconButton icon={<SquareDashedText/>} label="Page templates" labelSide="left"
-                            onClick={() => setManaging('markdown')}/>
-                <IconButton icon={<BookDashed/>} label="Binder templates" labelSide="left"
-                            onClick={() => setManaging('binder')}/>
-            </div>
 
             {managing === 'markdown' && <MarkdownTemplatesModal onClose={() => setManaging(null)}/>}
             {managing === 'binder' && <BinderTemplatesModal onClose={() => setManaging(null)}/>}
@@ -156,7 +159,8 @@ function Library() {
                     onCancel={() => setDeleting(null)}
                 />
             )}
-        </div>
+            </div>
+        </SurfaceLayout>
     )
 }
 

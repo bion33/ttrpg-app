@@ -1,28 +1,23 @@
 import type {CSSProperties, ReactNode} from 'react'
 import {useEffect} from 'react'
 import './PageViewport.css'
-import ViewControls from './ViewControls.tsx'
-import {usePageScale} from '@hooks/usePageScale.ts'
-import {usePinchZoomCapable} from '@hooks/usePinchZoomCapable.ts'
+import {usePageZoom} from './pageZoomContext.ts'
 
 /**
- * Props for the page viewport: the active page's natural (unscaled) width the zoom scales to a fraction of the
- * viewport, and the page content to render inside the scaled wrapper.
+ * Props for the page viewport: the page content to render inside the scaled wrapper. The zoom state comes from the
+ * surrounding PageZoomProvider.
  */
 interface PageViewportProps {
-    naturalWidth: number
     children: ReactNode
 }
 
 /**
- * The shared zoom scaffold around a page: a wrapper scaled to a persisted fraction of the viewport (via usePageScale)
- * with the bottom-corner zoom controls, so the character-sheet binder and the markdown-template editor share one view.
+ * The shared zoom scaffold around a page: a wrapper scaled to the surface's page-view zoom (from PageZoomProvider), so
+ * the character-sheet binder and the markdown-template editor share one view. The zoom controls live in the surface's
+ * top bar (see ZoomControls), not here.
  */
-function PageViewport({naturalWidth, children}: PageViewportProps) {
-    const {scale, fitScale, contentWidth, contentHeight, scaleUp, scaleDown, canScaleUp, canScaleDown, viewReference} =
-        usePageScale(naturalWidth)
-    // On a pinch-and-pan device the native gesture replaces these buttons, so they are dropped there.
-    const pinchCapable = usePinchZoomCapable()
+function PageViewport({children}: PageViewportProps) {
+    const {scale, fitScale, contentWidth, contentHeight, viewReference, pinchCapable} = usePageZoom()
 
     // Promote the view to its own compositor layer only for the duration of a zoom (a little past the 0.25s transition),
     // then drop it — a permanent layer around the editable markdown surface blanks out after inactivity. Toggled as a
@@ -54,17 +49,11 @@ function PageViewport({naturalWidth, children}: PageViewportProps) {
         : undefined
 
     return (
-        <>
-            <div className={`binder-view-frame${pinchCapable ? ' binder-view-frame--fitted' : ''}`} style={frameStyle}>
-                <div className="binder-view" ref={viewReference} style={viewStyle}>
-                    {children}
-                </div>
+        <div className={`binder-view-frame${pinchCapable ? ' binder-view-frame--fitted' : ''}`} style={frameStyle}>
+            <div className="binder-view" ref={viewReference} style={viewStyle}>
+                {children}
             </div>
-            {!pinchCapable && (
-                <ViewControls onScaleUp={scaleUp} onScaleDown={scaleDown} canScaleUp={canScaleUp}
-                              canScaleDown={canScaleDown}/>
-            )}
-        </>
+        </div>
     )
 }
 

@@ -8,7 +8,11 @@ import './Binder.css'
 import Tabs from './tabs/Tabs.tsx'
 import AddTabModal from './tabs/modals/AddTabModal.tsx'
 import TabControls from './tabs/TabControls.tsx'
+import ScrollTopButton from './tabs/ScrollTopButton.tsx'
 import PageViewport from '@features/PageViewport/PageViewport.tsx'
+import PageZoomProvider from '@features/PageViewport/PageZoomProvider.tsx'
+import ZoomControls from '@features/PageViewport/ZoomControls.tsx'
+import SurfaceLayout from '@ui/SurfaceLayout/SurfaceLayout.tsx'
 import EditTabModal from './tabs/modals/EditTabModal.tsx'
 import ConfirmModal from '@ui/ConfirmModal/ConfirmModal'
 import {pagePrefix} from './binderAtoms.ts'
@@ -41,8 +45,24 @@ function Binder() {
     if (!binders.some((binder) => binder.id === binderSlug)) return <Navigate to={libraryPath()} replace/>
 
     return (
-        <div className="app-shell" style={{'--sheet-border-color': tabBorderColor(active?.hue ?? 0)} as CSSProperties}>
-            <PageViewport naturalWidth={naturalWidth}>
+        <PageZoomProvider naturalWidth={naturalWidth}>
+            <SurfaceLayout sidebar={
+                <>
+                    <StorageControls leading={
+                        <IconButton icon={<Library/>} label="Back to library" labelSide="right"
+                                    onClick={() => navigate(libraryPath())}/>
+                    }/>
+                    <TabControls onAdd={() => setAdding(true)} hasActive={!!active} onEdit={() => setEditing('edit')}
+                                 onDelete={(event) => (event.shiftKey ? deletePage() : setEditing('delete'))}/>
+                    <div className="control-group">
+                        <ZoomControls/>
+                        <ScrollTopButton lastTab={lastTab}/>
+                    </div>
+                </>
+            }>
+                <div className="app-shell"
+                     style={{'--sheet-border-color': tabBorderColor(active?.hue ?? 0)} as CSSProperties}>
+                    <PageViewport>
                 {/* Every visited page stays mounted; inactive ones are hidden (display:none), so switching tabs within the
                     binder is instant. Markdown pages draw their own per-sheet paper chrome, so the wrapper drops its
                     border/shadow for them. An empty binder (no active page) shows the untitled empty page. */}
@@ -60,13 +80,6 @@ function Binder() {
                       onSelect={(id) => navigate(binderPath(binderSlug, id))} onReorder={reorderPages}
                       onLastTabChange={setLastTab}/>
             </PageViewport>
-            <TabControls onAdd={() => setAdding(true)} hasActive={!!active} onEdit={() => setEditing('edit')}
-                         onDelete={(event) => (event.shiftKey ? deletePage() : setEditing('delete'))}
-                         lastTab={lastTab}/>
-            <StorageControls placement="binder" leading={
-                <IconButton icon={<Library/>} label="Back to library" labelSide="right"
-                            onClick={() => navigate(libraryPath())}/>
-            }/>
             {adding && (
                 <AddTabModal
                     onCreate={(name, type, markdownTemplateId) => {
@@ -99,7 +112,9 @@ function Binder() {
                     onCancel={() => setEditing(null)}
                 />
             )}
-        </div>
+                </div>
+            </SurfaceLayout>
+        </PageZoomProvider>
     )
 }
 

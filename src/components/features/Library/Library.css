@@ -1,29 +1,24 @@
 /* The library: binder covers laid out in an even grid on the same backdrop as the page area. */
 
 .library {
-    min-height: 100vh;
+    min-height: 100%;
     box-sizing: border-box;
-    padding: 5%;
+    display: flex;
+    flex-direction: column;
     background: var(--color-parchment);
     font-family: var(--font-serif);
     color: var(--color-ink);
 }
 
-/* The template-manager controls, pinned to the bottom-right viewport corner; the fixed-stack base comes from the
-   shared `.corner-cluster` utility (index.css) and printing hides them via `.no-print`. */
-.library__templates {
-    bottom: 1.5rem;
-    right: 1.5rem;
-    transform-origin: bottom right;
-}
-
-/* Discreet links to the legal pages, pinned to the bottom-left viewport corner; printing hides them via `.no-print`. */
+/* Discreet links to the legal pages, held at the bottom of the library (pushed to the foot of the viewport by the
+   flex column when the grid is short; flowing below it when the grid is tall). Not fixed, so it scrolls with content.
+   Carries the side inset itself, since the library no longer pads its children so the control bar can span full width. */
 .library__legal {
-    position: fixed;
-    z-index: var(--z-controls);
-    bottom: 1.5rem;
-    left: 1.5rem;
+    margin-top: auto;
+    padding: 2rem 5% 1.5rem;
     display: flex;
+    align-items: center;
+    justify-content: center;
     gap: 1rem;
 }
 
@@ -37,11 +32,13 @@
     text-decoration: underline;
 }
 
-/* The binders in a grid whose column gap equals its row gap; columns are as many 9rem covers as fit each row. */
+/* The binders in a grid whose column gap equals its row gap; columns are as many 9rem covers as fit each row. Carries
+   the page inset itself (the library no longer pads its children, so the control bar spans full width). */
 .library__grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, 11.5rem);
     gap: 7rem;
+    padding: 5%;
     justify-content: center;
 }
 

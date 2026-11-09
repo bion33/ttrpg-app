@@ -19,7 +19,7 @@ const FIT_MARGIN = 0.98
  * What the page-scale hook returns: the current scale, the fit-to-width scale, the measured unscaled content size, the
  * step controls with their enabled flags, and the ref to put on the scaled wrapper so its layout size can be measured.
  */
-interface PageScale {
+export interface PageScale {
     scale: number
     fitScale: number
     contentWidth: number

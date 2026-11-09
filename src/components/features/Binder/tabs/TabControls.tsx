@@ -1,58 +1,34 @@
 import type {MouseEvent} from 'react'
-import {useEffect, useState} from 'react'
-import {ArrowUp, FilePlus2, Pencil, Printer, Trash2} from 'lucide-react'
+import {FilePlus2, Pencil, Printer, Trash2} from 'lucide-react'
 import IconButton from '@ui/IconButton/IconButton'
-import './TabControls.css'
 
 /**
  * Props for the tab controls: adding a page is always available; editing and deleting act on the active tab and are
- * offered only when `hasActive` is true. `lastTab` is the tab whose visibility gates the back-to-top button.
+ * offered only when `hasActive` is true.
  */
 interface TabControlsProps {
     onAdd: () => void
     hasActive: boolean
     onEdit: () => void
     onDelete: (event: MouseEvent<HTMLButtonElement>) => void
-    lastTab: HTMLElement | null
 }
 
 /**
- * The binder's fixed on-screen controls: a bottom-corner cluster to add a page and print (always shown) plus — for the
- * active tab — edit (rename and recolour) and delete. A back-to-top button appears once the last tab scrolls out of
- * view. (The back-to-library button lives in the top-left storage cluster; see StorageControls.)
+ * The binder's page controls, rendered as a group within the surface sidebar: add a page and print (always shown) plus
+ * — for the active tab — edit (rename and recolour) and delete.
  */
-function TabControls({onAdd, hasActive, onEdit, onDelete, lastTab}: TabControlsProps) {
-    const [scrolledPast, setScrolledPast] = useState(false)
-    // The back-to-top button shows only while there is a last tab and it has scrolled out of view.
-    const showToTop = !!lastTab && scrolledPast
-
-    // Watch whether the last tab is still on screen so the back-to-top button can appear when it is not.
-    useEffect(() => {
-        if (!lastTab) return
-        const observer = new IntersectionObserver(([entry]) => setScrolledPast(!entry.isIntersecting))
-        observer.observe(lastTab)
-        return () => observer.disconnect()
-    }, [lastTab])
-
+function TabControls({onAdd, hasActive, onEdit, onDelete}: TabControlsProps) {
     return (
-        <>
-            <div className="tab-controls corner-cluster no-print">
-                {hasActive && (
-                    <>
-                        <IconButton icon={<Trash2/>} label="Delete tab" variant="danger"
-                                    onClick={onDelete}/>
-                        <IconButton icon={<Printer/>} label="Print" onClick={() => window.print()}/>
-                        <IconButton icon={<Pencil/>} label="Edit tab" onClick={onEdit}/>
-                    </>
-                )}
-                <IconButton icon={<FilePlus2/>} label="Add tab" onClick={onAdd}/>
-            </div>
-            <div
-                className={`tab-controls__to-top corner-cluster no-print${showToTop ? ' tab-controls__to-top--visible' : ''}`}>
-                <IconButton icon={<ArrowUp/>} label="Back to top"
-                            onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}/>
-            </div>
-        </>
+        <div className="tab-controls control-group no-print">
+            <IconButton icon={<FilePlus2/>} label="Add tab" onClick={onAdd}/>
+            {hasActive && (
+                <>
+                    <IconButton icon={<Pencil/>} label="Edit tab" onClick={onEdit}/>
+                    <IconButton icon={<Printer/>} label="Print" onClick={() => window.print()}/>
+                    <IconButton icon={<Trash2/>} label="Delete tab" variant="danger" onClick={onDelete}/>
+                </>
+            )}
+        </div>
     )
 }
 

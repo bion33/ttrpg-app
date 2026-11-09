@@ -1,0 +1,42 @@
+/* The surface shell: a left sidebar and a content pane side by side, filling the viewport height so only the content
+   pane scrolls vertically (the sidebar stays put) while both still pan and scale together under pinch-zoom. */
+.surface {
+    display: flex;
+    height: 100dvh;
+}
+
+/* The in-flow control sidebar: a full-height vertical stack of control groups against the left edge. It scrolls
+   internally only if its own controls overflow a short screen. */
+.sidebar {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1rem 0.5rem;
+    overflow: hidden auto;
+    background: color-mix(in srgb, var(--color-parchment) 82%, transparent);
+    border-right: 1px solid var(--color-border);
+}
+
+/* The vertical scroll pane holding the page; `min-width: 0` lets it shrink beside the sidebar instead of overflowing,
+   and `position: relative` makes it the page's offset parent so the fit-to-width zoom measures the pane (sidebar
+   excluded) rather than the whole window. */
+.surface__content {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+}
+
+/* When printing, drop the shell so only the page content prints: no sidebar, no clipping, no fixed height. */
+@media print {
+    .surface {
+        display: block;
+        height: auto;
+    }
+
+    .surface__content {
+        overflow: visible;
+    }
+}

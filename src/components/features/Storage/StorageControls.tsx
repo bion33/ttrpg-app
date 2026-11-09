@@ -6,27 +6,23 @@ import {useStorageContext} from './storageContext.ts'
 import {canLoad, canSave, isProbeable} from '@lib/storage/sync/syncActions.ts'
 import StorageSettingsModal from './modals/StorageSettingsModal.tsx'
 import ConflictModal from './modals/ConflictModal.tsx'
-import './StorageControls.css'
 
 /**
- * Props for the storage controls: where they are mounted, which fixes their corner and the side their hover labels open
- * toward.
+ * Props for the storage controls: an optional leading button (e.g. the binder's back-to-library) rendered first in the
+ * same group.
  */
 interface StorageControlsProps {
-    placement: 'binder' | 'library'
-    // An optional button (e.g. the binder's back-to-library) rendered at the top of the same cluster, so it shares the
-    // cluster's gap and single counter-scale rather than sitting in its own fixed stack a scaled distance away.
     leading?: ReactNode
 }
 
 /**
- * The save/load/settings cluster wired to `useStorage`: exports the whole library to a file, imports one back (through
+ * The save/load/settings group wired to `useStorage`: exports the whole library to a file, imports one back (through
  * the conflict flow when it diverges from local edits), and opens the provider settings.
  */
-function StorageControls({placement, leading}: StorageControlsProps) {
+function StorageControls({leading}: StorageControlsProps) {
     const storage = useStorageContext()
     const [settingsOpen, setSettingsOpen] = useState(false)
-    // Both placements sit against the left edge, so their hover labels open rightward.
+    // The controls sit in a left-anchored bar, so their hover labels open rightward.
     const labelSide = 'right'
 
     // A never-configured device shows the settings once: it is open when the user opened it or the onboarding prompt is
@@ -55,7 +51,7 @@ function StorageControls({placement, leading}: StorageControlsProps) {
 
     return (
         <>
-            <div className={`storage-controls storage-controls--${placement} corner-cluster no-print`}>
+            <div className="storage-controls control-group no-print">
                 {leading}
                 <IconButton icon={<Settings/>} label="Storage settings" labelSide={labelSide}
                             onClick={() => setSettingsOpen(true)}/>
