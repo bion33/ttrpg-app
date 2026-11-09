@@ -3,34 +3,32 @@ import {ArrowUp} from 'lucide-react'
 import IconButton from '@ui/IconButton/IconButton'
 import {useSurfaceScroll} from '@ui/SurfaceLayout/surfaceScrollContext.ts'
 
-/**
- * Props for the back-to-top button: the last tab whose visibility within the content pane gates whether the button
- * shows.
- */
-interface ScrollTopButtonProps {
-    lastTab: HTMLElement | null
-}
+// How far the content pane must be scrolled, as a fraction of its own visible height, before the back-to-top button
+// appears — far enough that the top is no longer in view, independent of screen size or page zoom.
+const SHOW_AFTER_PANE_FRACTION = 0.5
 
 /**
- * A back-to-top button for the binder's content pane, shown once the last tab has scrolled out of view and scrolling
- * that pane (not the window) back to the top.
+ * A back-to-top button for the binder's content pane, shown once that pane has scrolled away from the top and scrolling
+ * it (not the window) back to the top.
  */
-function ScrollTopButton({lastTab}: ScrollTopButtonProps) {
+function ScrollTopButton() {
     const scrollPane = useSurfaceScroll()
-    const [scrolledPast, setScrolledPast] = useState(false)
+    const [scrolledDown, setScrolledDown] = useState(false)
 
-    // Watch whether the last tab is still on screen within the content pane so the button can appear when it is not.
+    // Track whether the pane has scrolled past the show threshold so the button can appear once the top is out of view.
     useEffect(() => {
-        if (!lastTab) return
-        const observer = new IntersectionObserver(([entry]) => setScrolledPast(!entry.isIntersecting), {root: scrollPane})
-        observer.observe(lastTab)
-        return () => observer.disconnect()
-    }, [lastTab, scrollPane])
+        if (!scrollPane) return
+        const update = () =>
+            setScrolledDown(scrollPane.scrollTop > scrollPane.clientHeight * SHOW_AFTER_PANE_FRACTION)
+        update()
+        scrollPane.addEventListener('scroll', update, {passive: true})
+        return () => scrollPane.removeEventListener('scroll', update)
+    }, [scrollPane])
 
-    if (!lastTab || !scrolledPast) return null
+    if (!scrolledDown) return null
     return (
         <IconButton icon={<ArrowUp/>} label="Back to top"
-                    onClick={() => (scrollPane ?? window).scrollTo({top: 0, behavior: 'smooth'})}/>
+                    onClick={() => scrollPane?.scrollTo({top: 0, behavior: 'smooth'})}/>
     )
 }
 

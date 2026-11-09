@@ -36,8 +36,6 @@ function Binder() {
     const navigate = useNavigate()
     const {pages, active, visited, createPage, editPage, deletePage, reorderPages} = useBinderPages(binderSlug, pageSlug)
     const [adding, setAdding] = useState(false)
-    // The last tab's element, watched so the back-to-top button appears once it scrolls out of view.
-    const [lastTab, setLastTab] = useState<HTMLElement | null>(null)
     // Whether another tab still fits beside the page; false disables the add-tab control (reported by the tab strip).
     const [canAdd, setCanAdd] = useState(true)
     // Which edit dialogue is open for the active tab, if any.
@@ -59,7 +57,7 @@ function Binder() {
                                  onDelete={(event) => (event.shiftKey ? deletePage() : setEditing('delete'))}/>
                     <div className="control-group">
                         <ZoomControls/>
-                        <ScrollTopButton lastTab={lastTab}/>
+                        <ScrollTopButton/>
                     </div>
                 </>
             }>
@@ -81,7 +79,7 @@ function Binder() {
                 )}
                 <Tabs tabs={pages} activeId={active?.id ?? ''}
                       onSelect={(id) => navigate(binderPath(binderSlug, id))} onReorder={reorderPages}
-                      onLastTabChange={setLastTab} onCanAddChange={setCanAdd}/>
+                      onCanAddChange={setCanAdd}/>
             </PageViewport>
             {adding && (
                 <AddTabModal
