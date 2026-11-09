@@ -8,6 +8,8 @@ import IconButton from '@ui/IconButton/IconButton'
  */
 interface TabControlsProps {
     onAdd: () => void
+    // Whether another tab would still fit beside the page; the add control is disabled when it would not.
+    canAdd: boolean
     hasActive: boolean
     onEdit: () => void
     onDelete: (event: MouseEvent<HTMLButtonElement>) => void
@@ -17,10 +19,11 @@ interface TabControlsProps {
  * The binder's page controls, rendered as a group within the surface sidebar: add a page and print (always shown) plus
  * — for the active tab — edit (rename and recolour) and delete.
  */
-function TabControls({onAdd, hasActive, onEdit, onDelete}: TabControlsProps) {
+function TabControls({onAdd, canAdd, hasActive, onEdit, onDelete}: TabControlsProps) {
     return (
         <div className="tab-controls control-group no-print">
-            <IconButton icon={<FilePlus2/>} label="Add tab" onClick={onAdd}/>
+            <IconButton icon={<FilePlus2/>} label={canAdd ? 'Add tab' : 'No room for more tabs'}
+                        disabled={!canAdd} onClick={onAdd}/>
             {hasActive && (
                 <>
                     <IconButton icon={<Pencil/>} label="Edit tab" onClick={onEdit}/>

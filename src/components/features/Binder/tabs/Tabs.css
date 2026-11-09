@@ -70,3 +70,64 @@
     white-space: nowrap;
     user-select: none;
 }
+
+/* The overflow fallback: a top-to-bottom list of horizontal tabs in the gutter, flush to the page's right edge (the
+   page reserves 1.7rem there), shown in place of the paper strip once that strip would run past the page bottom. */
+.tab-list {
+    position: absolute;
+    top: 0;
+    /* Sit flush at the page's right edge; only the active tab reaches left over the page border to read as attached. */
+    left: calc(100% - 1.7rem);
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+}
+
+.tab-list__tab {
+    /* --hue (degrees) is set per tab from the page hue in Tabs.tsx; the fallback keeps it defined. */
+    --hue: 0;
+    display: flex;
+    align-items: center;
+    width: 7rem;
+    /* Pull each row up so its top slips under the previous row's bottom (z-index set per tab), as the paper tabs do. */
+    margin-top: -1px;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.22);
+    border-radius: 0 0.4rem 0.4rem 0;
+    /* --tab-color (the base paper-tab colour) is set per tab from tabColor(hue); the fallback keeps it defined. */
+    background: var(--tab-color, hsl(var(--hue) 55% 82%));
+    color: var(--color-ink);
+    cursor: pointer;
+    /* Claim vertical drag gestures so touch pointers reorder tabs instead of scrolling the page. */
+    touch-action: none;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.tab-list__tab:first-child {
+    margin-top: 0;
+}
+
+.tab-list__tab:hover {
+    background: hsl(var(--hue) 60% 86%);
+}
+
+.tab-list__tab--active {
+    /* Reach 0.1rem left over the page border and drop the left border so the tab's background (lifted above the page
+       by its z-index) paints over that border, fusing the active tab to the page as the rotated paper tabs do. */
+    margin-left: -0.1rem;
+    border-left: none;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.tab-list__label {
+    display: block;
+    width: 100%;
+    font-family: 'Mongolian Baiti', serif;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    /* Truncate a label too long for the narrow gutter tab rather than wrapping or widening it. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+}

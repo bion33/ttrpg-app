@@ -38,6 +38,8 @@ function Binder() {
     const [adding, setAdding] = useState(false)
     // The last tab's element, watched so the back-to-top button appears once it scrolls out of view.
     const [lastTab, setLastTab] = useState<HTMLElement | null>(null)
+    // Whether another tab still fits beside the page; false disables the add-tab control (reported by the tab strip).
+    const [canAdd, setCanAdd] = useState(true)
     // Which edit dialogue is open for the active tab, if any.
     const [editing, setEditing] = useState<'edit' | 'delete' | null>(null)
     const naturalWidth = active ? PAGE_REGISTRY[active.type].naturalWidth : A4_WIDTH_PX
@@ -52,7 +54,8 @@ function Binder() {
                         <IconButton icon={<Library/>} label="Back to library" labelSide="right"
                                     onClick={() => navigate(libraryPath())}/>
                     }/>
-                    <TabControls onAdd={() => setAdding(true)} hasActive={!!active} onEdit={() => setEditing('edit')}
+                    <TabControls onAdd={() => setAdding(true)} canAdd={canAdd} hasActive={!!active}
+                                 onEdit={() => setEditing('edit')}
                                  onDelete={(event) => (event.shiftKey ? deletePage() : setEditing('delete'))}/>
                     <div className="control-group">
                         <ZoomControls/>
@@ -78,7 +81,7 @@ function Binder() {
                 )}
                 <Tabs tabs={pages} activeId={active?.id ?? ''}
                       onSelect={(id) => navigate(binderPath(binderSlug, id))} onReorder={reorderPages}
-                      onLastTabChange={setLastTab}/>
+                      onLastTabChange={setLastTab} onCanAddChange={setCanAdd}/>
             </PageViewport>
             {adding && (
                 <AddTabModal
